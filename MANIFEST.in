@@ -1,0 +1,3 @@
+include ReadMe.md
+recursive-include doc *
+
