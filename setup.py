@@ -29,11 +29,17 @@ class Pyl2ExtraInstall(install):
     def run(self):
         global base_path
         
+        try:
+            skip_pylearn2 = bool(os.environ['PYL2EXTRA_SKIP_PYL2'])
+        except KeyError:
+            skip_pylearn2 = False
+
         if os.path.isdir(os.path.join(base_path, 'pylearn2')):
-            crt_dir = os.getcwd()
-            os.chdir(os.path.join(base_path, 'pylearn2'))
-            subprocess.call(['python', 'setup.py', 'install'])
-            os.chdir(crt_dir)
+            if not skip_pylearn2:
+                crt_dir = os.getcwd()
+                os.chdir(os.path.join(base_path, 'pylearn2'))
+                subprocess.call(['python', 'setup.py', 'install'])
+                os.chdir(crt_dir)
 
         # allow for unattended install (pylearn2 still needs input)
         try:

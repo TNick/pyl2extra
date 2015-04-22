@@ -1,5 +1,5 @@
 Pylearn2 Extra
---------------
+==============
 
 [![Join the chat at https://gitter.im/TNick/pyl2extra](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/TNick/pyl2extra?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -26,7 +26,7 @@ Please note that I am in no way affiliated with
 the folks at [Lisa lab][3] that developed [Pylearn2][1] library.
 
 Highlights
-==========
+----------
 
 This section gives some hints about the content. It will probably
 get out of sync pretty fast, so please check the content of the package.
@@ -36,11 +36,12 @@ values from classes and ranges of values that generate a new value
 at each instantiation.
 
 Upcoming Features
-=================
+-----------------
 
 A visual debugger is in the making that allows
 you to visualize the parameters
-of your model, run it one epoch at a time, track the progress.
+of your model, images in the dataset, run it one
+epoch at a time, track the progress.
 The front-end GUI interface may run on a different machine than
 the one doing actual training.
 
