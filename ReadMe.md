@@ -26,7 +26,7 @@ Please note that I am in no way affiliated with
 the folks at [Lisa lab][3] that developed [Pylearn2][1] library.
 
 Highlights
-----------
+==========
 
 This section gives some hints about the content. It will probably
 get out of sync pretty fast, so please check the content of the package.
@@ -35,8 +35,22 @@ get out of sync pretty fast, so please check the content of the package.
 values from classes and ranges of values that generate a new value
 at each instantiation.
 
+Upcoming Features
+=================
+
+A visual debugger is in the making that allows
+you to visualize the parameters
+of your model, run it one epoch at a time, track the progress.
+The front-end GUI interface may run on a different machine than
+the one doing actual training.
+
+The debugger uses [PyQt4][4] for GUI, [PyQtGraph][5] for nice graphs
+and [ZMQ][6] for networking.
 
 
   [1]: https://github.com/lisa-lab/pylearn2 "Pylearn2 GitHub repository"
   [2]: https://github.com/Theano/Theano "Theano - define, optimize, and evaluate mathematical expressions"
   [3]: http://www.iro.umontreal.ca/~lisa/ "Laboratoire d’Informatique des Systèmes Adaptatifs"
+  [4]: http://pyqt.sourceforge.net/ "PyQt4"
+  [5]: http://www.pyqtgraph.org/ "PyQtGraph - Scientific Graphics and GUI Library for Python"
+  [6]: https://github.com/zeromq/pyzmq "GitHub repository for pyzmq"
