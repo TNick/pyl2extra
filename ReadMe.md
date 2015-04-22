@@ -14,7 +14,7 @@ LICENSE.txt, MANIFEST.in, setup.py, etc) were reused.
     cd pyl2extra
     git submodule update --init
 
-The setup.py script will look for pylearn2 directory and, if present,
+The `setup.py` script will look for `pylearn2` directory and, if present,
 will call it just like you would:
 
     cd pylearn2
@@ -22,6 +22,13 @@ will call it just like you would:
 
 Please note that I am in no way affiliated with
 the folks at [Lisa lab][3] that developed [Pylearn2][1] library.
+
+Highlights
+----------
+
+This section gives some hints about the content. It will probably
+get out of sync pretty fast, so please check the content of the package.
+
 
 
 
