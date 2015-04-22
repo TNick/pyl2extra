@@ -31,6 +31,9 @@ Highlights
 This section gives some hints about the content. It will probably
 get out of sync pretty fast, so please check the content of the package.
 
+- yaml_parser: some goodies were added to allow extracting
+values from classes and ranges of values that generate a new value
+at each instantiation.
 
 
 
