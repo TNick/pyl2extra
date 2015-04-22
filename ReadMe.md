@@ -1,6 +1,8 @@
 Pylearn2 Extra
 --------------
 
+[![Join the chat at https://gitter.im/TNick/pyl2extra](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/TNick/pyl2extra?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This repository contains code that extends the [Pylearn2][1] library,
 a Machine Learning library based on [Theano][2].
 
