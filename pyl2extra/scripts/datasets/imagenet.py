@@ -135,6 +135,9 @@ def make_argument_parser():
     parser_a.add_argument('--path', type=str,
                           help='output directory',
                           default='.')
+    parser_a.add_argument('--dry_run', type=bool,
+                          help='only count the files to download',
+                          default=False)
     parser_a.add_argument('--url_rs', type=str,
                           help='the address used to retreive data for relative status',
                           default=URL_REL_STATUS)
@@ -142,6 +145,7 @@ def make_argument_parser():
                           help='the address used to retreive data for image mapping',
                           default=URL_IMG_MAPPING)
     parser_a.set_defaults(func=cmd_download_images)
+
 
     return parser
 
@@ -308,7 +312,7 @@ def get_image_urls(url, synset):
 
 def cmd_image_urls(args):
     """
-    Prints a list of image names and urls for thje synset.
+    Prints a list of image names and urls for the synset.
     """
     response = get_image_urls(args.url, args.synset)
     for k in response:
@@ -428,7 +432,8 @@ class ImageDownloader(object):
         logger.info("download %s from %s to %s", imname, imurl, out_file)
 
         if os.path.isfile(out_file):
-            logger.debug('existing file will be overwritten')
+            logger.debug('the file already exists')
+            return True
 
         try:
             urlf = urllib2.urlopen(imurl)
@@ -532,14 +537,30 @@ class ImageDownloader(object):
                      self.downloaded_ok,
                      self.downloaded_fail)
 
+def count_images(url_rel, url_mapping):
+    """
+    How many images you should be getting.
+    """
+    synsets = get_image_synsets(url_rel)
+    image_count = 0
+    for i in synsets:
+        sset = get_image_urls(url_mapping, i)
+        for k in sset:
+            logging.debug(k)
+        image_count = image_count + len(sset)
+    logging.info('Total images in dataset: %d', image_count)
+
 def cmd_download_images(args):
     """
-    Download.
+    Number of images.
     """
-    if not os.path.isdir(args.path):
-        os.mkdir(args.path)
-    downloader = ImageDownloader(args.path)
-    downloader.run(args.url_rs, args.url_im)
+    if args.dry_run:
+        count_images(args.url_rs, args.url_im)
+    else:
+        if not os.path.isdir(args.path):
+            os.mkdir(args.path)
+        downloader = ImageDownloader(args.path)
+        downloader.run(args.url_rs, args.url_im)
 
 # ----------------------------------------------------------------------------
 
