@@ -1,0 +1,37 @@
+!obj:pylearn2.train.Train {
+    dataset: &trndataset !obj:pylearn2.datasets.cos_dataset.CosDataset {},
+    model: !obj:pylearn2.models.mlp.MLP {
+        layers: [
+            !obj:pylearn2.models.mlp.Linear {
+                dim: 1,
+                layer_name: 'layer1'
+            }
+        ],
+        input_space: !obj:pylearn2.space.Conv2DSpace {
+            shape: [],
+            num_channels: 3,
+            axes: !value: {
+                obj_to_call: *trndataset,
+                method_to_call: "axes"
+            }
+        }
+
+
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        learning_rate: 1e-3,
+        batch_size: 64,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: 0.10,
+            nesterov_momentum: False
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.MonitorBased {
+            channel_name: 'valid_y_misclass',
+            N: 50,
+            prop_decrease: 0.0
+        }
+    },
+    save_freq: 1,
+    save_path: "linear.pkl",
+    allow_overwrite: True
+}
