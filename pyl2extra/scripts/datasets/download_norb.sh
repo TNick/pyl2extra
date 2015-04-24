@@ -35,7 +35,7 @@ function get_file {
 
 echo "Downloading and extracting small NORB dataset into $NORB_SML_DIR..."
 BASE_URL="$NORB_SML_URL"
-if [ ! -d $NORB_SML_DIR ]
+if [ ! -d $NORB_SML_DIR ]; then
     mkdir -p $NORB_SML_DIR
 fi
 pushd $NORB_SML_DIR > /dev/null
@@ -50,7 +50,7 @@ popd > /dev/null
 
 echo "Downloading and extracting big NORB dataset into $NORB_BIG_DIR..."
 BASE_URL="$NORB_BIG_URL"
-if [ ! -d $NORB_BIG_DIR ]
+if [ ! -d $NORB_BIG_DIR ]; then
     mkdir -p $NORB_BIG_DIR
 fi
 pushd $NORB_BIG_DIR > /dev/null

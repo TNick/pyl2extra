@@ -4,19 +4,13 @@
         layers: [
             !obj:pylearn2.models.mlp.Linear {
                 dim: 1,
-                layer_name: 'layer1'
+                layer_name: 'layer1',
+                irange: 0.005
             }
         ],
-        input_space: !obj:pylearn2.space.Conv2DSpace {
-            shape: [],
-            num_channels: 3,
-            axes: !value: {
-                obj_to_call: *trndataset,
-                method_to_call: "axes"
-            }
+        input_space: !obj:pylearn2.space.VectorSpace {
+            dim: 1
         }
-
-
     },
     algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
         learning_rate: 1e-3,
