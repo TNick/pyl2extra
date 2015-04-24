@@ -7,9 +7,9 @@
 [ -z "$PYLEARN2_DATA_PATH" ] && echo "PYLEARN2_DATA_PATH is not set" && exit 1
 
 NORB_BIG_DIR=$PYLEARN2_DATA_PATH/norb
-NORB_BIG_URL="http://www.cs.nyu.edu/~ylclab/data"
+NORB_BIG_URL="http://www.cs.nyu.edu/~ylclab/data/norb-v1.0"
 NORB_SML_DIR=$PYLEARN2_DATA_PATH/norb_small/original
-NORB_SML_URL="http://www.cs.nyu.edu/~ylclab/data/norb-v1.0-small/smallnorb"
+NORB_SML_URL="http://www.cs.nyu.edu/~ylclab/data/norb-v1.0-small"
 
 
 which wget > /dev/null
@@ -39,12 +39,12 @@ if [ ! -d $NORB_SML_DIR ]; then
     mkdir -p $NORB_SML_DIR
 fi
 pushd $NORB_SML_DIR > /dev/null
-get_file norb-v1.0-5x46789x9x18x6x2x96x96-training-dat.mat
-get_file norb-v1.0-5x46789x9x18x6x2x96x96-training-cat.mat
-get_file norb-v1.0-5x46789x9x18x6x2x96x96-training-info.mat
-get_file norb-v1.0-5x01235x9x18x6x2x96x96-testing-dat.mat
-get_file norb-v1.0-5x01235x9x18x6x2x96x96-testing-cat.mat
-get_file norb-v1.0-5x01235x9x18x6x2x96x96-testing-info.mat
+get_file smallnorb-5x46789x9x18x6x2x96x96-training-dat.mat
+get_file smallnorb-5x46789x9x18x6x2x96x96-training-cat.mat
+get_file smallnorb-5x46789x9x18x6x2x96x96-training-info.mat
+get_file smallnorb-5x01235x9x18x6x2x96x96-testing-dat.mat
+get_file smallnorb-5x01235x9x18x6x2x96x96-testing-cat.mat
+get_file smallnorb-5x01235x9x18x6x2x96x96-testing-info.mat
 popd > /dev/null
 
 
