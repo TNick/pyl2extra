@@ -27,11 +27,9 @@ else
 fi
 
 function get_file {
-    $DL_CMD $BASE_URL/$1.gz
-    gzip -c $1.gz > $1
-    rm $1.gz
+    FILE=$1
+    $DL_CMD $BASE_URL/$FILE.gz | gzip -c > $FILE
 }
-
 
 echo "Downloading and extracting small NORB dataset into $NORB_SML_DIR..."
 BASE_URL="$NORB_SML_URL"
