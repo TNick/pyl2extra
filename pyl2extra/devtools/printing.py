@@ -112,7 +112,7 @@ class PyDotPrinter(object):
             self.color_codes = default_colorCodes
 
         if not self.color_codes.has_key('input_update'):
-            self.color_codes['input_update'] = 'lightblue' 
+            self.color_codes['input_update'] = 'lightblue'
         if not self.color_codes.has_key('outputs'):
             self.color_codes['outputs'] = 'blue'
         if not self.color_codes.has_key('inputs'):
@@ -157,7 +157,7 @@ class PyDotPrinter(object):
         # GraphNode instances that we have assigned.
         self.name_mapping = {}
 
-        # list of PyDotExtension inheritants
+        # list of Extension inheritants
         self.extensions = []
 
         # Used to update the inputs that have an update function
@@ -271,7 +271,7 @@ class PyDotPrinter(object):
         edge_col = self.color_codes['edge']
         b_edge = False
         b_node = False
-        
+
         if not color:
             if var in self.input_update:
                 color = self.color_codes['input_update']
@@ -305,6 +305,7 @@ class PyDotPrinter(object):
 
     def edge_label(self, var, parent_cnt, identif):
         """
+        Create a proper label for an edge.
         """
         edge_lbl = str(var.type)
         if len(parent_cnt) > 1:
@@ -407,7 +408,7 @@ class PyDotPrinter(object):
             name = self.unique_apply_name()
         else:
             assert len(name) > 0
- 
+
         result = self.add_node(name=name, obj=obj, index=index)
         result.label = self.generate_apply_label(obj)
 
@@ -427,7 +428,7 @@ class PyDotPrinter(object):
         varstr : string
             The label to use.
         """
-        
+
         if node in self.input_update:
             var_name = self.input_update[node].variable.name
             if var_name is None:
@@ -724,7 +725,7 @@ class PyDotPrinter(object):
             The object in question.
         name : str
             The object in question.
-            
+
         Returns
         -------
         nw_node : pydot.Node
@@ -758,17 +759,17 @@ class PyDotPrinter(object):
         Creates a cluster to act as a legend.
         """
         sgleg = pd.Cluster(graph_name="cluster_legend",
-                              label="Legend", 
-                              fontsize="15", 
-                              color="red",
-                              style="filled",
-                              fillcolor="lightgrey")
+                           label="Legend",
+                           fontsize="15",
+                           color="red",
+                           style="filled",
+                           fillcolor="lightgrey")
         sgleg_var = pd.Cluster('l_var', label="Variables", color="lightgrey")
         sgleg_op = pd.Cluster('l_op', label="Opperations", color="lightgrey")
         sgleg_edge = pd.Cluster('l_edge', label="Graph Flow", color="lightgrey")
-        
+
         def add_var(ncnt, color, label):
-            node = self.create_dot_var(name='leg_var_%d' % ncnt, 
+            node = self.create_dot_var(name='leg_var_%d' % ncnt,
                                        color=self.color_codes[color],
                                        label=label,
                                        shape='box')
@@ -776,10 +777,10 @@ class PyDotPrinter(object):
                 self.graph.add_edge(pd.Edge(src='leg_var_%d' % (ncnt-1),
                                             dst=node.get_name(),
                                             style='invis'))
-            sgleg_var.add_node(node)            
+            sgleg_var.add_node(node)
             return ncnt + 1
         def add_op(ncnt, color, label):
-            node = self.create_dot_var(name='leg_op_%d' % ncnt, 
+            node = self.create_dot_var(name='leg_op_%d' % ncnt,
                                        color=self.color_codes[color],
                                        label=label,
                                        shape='ellipse')
@@ -787,20 +788,20 @@ class PyDotPrinter(object):
                 self.graph.add_edge(pd.Edge(src='leg_op_%d' % (ncnt-1),
                                             dst=node.get_name(),
                                             style='invis'))
-            sgleg_op.add_node(node)            
+            sgleg_op.add_node(node)
             return ncnt + 1
-            
+
         def add_edge(ncnt, color, label):
-            node1 = self.create_dot_var(name='leg_edge_%d' % ncnt, 
-                                       color=self.color_codes['noclients'],
-                                       label=' ',
-                                       style='invis',
-                                       shape='none')
-            node2 = self.create_dot_var(name='leg_edge_%d' % (ncnt+1), 
-                                       color=self.color_codes['noclients'],
-                                       label=' ',
-                                       style='invis',
-                                       shape='none')
+            node1 = self.create_dot_var(name='leg_edge_%d' % ncnt,
+                                        color=self.color_codes['noclients'],
+                                        label=' ',
+                                        style='invis',
+                                        shape='none')
+            node2 = self.create_dot_var(name='leg_edge_%d' % (ncnt+1),
+                                        color=self.color_codes['noclients'],
+                                        label=' ',
+                                        style='invis',
+                                        shape='none')
             self.graph.add_edge(pd.Edge(src=node1.get_name(),
                                         dst=node2.get_name(),
                                         labelaligned=True,
@@ -817,7 +818,7 @@ class PyDotPrinter(object):
             sgleg_edge.add_node(node1)
             sgleg_edge.add_node(node2)
             return ncnt + 2
-            
+
         ncnt = 1
         ncnt = add_var(ncnt, 'inputs', 'Input Variable')
         ncnt = add_var(ncnt, 'outputs', 'Output Variable')
@@ -838,7 +839,7 @@ class PyDotPrinter(object):
         ncnt = add_op(ncnt, 'Subtensor', 'Subtensor')
         ncnt = add_op(ncnt, 'Alloc', 'Alloc')
         ncnt = add_op(ncnt, 'apply', 'Generic Op')
-        
+
         ncnt = 1
         ncnt = add_edge(ncnt, 'edge', 'Variable type')
         ncnt = add_edge(ncnt, 'view', 'View of the input')
@@ -969,7 +970,7 @@ class PyDotPrinter(object):
 
 
 
-class PyDotExtension(object):
+class Extension(object):
     """
     Class used to extend the functionality of PyDotPrinter.
 
@@ -979,7 +980,7 @@ class PyDotExtension(object):
         The instance where this extension was/will be inserted
     """
     def __init__(self, base):
-        super(PyDotExtension, self).__init__()
+        super(Extension, self).__init__()
         self.base = base
 
     def setup(self):
@@ -1046,7 +1047,7 @@ class PyDotExtension(object):
         """
         pass
 
-class PyDotIfElseCluster(PyDotExtension):
+class PyDotIfElseCluster(Extension):
     """
     Clusters an IfElse rule in three clusters.
 
@@ -1148,6 +1149,7 @@ def pydotprint(fct,
                max_label_size=70,
                scan_graphs=False,
                var_with_name_simple=False,
+               legend=False,
                print_output_file=True,
                assert_nb_all_strings=-1,
                return_image=False):
@@ -1180,6 +1182,7 @@ def pydotprint(fct,
     :param var_with_name_simple: If true and a variable have a name,
                 we will print only the variable name.
                 Otherwise, we concatenate the type to the var name.
+    :param legend: If true a legend is added.
     :param assert_nb_all_strings: Used for tests. If non-negative, assert that
                 the number of unique string nodes in the dot graph is equal to
                 this number. This is used in tests to verify that dot won't
@@ -1233,7 +1236,8 @@ def pydotprint(fct,
     if scan_graphs:
         pr.create_subgraphs()
 
-    pr.add_legend()
+    if legend:
+        pr.add_legend()
 
     if assert_nb_all_strings != -1:
         assert len(pr.name_mapping) == assert_nb_all_strings, \
