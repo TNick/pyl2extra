@@ -3,33 +3,9 @@
 Welcome
 =======
 
-
-.. _install:
-
-Download and installation
-=========================
-
-There is no PyPI download yet
-
-Dependencies
-============
-
-
-License
-=======
-
-
-
-Documentation
-=============
-
-
-Community
-=========
-
-
-Developer
-=========
+This website hosts the documentation for Pyl2Extra project.
+The code is released under a 3-claused BSD license, so it may be
+used for commercial purposes.
 
 
 .. toctree::
