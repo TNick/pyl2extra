@@ -10,8 +10,8 @@ from pylearn2.utils.rng import make_np_rng
 import numpy as np
 from theano import config
 
-
-_banned_mods = ['shuffled_sequential',
+#'shuffled_sequential',
+_banned_mods = [
                 'random_slice',
                 'random_uniform',
                 'batchwise_shuffled_sequential',
@@ -241,27 +241,30 @@ class CosDataset(Dataset):
 
     def get (self, source, next_index):
         """
-        The method ignores both the source and next_index arguments.
-        It simply finds an x in the interval and computes cos(x) ad adds some 
-        noise.
+        next_index is a slice that tells how many examples are requested.
         """
-        batch_size = 1
+        out_size = len(source)
         x = np.cast[config.floatX](self.rng.uniform(self.min_x, self.max_x,
-                                                    (batch_size, 1)))
+                                                    (out_size, 1)))
         y = np.cos(x) + (np.cast[config.floatX](self.rng.randn(*x.shape)) *
                          self.std)
-        return y
+        result = np.reshape(y, (out_size, 1))
+        return result
 
     @wraps(Dataset.iterator)
     def iterator(self, mode=None, batch_size=None, num_batches=None,
                  rng=None, data_specs=None, return_tuple=False):
         # we can't use modes that require the size of the dataset
+        orig_mode = mode
         if mode in _banned_mods:
             raise ValueError('Mode %s is not supported in CosDataset' % mode)
         if mode == 'random':
             mode = RandomSubsetIterator
         [mode, batch_size, num_batches, rng, data_specs] = self._init_iterator(
             mode, batch_size, num_batches, rng, data_specs)
+        # sequential mode does not allow a random number generator
+        if orig_mode == 'sequential':
+            rng = None
         return InfiniteDatasetIterator(self,
                                        mode(float('inf'),
                                             batch_size,
