@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Configuration &mdash; Pyl2Extra dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/solar.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Pyl2Extra dev documentation" href="../index.html" />
+    <link rel="up" title="Library Documentation" href="index.html" />
+    <link rel="next" title="Developer tools" href="devtools.html" />
+    <link rel="prev" title="Datasets" href="datasets.html" /><link href='http://fonts.googleapis.com/css?family=Source+Code+Pro|Open+Sans:300italic,400italic,700italic,400,300,700' rel='stylesheet' type='text/css'>
+<link href="../_static/solarized-dark.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="devtools.html" title="Developer tools"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="datasets.html" title="Datasets"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Pyl2Extra dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Library Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Configuration</a><ul>
+<li><a class="reference internal" href="#module-pyl2extra.config.yaml_parse">YAML parser</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="datasets.html"
+                        title="previous chapter">Datasets</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="devtools.html"
+                        title="next chapter">Developer tools</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/library/config.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-pyl2extra.config">
+<span id="configuration"></span><h1>Configuration<a class="headerlink" href="#module-pyl2extra.config" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-pyl2extra.config.yaml_parse">
+<span id="yaml-parser"></span><h2>YAML parser<a class="headerlink" href="#module-pyl2extra.config.yaml_parse" title="Permalink to this headline">¶</a></h2>
+<p>Support code for YAML parsing of experiment descriptions.</p>
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.constructor_float">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">constructor_float</tt><big>(</big><em>loader</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.constructor_float" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!float &lt;str&gt;&#8221; tag is encountered.
+This tag expects a (quoted) string as argument.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.constructor_import">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">constructor_import</tt><big>(</big><em>loader</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.constructor_import" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!import &lt;str&gt;&#8221; tag is encountered.
+This tag exects a (quoted) string as argument.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.constructor_int">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">constructor_int</tt><big>(</big><em>loader</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.constructor_int" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!int &lt;str&gt;&#8221; tag is encountered.
+This tag expects a (quoted) string as argument.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.constructor_range">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">constructor_range</tt><big>(</big><em>loader</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.constructor_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!range &lt;str&gt;&#8221; tag is encountered.
+This tag expects a (quoted) string as argument.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.do_not_recurse">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">do_not_recurse</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.do_not_recurse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function symbol used for wrapping an unpickled object (which should
+not be recursively expanded). This is recognized and respected by the
+instantiation parser. Implementationally, no-op (returns the value
+passed in as an argument).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>value</strong> : object</p>
+<blockquote>
+<div><p>The value to be returned.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>value</strong> : object</p>
+<blockquote class="last">
+<div><p>The same object passed in as an argument.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.initialize">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">initialize</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the configuration system by installing YAML handlers.
+Automatically done on first call to load() specified in this file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.load">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">load</tt><big>(</big><em>stream</em>, <em>environ=None</em>, <em>instantiate=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads a YAML configuration from a string or file-like object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>stream</strong> : str or object</p>
+<blockquote>
+<div><p>Either a string containing valid YAML or a file-like object
+supporting the .read() interface.</p>
+</div></blockquote>
+<p><strong>environ</strong> : dict, optional</p>
+<blockquote>
+<div><p>A dictionary used for ${FOO} substitutions in addition to
+environment variables. If a key appears both in <cite>os.environ</cite>
+and this dictionary, the value in this dictionary is used.</p>
+</div></blockquote>
+<p><strong>instantiate</strong> : bool, optional</p>
+<blockquote>
+<div><p>If <cite>False</cite>, do not actually instantiate the objects but instead
+produce a nested hierarchy of <cite>Proxy</cite> objects.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>graph</strong> : dict or object</p>
+<blockquote class="last">
+<div><p>The dictionary or object (if the top-level element specified
+a Python object to instantiate), or a nested hierarchy of
+<cite>Proxy</cite> objects.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Other keyword arguments are passed on to <cite>yaml.load</cite>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.load_path">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">load_path</tt><big>(</big><em>path</em>, <em>environ=None</em>, <em>instantiate=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.load_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function for loading a YAML configuration from a file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>path</strong> : str</p>
+<blockquote>
+<div><p>The path to the file to load on disk.</p>
+</div></blockquote>
+<p><strong>environ</strong> : dict, optional</p>
+<blockquote>
+<div><p>A dictionary used for ${FOO} substitutions in addition to
+environment variables. If a key appears both in <cite>os.environ</cite>
+and this dictionary, the value in this dictionary is used.</p>
+</div></blockquote>
+<p><strong>instantiate</strong> : bool, optional</p>
+<blockquote>
+<div><p>If <cite>False</cite>, do not actually instantiate the objects but instead
+produce a nested hierarchy of <cite>Proxy</cite> objects.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>graph</strong> : dict or object</p>
+<blockquote class="last">
+<div><p>The dictionary or object (if the top-level element specified
+a Python object to instantiate), or a nested hierarchy of
+<cite>Proxy</cite> objects.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Other keyword arguments are passed on to <cite>yaml.load</cite>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.multi_constructor_import">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">multi_constructor_import</tt><big>(</big><em>loader</em>, <em>tag_suffix</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.multi_constructor_import" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!import:&#8221; tag is encountered.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.multi_constructor_multiseq">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">multi_constructor_multiseq</tt><big>(</big><em>loader</em>, <em>tag_suffix</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.multi_constructor_multiseq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!multiseq:&#8221; tag is encountered.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.multi_constructor_obj">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">multi_constructor_obj</tt><big>(</big><em>loader</em>, <em>tag_suffix</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.multi_constructor_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!obj:&#8221; tag is encountered.</p>
+<p>See PyYAML documentation for details on the call signature.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.multi_constructor_pkl">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">multi_constructor_pkl</tt><big>(</big><em>loader</em>, <em>tag_suffix</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.multi_constructor_pkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!pkl:&#8221; tag is encountered.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.multi_constructor_value">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">multi_constructor_value</tt><big>(</big><em>loader</em>, <em>tag_suffix</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.multi_constructor_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback used by PyYAML when a &#8221;!value:&#8221; tag is encountered.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.config.yaml_parse.try_to_import">
+<tt class="descclassname">pyl2extra.config.yaml_parse.</tt><tt class="descname">try_to_import</tt><big>(</big><em>tag_suffix</em><big>)</big><a class="headerlink" href="#pyl2extra.config.yaml_parse.try_to_import" title="Permalink to this definition">¶</a></dt>
+<dd><div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">WRITEME</p>
+</div>
+</dd></dl>
+
+<span class="target" id="module-pyl2extra.config.multi_seq"></span><p>Module containing the MultiSeq class and support functionality.</p>
+<p>This class along with yaml extensions implemented in yaml_parse
+(!multiseq and !range) allow you to define an experiment once while also
+using a range of values for some of the parameters.</p>
+<p>The simplest usage would imply defining both the control class (MultiSeq)
+and the experiment in the same file like so:</p>
+<div class="highlight-none"><div class="highlight"><pre>{
+    multiseq: !multiseq: {
+        # ...
+    },
+    train: !obj:pylearn2.train.Train {
+        # ...
+    }
+}
+</pre></div>
+</div>
+<dl class="class">
+<dt id="pyl2extra.config.multi_seq.MultiSeq">
+<em class="property">class </em><tt class="descclassname">pyl2extra.config.multi_seq.</tt><tt class="descname">MultiSeq</tt><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements multiple experiments from a single source using value ranges.</p>
+<p>This is a helper class for yaml_parser module.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>multiseq_tag: str</strong></p>
+<blockquote>
+<div><p>Unique tag for this run generated using uuid or current time.</p>
+</div></blockquote>
+<p><strong>iterations: int</strong></p>
+<blockquote>
+<div><p>Number of iterations performed so far.</p>
+</div></blockquote>
+<p><strong>dynamic_env: dict of strings</strong></p>
+<blockquote>
+<div><p>Variables that are updated at the start of a new iteration</p>
+</div></blockquote>
+<p><strong>range_vars: list</strong></p>
+<blockquote class="last">
+<div><p>the list of variables with an associated range</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.add_range_var">
+<tt class="descname">add_range_var</tt><big>(</big><em>var_str</em><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.add_range_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates or updated a range variable from a string.</p>
+<p>Expected string has the form &#8220;${VARNAME:start,stop,num}&#8221;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.first_iteration">
+<tt class="descname">first_iteration</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.first_iteration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the object for first run.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.get_instance">
+<em class="property">static </em><tt class="descname">get_instance</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.get_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get existing instance or create a new one.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.get_value">
+<em class="property">static </em><tt class="descname">get_value</tt><big>(</big><em>rng_var</em><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.get_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get existing instance or create a new one.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.next_iteration">
+<tt class="descname">next_iteration</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.next_iteration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advances to next step.</p>
+<p>Returns False if we&#8217;re at the end.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.reinit">
+<tt class="descname">reinit</tt><big>(</big><em>grouping</em>, <em>gen_val</em>, <em>gen_tag</em>, <em>max_count</em>, <em>environ=None</em><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.reinit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare to iterate over examples.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.save_params">
+<tt class="descname">save_params</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.save_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the input to a string and dumps it to provided file.</p>
+<p>The file is only generated if local environment contains
+a key called <cite>PARAMETERS_FILE</cite>. Otherwise we assume that the
+user does not want a separate file.</p>
+<p>TODO:generate a runnable yaml file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.set_iter_vars">
+<tt class="descname">set_iter_vars</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.set_iter_vars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the variables that change with each iteration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.unique_tag">
+<tt class="descname">unique_tag</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.unique_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a unique tag for current run.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.MultiSeq.val_for_name">
+<tt class="descname">val_for_name</tt><big>(</big><em>rng_var_name</em><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.MultiSeq.val_for_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets current value of a range variable given range variable&#8217;s name.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyl2extra.config.multi_seq.RangeVar">
+<em class="property">class </em><tt class="descclassname">pyl2extra.config.multi_seq.</tt><tt class="descname">RangeVar</tt><big>(</big><em>name</em>, <em>space</em><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.RangeVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>One range variable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The name as it will be used in the custome environment.</p>
+</div></blockquote>
+<p><strong>space</strong> : numpy.linspace instance</p>
+<blockquote>
+<div><p>The linear space from which we will extract values..</p>
+</div></blockquote>
+<p><strong>index</strong> : int</p>
+<blockquote class="last">
+<div><p>Current index inside space.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.RangeVar.compute_next_id">
+<tt class="descname">compute_next_id</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.RangeVar.compute_next_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects the next index based on current value and provided settings.</p>
+<p>If ordered mode is selected the values will be incremented and,
+at the end, will wrap around.MultiSeq</p>
+<p>If random mode is selected a random index is picked up.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>new_idx</strong> : int</p>
+<blockquote class="last">
+<div><p>Newly assigned index.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.config.multi_seq.RangeVar.value">
+<tt class="descname">value</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.config.multi_seq.RangeVar.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value based on internal range and index.</p>
+<p>We can&#8217;t just <cite>float(self.space[self.index])</cite> because it may get
+promoted to float64 and that is only desirable if floatX is float64.</p>
+<p>We can&#8217;t also just <cite>as_floatX(self.space[self.index])</cite> because there
+are assertions in code that explicitly expect a float and
+as_floatX will create a one dimensional array.</p>
+<p>So, there you go. The solution below appears to work. I&#8217;m sure you
+can see why.</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-pyl2extra.config.proxy"></span><p>Module containing the Train class and support functionality.</p>
+<dl class="class">
+<dt id="pyl2extra.config.proxy.BaseProxy">
+<em class="property">class </em><tt class="descclassname">pyl2extra.config.proxy.</tt><tt class="descname">BaseProxy</tt><a class="headerlink" href="#pyl2extra.config.proxy.BaseProxy" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="pyl2extra.config.proxy.BaseProxy.callable">
+<tt class="descname">callable</tt><a class="headerlink" href="#pyl2extra.config.proxy.BaseProxy.callable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyl2extra.config.proxy.BaseProxy.keywords">
+<tt class="descname">keywords</tt><a class="headerlink" href="#pyl2extra.config.proxy.BaseProxy.keywords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyl2extra.config.proxy.BaseProxy.positionals">
+<tt class="descname">positionals</tt><a class="headerlink" href="#pyl2extra.config.proxy.BaseProxy.positionals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pyl2extra.config.proxy.BaseProxy.yaml_src">
+<tt class="descname">yaml_src</tt><a class="headerlink" href="#pyl2extra.config.proxy.BaseProxy.yaml_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyl2extra.config.proxy.Proxy">
+<em class="property">class </em><tt class="descclassname">pyl2extra.config.proxy.</tt><tt class="descname">Proxy</tt><a class="headerlink" href="#pyl2extra.config.proxy.Proxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>An intermediate representation between initial YAML parse and object
+instantiation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>callable</strong> : callable</p>
+<blockquote>
+<div><p>The function/class to call to instantiate this node.</p>
+</div></blockquote>
+<p><strong>positionals</strong> : iterable</p>
+<blockquote>
+<div><p>Placeholder for future support for positional arguments (<cite>*args</cite>).</p>
+</div></blockquote>
+<p><strong>keywords</strong> : dict-like</p>
+<blockquote>
+<div><p>A mapping from keywords to arguments (<cite>**kwargs</cite>), which may be
+<cite>Proxy`s or `Proxy`s nested inside `dict</cite> or <cite>list</cite> instances.
+Keys must be strings that are valid Python variable names.</p>
+</div></blockquote>
+<p><strong>yaml_src</strong> : str</p>
+<blockquote class="last">
+<div><p>The YAML source that created this node, if available.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>This is intended as a robust, forward-compatible intermediate
+representation for either internal consumption or external consumption
+by another tool e.g. hyperopt.</p>
+<p>This particular class mainly exists to  override <cite>BaseProxy</cite>&#8216;s <cite>__hash__</cite>
+(to avoid hashing unhashable namedtuple elements).</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="devtools.html" title="Developer tools"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="datasets.html" title="Datasets"
+             >previous</a> |</li>
+        <li><a href="../index.html">Pyl2Extra dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Library Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Nicu Tofan.
+      Last updated on May 10, 2015.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.Theme by <a href="http://github.com/vkvn">vkvn</a>
+    </div>
+  </body>
+</html>

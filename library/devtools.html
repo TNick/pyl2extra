@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Developer tools &mdash; Pyl2Extra dev documentation</title>
+    
+    <link rel="stylesheet" href="../_static/solar.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Pyl2Extra dev documentation" href="../index.html" />
+    <link rel="up" title="Library Documentation" href="index.html" />
+    <link rel="next" title="Scripts" href="scripts.html" />
+    <link rel="prev" title="Configuration" href="config.html" /><link href='http://fonts.googleapis.com/css?family=Source+Code+Pro|Open+Sans:300italic,400italic,700italic,400,300,700' rel='stylesheet' type='text/css'>
+<link href="../_static/solarized-dark.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="scripts.html" title="Scripts"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="Configuration"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Pyl2Extra dev documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Library Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Developer tools</a><ul>
+<li><a class="reference internal" href="#module-pyl2extra.devtools.printing">Printing</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="config.html"
+                        title="previous chapter">Configuration</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="scripts.html"
+                        title="next chapter">Scripts</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/library/devtools.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-pyl2extra.devtools">
+<span id="developer-tools"></span><h1>Developer tools<a class="headerlink" href="#module-pyl2extra.devtools" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-pyl2extra.devtools.printing">
+<span id="printing"></span><h2>Printing<a class="headerlink" href="#module-pyl2extra.devtools.printing" title="Permalink to this headline">¶</a></h2>
+<p>Provides a drop-in replacement for theano.printing.pydotprint().</p>
+<p>The code was initially copied from theano.printing.pydotprint() and
+it was modified.</p>
+<dl class="class">
+<dt id="pyl2extra.devtools.printing.ExtClusterTrace">
+<em class="property">class </em><tt class="descclassname">pyl2extra.devtools.printing.</tt><tt class="descname">ExtClusterTrace</tt><big>(</big><em>base</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtClusterTrace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clusters the nodes based on their trace.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>base</strong> : PyDotPrinter</p>
+<blockquote class="last">
+<div><p>The instance where this extension was/will be inse</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.ExtClusterTrace.apply_node_added">
+<tt class="descname">apply_node_added</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtClusterTrace.apply_node_added" title="Permalink to this definition">¶</a></dt>
+<dd><p>An apply node was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.ExtClusterTrace.input_node_added">
+<tt class="descname">input_node_added</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtClusterTrace.input_node_added" title="Permalink to this definition">¶</a></dt>
+<dd><p>An input variable was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.ExtClusterTrace.output_node_added">
+<tt class="descname">output_node_added</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtClusterTrace.output_node_added" title="Permalink to this definition">¶</a></dt>
+<dd><p>An output variable was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.ExtClusterTrace.setup">
+<tt class="descname">setup</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtClusterTrace.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called once the function was parsed and before any (potential) nodes.</p>
+<p>It is possible that an instance may receive multiple <cite>setup()</cite>
+calls, each followed by a coresponding <cite>tear_down()</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.ExtClusterTrace.tear_down">
+<tt class="descname">tear_down</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtClusterTrace.tear_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called after all nodes were processed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyl2extra.devtools.printing.ExtIfElseCluster">
+<em class="property">class </em><tt class="descclassname">pyl2extra.devtools.printing.</tt><tt class="descname">ExtIfElseCluster</tt><big>(</big><em>base</em>, <em>cond_highlight</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtIfElseCluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clusters an IfElse rule in three clusters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>base</strong> : PyDotPrinter</p>
+<blockquote>
+<div><p>The instance where this extension was/will be inse</p>
+</div></blockquote>
+<p><strong>cond_highlight</strong> : gof.Apply</p>
+<blockquote class="last">
+<div><p>The condition node</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.ExtIfElseCluster.apply_node_added">
+<tt class="descname">apply_node_added</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtIfElseCluster.apply_node_added" title="Permalink to this definition">¶</a></dt>
+<dd><p>An apply node was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.ExtIfElseCluster.setup">
+<tt class="descname">setup</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtIfElseCluster.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called once the function was parsed and before any (potential) nodes.</p>
+<p>It is possible that an instance may receive multiple <cite>setup()</cite>
+calls, each followed by a coresponding <cite>tear_down()</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.ExtIfElseCluster.tear_down">
+<tt class="descname">tear_down</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.ExtIfElseCluster.tear_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called after all nodes were processed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyl2extra.devtools.printing.Extension">
+<em class="property">class </em><tt class="descclassname">pyl2extra.devtools.printing.</tt><tt class="descname">Extension</tt><big>(</big><em>base</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.Extension" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class used to extend the functionality of PyDotPrinter.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>base</strong> : PyDotPrinter</p>
+<blockquote class="last">
+<div><p>The instance where this extension was/will be inserted</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.Extension.apply_node_added">
+<tt class="descname">apply_node_added</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.Extension.apply_node_added" title="Permalink to this definition">¶</a></dt>
+<dd><p>An apply node was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.Extension.input_node_added">
+<tt class="descname">input_node_added</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.Extension.input_node_added" title="Permalink to this definition">¶</a></dt>
+<dd><p>An input variable was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.Extension.node_added">
+<tt class="descname">node_added</tt><big>(</big><em>node</em>, <em>kind</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.Extension.node_added" title="Permalink to this definition">¶</a></dt>
+<dd><p>A variable was added to the graph.</p>
+<p>This is called with each <a href="#id1"><span class="problematic" id="id2">*</span></a>_node_added. The implementation
+may only use this function for simple processing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote>
+<div><p>The node in question.</p>
+</div></blockquote>
+<p><strong>kind</strong> : srt</p>
+<blockquote class="last">
+<div><p>Either &#8216;apply&#8217;, &#8216;input&#8217; or &#8216;output&#8217;.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.Extension.output_node_added">
+<tt class="descname">output_node_added</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.Extension.output_node_added" title="Permalink to this definition">¶</a></dt>
+<dd><p>An output variable was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.Extension.setup">
+<tt class="descname">setup</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.Extension.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called once the function was parsed and before any (potential) nodes.</p>
+<p>It is possible that an instance may receive multiple <cite>setup()</cite>
+calls, each followed by a coresponding <cite>tear_down()</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.Extension.tear_down">
+<tt class="descname">tear_down</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.Extension.tear_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called after all nodes were processed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pyl2extra.devtools.printing.GraphNode">
+<em class="property">class </em><tt class="descclassname">pyl2extra.devtools.printing.</tt><tt class="descname">GraphNode</tt><big>(</big><em>name</em>, <em>obj</em>, <em>parent=None</em>, <em>index=-1</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.GraphNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>A node in our tree.</p>
+<p>We&#8217;re creating a tree to mimic the structure of the graph as we build it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The unique name that will be used to identify this node in out
+tree and in dot graph. unique_apply_name() or unique_var_name()
+can be used to to generate this.</p>
+</div></blockquote>
+<p><strong>obj</strong> : object</p>
+<blockquote>
+<div><p>The actual object that will be inserted.</p>
+</div></blockquote>
+<p><strong>parent</strong> : GraphNode, optional</p>
+<blockquote class="last">
+<div><p>Parent node or None to insert it at top level.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter">
+<em class="property">class </em><tt class="descclassname">pyl2extra.devtools.printing.</tt><tt class="descname">PyDotPrinter</tt><big>(</big><em>fct</em>, <em>compact=True</em>, <em>outfrm='png'</em>, <em>with_ids=False</em>, <em>high_contrast=True</em>, <em>color_codes=None</em>, <em>max_label_size=70</em>, <em>var_with_name_simple=False</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print to a file the graph of a compiled theano function&#8217;s ops. Supports
+all pydot output formats, including png and svg.</p>
+<p>Throughout the class the distinction is made between names
+(properly formated strings to act as dot names) and labels (the string
+displayed by that node).</p>
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.add_legend">
+<tt class="descname">add_legend</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.add_legend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a cluster to act as a legend.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.add_node">
+<tt class="descname">add_node</tt><big>(</big><em>name</em>, <em>obj</em>, <em>parent=None</em>, <em>index=-1</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.add_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a node to our tree.</p>
+<p>The node is inserted in self.tree and in self.name_mapping.
+This is a more low level method. Use add_or_get</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The unique name that will be used to identify this node in our
+tree and in dot graph. unique_apply_name() or unique_var_name()
+can be used to to generate this.</p>
+</div></blockquote>
+<p><strong>obj</strong> : object</p>
+<blockquote>
+<div><p>The actual object that will be inserted.</p>
+</div></blockquote>
+<p><strong>parent</strong> : GraphNode, optional</p>
+<blockquote>
+<div><p>Parent node or None to insert it at top level.</p>
+</div></blockquote>
+<p><strong>index</strong> : int</p>
+<blockquote>
+<div><p>Index in parent object (NOT parent argument)</p>
+</div></blockquote>
+<p><strong>Returns</strong></p>
+<p><strong>&#8212;&#8212;-</strong></p>
+<p><strong>new_node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The object that was created for this node.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.add_or_get_apply">
+<tt class="descname">add_or_get_apply</tt><big>(</big><em>obj</em>, <em>name=None</em>, <em>index=-1</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.add_or_get_apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>High level function to add an apply node to the tree.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>obj</strong> : ApplyNode</p>
+<blockquote>
+<div><p>The node to insert.</p>
+</div></blockquote>
+<p><strong>name</strong> : str, optional</p>
+<blockquote>
+<div><p>The unique name that will be used to identify this node in our
+tree and in dot graph. If not provided unique_apply_name()
+will be used to to generate it.</p>
+</div></blockquote>
+<p><strong>index</strong> : int</p>
+<blockquote>
+<div><p>Index in parent.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>Either an existing or a new node.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.add_or_get_var">
+<tt class="descname">add_or_get_var</tt><big>(</big><em>var</em>, <em>name=None</em>, <em>index=-1</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.add_or_get_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>High level function to add an variable node to the tree.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>var</strong> : Variable</p>
+<blockquote>
+<div><p>The node to insert.</p>
+</div></blockquote>
+<p><strong>name</strong> : str, optional</p>
+<blockquote>
+<div><p>The unique name that will be used to identify this node in our
+tree and in dot graph. If not provided unique_var_name()
+will be used to to generate it.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>Either an existing or a new node.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.apply_label_mode">
+<tt class="descname">apply_label_mode</tt><big>(</big><em>node</em>, <em>prefix</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.apply_label_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a label for a node that has mode information.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : gof.Apply</p>
+<blockquote>
+<div><p>The node to label.</p>
+</div></blockquote>
+<p><strong>prefix</strong> : str</p>
+<blockquote>
+<div><p>The prefix to use in the final name.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : str</p>
+<blockquote class="last">
+<div><p>The label to use.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.apply_label_profile">
+<tt class="descname">apply_label_profile</tt><big>(</big><em>node</em>, <em>prefix</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.apply_label_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a label for a node that has profile information.</p>
+<p># Update the inputs that have an update function
+self.input_update = {}</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : gof.Apply</p>
+<blockquote>
+<div><p>The node to label.</p>
+</div></blockquote>
+<p><strong>prefix</strong> : str</p>
+<blockquote>
+<div><p>The prefix to use in the final name.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : string</p>
+<blockquote class="last">
+<div><p>The label to use.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.color_for_object">
+<tt class="descname">color_for_object</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.color_for_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tries to locate a clor for the class of provided object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>obj</strong> : object</p>
+<blockquote>
+<div><p>The object in question.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : string</p>
+<blockquote class="last">
+<div><p>The color to use of None if the class was not found.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.create_dot_apply">
+<tt class="descname">create_dot_apply</tt><big>(</big><em>name</em>, <em>color</em>, <em>label</em>, <em>shape='ellipse'</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.create_dot_apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a dot node and inserts it in the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The object in question.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>nw_node</strong> : pydot.Node</p>
+<blockquote class="last">
+<div><p>Newly created node.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.create_dot_var">
+<tt class="descname">create_dot_var</tt><big>(</big><em>name</em>, <em>color</em>, <em>label</em>, <em>shape='box'</em>, <em>style=''</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.create_dot_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a dot node and inserts it in the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The object in question.</p>
+</div></blockquote>
+<p><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The object in question.</p>
+</div></blockquote>
+<p><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The object in question.</p>
+</div></blockquote>
+<p><strong>name</strong> : str</p>
+<blockquote>
+<div><p>The object in question.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>nw_node</strong> : pydot.Node</p>
+<blockquote class="last">
+<div><p>Newly created node.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.create_file">
+<tt class="descname">create_file</tt><big>(</big><em>outfile=None</em>, <em>print_output_file=False</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.create_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a file from current instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>outfile</strong> : str,optional</p>
+<blockquote class="last">
+<div><p>The path to the output file.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.create_image">
+<tt class="descname">create_image</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.create_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an image file from current instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.create_subgraphs">
+<tt class="descname">create_subgraphs</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.create_subgraphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create subgraph files for Scan ops in the graph.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.edge_label">
+<tt class="descname">edge_label</tt><big>(</big><em>var</em>, <em>parent_cnt</em>, <em>identif</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.edge_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a proper label for an edge.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.ext_apply">
+<tt class="descname">ext_apply</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.ext_apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>An apply node was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.ext_input">
+<tt class="descname">ext_input</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.ext_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>An input variable was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.ext_output">
+<tt class="descname">ext_output</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.ext_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>An output variable was added to the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.ext_setup">
+<tt class="descname">ext_setup</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.ext_setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called once the function was parsed and before any (potential) nodes.</p>
+<p>It is possible that an instance may receive multiple <cite>setup()</cite>
+calls, each followed by a coresponding <cite>tear_down()</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.ext_tear_down">
+<tt class="descname">ext_tear_down</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.ext_tear_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called after all nodes were processed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.generate_apply_label">
+<tt class="descname">generate_apply_label</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.generate_apply_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a label for a node.</p>
+<p>This is a higher level method that uses self.apply_label_profile()
+and self.apply_label_mode() if appropriate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : gof.Apply</p>
+<blockquote>
+<div><p>The node to label.</p>
+</div></blockquote>
+<p><strong>prefix</strong> : str</p>
+<blockquote>
+<div><p>The prefix to use in the final name.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : string</p>
+<blockquote class="last">
+<div><p>The label to use.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.generate_var_label">
+<tt class="descname">generate_var_label</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.generate_var_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a label for a variable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node</strong> : gof.Variable</p>
+<blockquote>
+<div><p>The node to label.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>varstr</strong> : string</p>
+<blockquote class="last">
+<div><p>The label to use.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.path_from_applyn">
+<tt class="descname">path_from_applyn</tt><big>(</big><em>srcnode</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.path_from_applyn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract the trace from an Apply instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>srcnode</strong> : gof.Apply</p>
+<blockquote>
+<div><p>The node in question.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : list of strings</p>
+<blockquote class="last">
+<div><p>The trace for when the Op was created.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.process_raw_input">
+<tt class="descname">process_raw_input</tt><big>(</big><em>var</em>, <em>parent</em>, <em>identif</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.process_raw_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a raw node into the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>var</strong> : gof.Variable</p>
+<blockquote>
+<div><p>The node to insert.</p>
+</div></blockquote>
+<p><strong>parent</strong> : GraphNode</p>
+<blockquote>
+<div><p>Parent Apply node.</p>
+</div></blockquote>
+<p><strong>identif</strong> : int</p>
+<blockquote>
+<div><p>The identifier of the node in parent Apply node.</p>
+</div></blockquote>
+<p><strong>Returns</strong></p>
+<p><strong>&#8212;&#8212;-</strong></p>
+<p><strong>result</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>Either an existing or a new node.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.process_raw_node">
+<tt class="descname">process_raw_node</tt><big>(</big><em>node_idx</em>, <em>node</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.process_raw_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a raw node into the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node_idx</strong> : int</p>
+<blockquote>
+<div><p>The index of the node in topology.</p>
+</div></blockquote>
+<p><strong>node</strong> : gof.ApplyNode</p>
+<blockquote>
+<div><p>The node to insert.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>Either an existing or a new node.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.process_raw_output">
+<tt class="descname">process_raw_output</tt><big>(</big><em>var</em>, <em>parent</em>, <em>identif</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.process_raw_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a raw node into the graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>node_idx</strong> : int</p>
+<blockquote>
+<div><p>The index of the node in topology.</p>
+</div></blockquote>
+<p><strong>var</strong> : gof.Variable</p>
+<blockquote>
+<div><p>The node to insert.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : GraphNode</p>
+<blockquote class="last">
+<div><p>Either an existing or a new node.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a file from provided input.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.unique_apply_name">
+<tt class="descname">unique_apply_name</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.unique_apply_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a unique name and increments the <cite>apply node</cite> counter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.devtools.printing.PyDotPrinter.unique_var_name">
+<tt class="descname">unique_var_name</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.PyDotPrinter.unique_var_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a unique name and increments the <cite>variable node</cite> counter.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.devtools.printing.pydotprint">
+<tt class="descclassname">pyl2extra.devtools.printing.</tt><tt class="descname">pydotprint</tt><big>(</big><em>fct</em>, <em>outfile=None</em>, <em>compact=True</em>, <em>format='png'</em>, <em>with_ids=False</em>, <em>high_contrast=True</em>, <em>cond_highlight=None</em>, <em>colorCodes=None</em>, <em>max_label_size=70</em>, <em>scan_graphs=False</em>, <em>var_with_name_simple=False</em>, <em>legend=False</em>, <em>cluster_trace=False</em>, <em>print_output_file=True</em>, <em>assert_nb_all_strings=-1</em>, <em>return_image=False</em><big>)</big><a class="headerlink" href="#pyl2extra.devtools.printing.pydotprint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print to a file the graph of a compiled theano function&#8217;s ops. Supports
+all pydot output formats, including png and svg.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fct</strong> &#8211; a compiled Theano function, a Variable, an Apply or
+a list of Variable.</li>
+<li><strong>outfile</strong> &#8211; the output file where to put the graph.</li>
+<li><strong>compact</strong> &#8211; if True, will remove intermediate var that don&#8217;t have name.</li>
+<li><strong>format</strong> &#8211; the file format of the output.</li>
+<li><strong>with_ids</strong> &#8211; Print the toposort index of the node in the node name.
+and an index number in the variable ellipse.</li>
+<li><strong>high_contrast</strong> &#8211; if true, the color that describes the respective
+node is filled with its corresponding color, instead of coloring
+the border</li>
+<li><strong>color_codes</strong> &#8211; dictionary with names of ops (Ex. Elemwise, DimShuffle)
+as keys and colors as values</li>
+<li><strong>cond_highlight</strong> &#8211; Highlights a lazy if by sorrounding each of the 3
+possible categories of ops with a border. The categories
+are: ops that are on the left branch, ops that are on the
+right branch, ops that are on both branches
+As an alternative you can provide the node that represents
+the lazy if</li>
+<li><strong>scan_graphs</strong> &#8211; if true it will plot the inner graph of each scan op
+in files with the same name as the name given for the main
+file to which the name of the scan op is concatenated and
+the index in the toposort of the scan.
+This index can be printed with the option with_ids.</li>
+<li><strong>var_with_name_simple</strong> &#8211; If true and a variable have a name,
+we will print only the variable name.
+Otherwise, we concatenate the type to the var name.</li>
+<li><strong>legend</strong> &#8211; If true a legend is added.</li>
+<li><strong>cluster_trace</strong> &#8211; Cluster based on backtrace at creation time.</li>
+<li><strong>assert_nb_all_strings</strong> &#8211; Used for tests. If non-negative, assert that
+the number of unique string nodes in the dot graph is equal to
+this number. This is used in tests to verify that dot won&#8217;t
+merge Theano nodes.</li>
+<li><strong>return_image</strong> &#8211; <p>If True, it will create the image and return it.
+Useful to display the image in ipython notebook.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">theano</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">theano</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">vector</span><span class="p">()</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">SVG</span>
+<span class="n">SVG</span><span class="p">(</span><span class="n">theano</span><span class="o">.</span><span class="n">printing</span><span class="o">.</span><span class="n">pydotprint</span><span class="p">(</span><span class="n">v</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">return_image</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                               <span class="n">format</span><span class="o">=</span><span class="s">&#39;svg&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>In the graph, ellipses are Apply Nodes (the execution of an op)
+and boxes are variables.  If variables have names they are used as
+text (if multiple vars have the same name, they will be merged in
+the graph).  Otherwise, if the variable is constant, we print its
+value and finally we print the type + a unique number to prevent
+multiple vars from being merged.  We print the op of the apply in
+the Apply box with a number that represents the toposort order of
+application of those Apply.  If an Apply has more than 1 input, we
+label each edge between an input and the Apply node with the
+input&#8217;s index.</p>
+<p>Green boxes are inputs variables to the graph,
+blue boxes are outputs variables of the graph,
+grey boxes are variables that are not outputs and are not used,
+red ellipses are transfers from/to the gpu (ops with names GpuFromHost,
+HostFromGpu).</p>
+<p>For edges, they are black by default. If a node returns a view
+of an input, we put the corresponding input edge in blue. If it
+returns a destroyed input, we put the corresponding edge in red.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="scripts.html" title="Scripts"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="Configuration"
+             >previous</a> |</li>
+        <li><a href="../index.html">Pyl2Extra dev documentation</a> &raquo;</li>
+          <li><a href="index.html" >Library Documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Nicu Tofan.
+      Last updated on May 10, 2015.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.Theme by <a href="http://github.com/vkvn">vkvn</a>
+    </div>
+  </body>
+</html>

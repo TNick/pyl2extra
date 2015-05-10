@@ -1,0 +1,53 @@
+===
+GUI
+===
+
+.. automodule:: pyl2extra.gui
+
+.. contents::
+   :depth: 2
+
+Debugger
+========
+
+.. automodule:: pyl2extra.gui.debugger
+
+
+.. automodule:: pyl2extra.gui.debugger.dataset_window
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.debugger
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.image
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.object_tree_window
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.utils
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.debugger_proxy
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.delayed_request
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.remote_window
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.variable_window
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.debugger_publisher
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.gui
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.main_window
+   :members:
+
+.. automodule:: pyl2extra.gui.debugger.signal_handler
+   :members:
