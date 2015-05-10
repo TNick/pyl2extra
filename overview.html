@@ -48,6 +48,16 @@
     </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Overview</a><ul>
+<li><a class="reference internal" href="#highlights">Highlights</a></li>
+<li><a class="reference internal" href="#upcoming-features">Upcoming Features</a></li>
+<li><a class="reference internal" href="#community">Community</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Welcome</a></p>
@@ -82,6 +92,53 @@
             
   <div class="section" id="overview">
 <span id="id1"></span><h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<p>This repository contains code that extends the <a class="reference external" href="https://github.com/lisa-lab/pylearn2">Pylearn2</a> library,
+a Machine Learning library based on [Theano]theano_.</p>
+<p>The structure of the code tries to mimic that of the
+<a class="reference external" href="https://github.com/lisa-lab/pylearn2">Pylearn2</a> library. Some support files (
+<tt class="docutils literal"><span class="pre">LICENSE.txt</span></tt>, <tt class="docutils literal"><span class="pre">MANIFEST.in</span></tt>, <tt class="docutils literal"><span class="pre">setup.py</span></tt>, etc) were reused.</p>
+<p><a class="reference external" href="https://github.com/lisa-lab/pylearn2">Pylearn2</a> was also added as a submodule, so you can:</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/TNick/pyl2extra.git
+cd pyl2extra
+git submodule update --init
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">setup.py</span></tt> script will look for <tt class="docutils literal"><span class="pre">pylearn2</span></tt> directory and, if present,
+will call it just like you would:</p>
+<div class="highlight-python"><div class="highlight"><pre>cd pylearn2
+python setup.py develop --user
+</pre></div>
+</div>
+<p>Please note that I am in no way affiliated with
+the folks at <a class="reference external" href="http://www.iro.umontreal.ca/~lisa/">Lisa</a> lab that developed <a class="reference external" href="https://github.com/lisa-lab/pylearn2">Pylearn2</a> library.</p>
+<div class="section" id="highlights">
+<h2>Highlights<a class="headerlink" href="#highlights" title="Permalink to this headline">¶</a></h2>
+<p>This section gives some hints about the content. It will probably
+get out of sync pretty fast, so please check the content of the package.</p>
+<ul class="simple">
+<li>yaml_parser: some goodies were added to allow extracting
+values from classes and ranges of values that generate a new value
+at each instantiation.</li>
+</ul>
+</div>
+<div class="section" id="upcoming-features">
+<h2>Upcoming Features<a class="headerlink" href="#upcoming-features" title="Permalink to this headline">¶</a></h2>
+<p>A visual debugger is in the making that allows
+you to visualize the parameters
+of your model, images in the dataset, run it one
+epoch at a time, track the progress.
+The front-end GUI interface may run on a different machine than
+the one doing actual training.</p>
+<p>The debugger uses <a class="reference external" href="http://pyqt.sourceforge.net/">PyQt4</a> for GUI, <a class="reference external" href="http://www.pyqtgraph.org/">PyQtGraph</a> for nice graphs
+and <a class="reference external" href="https://github.com/zeromq/pyzmq">ZMQ</a> for networking.</p>
+</div>
+<div class="section" id="community">
+<h2>Community<a class="headerlink" href="#community" title="Permalink to this headline">¶</a></h2>
+<p>Join the <a class="reference external" href="https://gitter.im/TNick/pyl2extra?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge">Gitter</a> channel if you have questions or you want to contribute.</p>
+<a class="reference external image-reference" href="https://gitter.im/TNick/pyl2extra?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img alt="Join the chat at https://gitter.im/TNick/pyl2extra" src="https://badges.gitter.im/Join%20Chat.svg" /></a>
+<p>If you found a bug or you need a particular feature please
+open an <a class="reference external" href="https://github.com/TNick/pyl2extra/issues">issue</a>.</p>
+</div>
 </div>
 
 

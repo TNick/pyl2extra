@@ -4,3 +4,74 @@
 Overview
 ============
 
+
+This repository contains code that extends the Pylearn2_ library,
+a Machine Learning library based on [Theano]theano_.
+
+The structure of the code tries to mimic that of the
+Pylearn2_ library. Some support files (
+``LICENSE.txt``, ``MANIFEST.in``, ``setup.py``, etc) were reused.
+
+Pylearn2_ was also added as a submodule, so you can:
+
+::
+
+    git clone https://github.com/TNick/pyl2extra.git
+    cd pyl2extra
+    git submodule update --init
+
+The ``setup.py`` script will look for ``pylearn2`` directory and, if present,
+will call it just like you would:
+
+::
+
+    cd pylearn2
+    python setup.py develop --user
+
+Please note that I am in no way affiliated with
+the folks at Lisa_ lab that developed Pylearn2_ library.
+
+Highlights
+----------
+
+This section gives some hints about the content. It will probably
+get out of sync pretty fast, so please check the content of the package.
+
+- yaml_parser: some goodies were added to allow extracting
+  values from classes and ranges of values that generate a new value
+  at each instantiation.
+
+Upcoming Features
+-----------------
+
+A visual debugger is in the making that allows
+you to visualize the parameters
+of your model, images in the dataset, run it one
+epoch at a time, track the progress.
+The front-end GUI interface may run on a different machine than
+the one doing actual training.
+
+The debugger uses PyQt4_ for GUI, PyQtGraph_ for nice graphs
+and ZMQ_ for networking.
+
+Community
+---------
+
+Join the Gitter_ channel if you have questions or you want to contribute.
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/TNick/pyl2extra
+   :target: https://gitter.im/TNick/pyl2extra?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
+If you found a bug or you need a particular feature please
+open an `issue <https://github.com/TNick/pyl2extra/issues>`_.
+
+.. _Pylearn2: https://github.com/lisa-lab/pylearn2
+.. _theano: https://github.com/Theano/Theano
+.. _Lisa: http://www.iro.umontreal.ca/~lisa/
+.. _PyQt4: http://pyqt.sourceforge.net/
+.. _PyQtGraph: http://www.pyqtgraph.org/
+.. _ZMQ: https://github.com/zeromq/pyzmq
+.. _sphinx: http://sphinx-doc.org/
+.. _gitrepo: https://github.com/TNick/pyl2extra
+.. _Gitter: https://gitter.im/TNick/pyl2extra?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
