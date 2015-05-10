@@ -1,0 +1,17 @@
+=============
+Configuration
+=============
+
+.. automodule:: pyl2extra.config
+
+YAML parser
+===========
+
+.. automodule:: pyl2extra.config.yaml_parse
+    :members:
+
+.. automodule:: pyl2extra.config.multi_seq
+    :members:
+
+.. automodule:: pyl2extra.config.proxy
+    :members:

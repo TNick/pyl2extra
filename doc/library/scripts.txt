@@ -1,0 +1,34 @@
+=======
+Scripts
+=======
+
+.. automodule:: pyl2extra.scripts
+
+.. contents::
+   :depth: 2
+
+Datasets
+========
+
+.. automodule:: pyl2extra.scripts.datasets
+
+Bash Scripts
+------------
+
+* caltech256
+* norb
+
+Python Scripts: Imagenet
+------------------------
+
+.. automodule:: pyl2extra.scripts.datasets.imagenet
+   :members:
+
+Other scripts
+=============
+
+.. automodule:: pyl2extra.scripts.debugger
+   :members:
+
+.. automodule:: pyl2extra.scripts.train_multi
+   :members:
