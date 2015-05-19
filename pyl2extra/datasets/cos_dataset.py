@@ -1,6 +1,12 @@
 """
 A module defining the CosDataset class.
 """
+__authors__ = "Nicu Tofan"
+__copyright__ = "Copyright 2015, Nicu Tofan"
+__credits__ = ["Nicu Tofan"]
+__license__ = "3-clause BSD"
+__maintainer__ = "Nicu Tofan"
+__email__ = "nicu.tofan@gmail.com"
 
 from pylearn2.datasets.dataset import Dataset
 from pylearn2.utils import safe_izip, wraps
@@ -10,8 +16,10 @@ from pylearn2.utils.rng import make_np_rng
 import numpy as np
 from theano import config
 
-#'shuffled_sequential',
-_banned_mods = [
+from pyl2extra.utils import slice_count
+
+
+_banned_mods = ['shuffled_sequential',
                 'random_slice',
                 'random_uniform',
                 'batchwise_shuffled_sequential',
@@ -215,6 +223,17 @@ class CosDataset(Dataset):
     The first coordinate is sampled from a uniform distribution.
     The second coordinate is the cosine of the first coordinate,
     plus some gaussian noise.
+    
+    Parameters
+    ----------
+    min_x : float, optional
+        Lower limit for x as in cos(x)
+    max_x : float, optional
+        Higher limit for x as in cos(x)
+    std : float, optional
+        Standard deviation for the noise added to the values we generate
+    rng : tuple, optional
+        Seed for random number generator
     """
     _default_seed = (17, 2, 946)
 
@@ -223,8 +242,14 @@ class CosDataset(Dataset):
         Constructor.
         """
         super(CosDataset, self).__init__()
+        
+        #: lower limit for x as in cos(x)
         self.min_x = min_x
+        
+        #: higher limit for x as in cos(x)
         self.max_x = max_x
+        
+        #: standard deviation for the noise added to the values we generate
         self.std = std
 
         # argument to resolve_iterator_class() can be either
@@ -232,24 +257,49 @@ class CosDataset(Dataset):
         # random_uniform, batchwise_shuffled_sequential, even_sequential,
         # even_shuffled_sequential, even_batchwise_shuffled_sequential,
         # even_sequences] or a SubsetIterator sublass.
+
+        #: default iterator implementation (a class to be instantiated)
         self._iter_subset_class = resolve_iterator_class('sequential')
+        
+        #: default data specifications for iterator
         self._iter_data_specs = (VectorSpace(2), 'features')
+        
+        #: default batch size for the iterator
         self._iter_batch_size = 100
-        self._iter_num_batches = float('inf')
+        
+        #: default number of batches for the iterator
+        self._iter_num_batches = 10
+        
+        #: random number generator
         self.rng = make_np_rng(rng, which_method=['uniform', 'randn'])
 
 
     def get (self, source, next_index):
         """
         next_index is a slice that tells how many examples are requested.
+        source
+        
+        The result should be a list of same size as source (one entry
+        per source).
         """
-        out_size = len(source)
+        idx_size = slice_count(next_index)
         x = np.cast[config.floatX](self.rng.uniform(self.min_x, self.max_x,
-                                                    (out_size, 1)))
+                                                    (idx_size, 1)))
         y = np.cos(x) + (np.cast[config.floatX](self.rng.randn(*x.shape)) *
                          self.std)
-        result = np.reshape(y, (out_size, 1))
-        return result
+        result = []
+        for srel in source:
+            if srel == 'features':
+                result.append(y)
+            elif srel == 'targets':
+                result.append(x)
+            else:
+                raise ValueError('The only sources that CosDataset implements '
+                                 'are targets and features. %s is neither.' % 
+                                 srel)
+        #src_size = len(source)
+        #result = np.reshape(y, (src_size, idx_size))
+        return tuple(result)
 
     @wraps(Dataset.iterator)
     def iterator(self, mode=None, batch_size=None, num_batches=None,
