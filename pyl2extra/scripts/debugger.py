@@ -4,14 +4,22 @@
 
 Examples:
 
+::
+
     # run the debugger in gui mode
     python debugger.py --debug gui
     
     # run the debugger in remote mode
     python debugger.py --debug remote --rport 5955 --pport 5956 --address "*"
     
-@author: Nicu Tofan <nicu.tofan@gmail.com>
 """
+__authors__ = "Nicu Tofan"
+__copyright__ = "Copyright 2015, Nicu Tofan"
+__credits__ = ["Nicu Tofan"]
+__license__ = "3-clause BSD"
+__maintainer__ = "Nicu Tofan"
+__email__ = "nicu.tofan@gmail.com"
+
 import sys
 import json
 import os
@@ -19,29 +27,9 @@ import tempfile
 import argparse
 import logging
 
+from pyl2extra.gui.loggui import LoggerToWidget
 
 logger = None
-
-# ----------------------------------------------------------------------------
-
-class CustomConsoleHandler(logging.StreamHandler):
-    """
-    Catches the logging output and redirects it to a text box.
-    """
-    def __init__(self, textctrl):
-        """
-        Constructor.
-        """
-        logging.StreamHandler.__init__(self)
-        self.textctrl = textctrl
-
-    def emit(self, record):
-        """
-        Notified about messages.
-        """
-        msg = self.format(record)
-        self.textctrl.append(msg)
-        self.flush()
 
 # ----------------------------------------------------------------------------
 
@@ -113,7 +101,7 @@ def cmd_gui(args):
 
     # The handler that prints to console
     # TODO: move in main window
-    txt_handler = CustomConsoleHandler(ex.console)
+    txt_handler = LoggerToWidget(ex.console)
     txt_handler.setLevel(logging.DEBUG)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(txt_handler)
