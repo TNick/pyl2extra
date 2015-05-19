@@ -68,7 +68,7 @@ setup(
     long_description=open('ReadMe.md', 'rb').read().decode('utf8'),
     dependency_links=['git+http://github.com/Theano/Theano.git#egg=Theano'],
     install_requires=['numpy>=1.5', 'pyyaml', 'argparse', "Theano",
-                      'python-magic'],
+                      'python-magic', 'webcolors'],
     scripts=[],
     package_data={
         '': ['*.cu', '*.cuh', '*.h'],
