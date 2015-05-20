@@ -50,6 +50,15 @@
     </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Datasets</a><ul>
+<li><a class="reference internal" href="#module-pyl2extra.datasets.img_dataset">ImgDataset</a></li>
+<li><a class="reference internal" href="#cosdataset">CosDataset</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Library Documentation</a></p>
@@ -82,13 +91,138 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="datasets">
-<h1><a class="toc-backref" href="#id1">Datasets</a><a class="headerlink" href="#datasets" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-pyl2extra.datasets">
+<span id="datasets"></span><h1><a class="toc-backref" href="#id1">Datasets</a><a class="headerlink" href="#module-pyl2extra.datasets" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#datasets" id="id1">Datasets</a></li>
+<li><a class="reference internal" href="#module-pyl2extra.datasets" id="id1">Datasets</a><ul>
+<li><a class="reference internal" href="#module-pyl2extra.datasets.img_dataset" id="id2">ImgDataset</a></li>
+<li><a class="reference internal" href="#cosdataset" id="id3">CosDataset</a></li>
 </ul>
+</li>
+</ul>
+</div>
+<div class="section" id="module-pyl2extra.datasets.img_dataset">
+<span id="imgdataset"></span><h2><a class="toc-backref" href="#id2">ImgDataset</a><a class="headerlink" href="#module-pyl2extra.datasets.img_dataset" title="Permalink to this headline">¶</a></h2>
+<p>Provides a easy solution for using images in Pylearn2.</p>
+<p>Input files may be provided in various ways:</p>
+<ul class="simple">
+<li>as a list of dictionaries, where the keys are paths to image files
+and the values are the class for that image;</li>
+<li>as a csv file, where first column is the class and second column is
+the path toward the image file by default;</li>
+<li>in general using an iterator instance that spits file - value pairs.</li>
+</ul>
+<p>The images will all be resized to same square dimensions (customizable)
+and those in RGBA format will be converted to RGB. The empty spaces generated 
+in this fashion will be filled with a color of your choosing or using a
+background image.</p>
+<p>Various affine transformations can be applied (rotation, scale, flip),
+patches can be extracted and the contrast can be normalized.</p>
+<p>Preparing the batches can be done in a number of ways:</p>
+<ul class="simple">
+<li>online, in the same thread as the requester;</li>
+<li>using a customisable number of threads</li>
+<li>using a customisable number of processes</li>
+</ul>
+<p>Online option can be useful if the user wants a new, 
+pylearn2.datasets.DenseDesignMatrix created from
+a set of files; paralel options are suitable when the proprocessing is done
+while previous batch is used for training. The dataset may be forced to use
+the CPU for this opperation independent of the environment flags for
+Theano.</p>
+<p>When preparing batches the class can employ various strategies:
+- apply all possible transformations for an image then step to next image;
+- apply a random set of transformations to each image in the batch</p>
+<dl class="class">
+<dt id="pyl2extra.datasets.img_dataset.dataset.ImgDataset">
+<em class="property">class </em><tt class="descclassname">pyl2extra.datasets.img_dataset.dataset.</tt><tt class="descname">ImgDataset</tt><big>(</big><em>data_provider</em>, <em>adjusters=None</em>, <em>generator=None</em>, <em>shape=None</em>, <em>axes=None</em>, <em>cache_loc=None</em>, <em>rng=None</em><big>)</big><a class="headerlink" href="#pyl2extra.datasets.img_dataset.dataset.ImgDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dataset that can be preprocessed as it is being trained.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data_provider</strong> : str, dictionary or Provider</p>
+<blockquote>
+<div><p>If it is a string it is interpreted as being a csv file with
+first column having the class and second column the path towards
+the image.
+If it is a dictionary the keys are file paths and the values
+are the classes.
+Both string and dictionary variant are internally converted to
+coresponding Provider class.</p>
+</div></blockquote>
+<p><strong>adjusters</strong> : list of Adjuster or strings, optional</p>
+<blockquote>
+<div><p>The list can consist of either actual adjusters or names for them.
+The constructor will initialize the entries consisting of strings with
+appropriate adjuster using default arguments.</p>
+</div></blockquote>
+<p><strong>generator</strong> : str or Generator, optional</p>
+<blockquote>
+<div><p>The option can be a Generator subclass or a name for one.
+If later default values will be used with the constructor.
+By default an inline generator is used.</p>
+</div></blockquote>
+<p><strong>cache_loc</strong> : str, optional</p>
+<blockquote>
+<div><p>The path towards the cache location. If None caching is disabled.
+Caching can be very useful when a dataset is used repeatedly. Most
+of the time the dataset has plenty of time to generate content
+while previous batch is used for training. However, for the first
+batch, the network will have to wait as there is no previous batch.
+If a cache_location is present the network will look for first batch
+from a previous run and will use it as the first batch if found.</p>
+</div></blockquote>
+<p><strong>rng</strong> : <cite>numpy.random.RandomState</cite> or seed, optional</p>
+<blockquote class="last">
+<div><p>The random number generator associated with this dataset</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="cosdataset">
+<h2><a class="toc-backref" href="#id3">CosDataset</a><a class="headerlink" href="#cosdataset" title="Permalink to this headline">¶</a></h2>
+<p>This is mostly deprecated and will be replaced with a more generic dataset that
+generates values from functions.</p>
+<dl class="class">
+<dt id="pyl2extra.datasets.cos_dataset.CosDataset">
+<em class="property">class </em><tt class="descclassname">pyl2extra.datasets.cos_dataset.</tt><tt class="descname">CosDataset</tt><big>(</big><em>min_x=-6.28</em>, <em>max_x=6.28</em>, <em>std=0.05</em>, <em>rng=(17</em>, <em>2</em>, <em>946)</em><big>)</big><a class="headerlink" href="#pyl2extra.datasets.cos_dataset.CosDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dataset that streams randomly generated 2D examples.</p>
+<p>The first coordinate is sampled from a uniform distribution.
+The second coordinate is the cosine of the first coordinate,
+plus some gaussian noise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>min_x</strong> : float, optional</p>
+<blockquote>
+<div><p>Lower limit for x as in cos(x)</p>
+</div></blockquote>
+<p><strong>max_x</strong> : float, optional</p>
+<blockquote>
+<div><p>Higher limit for x as in cos(x)</p>
+</div></blockquote>
+<p><strong>std</strong> : float, optional</p>
+<blockquote>
+<div><p>Standard deviation for the noise added to the values we generate</p>
+</div></blockquote>
+<p><strong>rng</strong> : tuple, optional</p>
+<blockquote class="last">
+<div><p>Seed for random number generator</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 </div>
 
@@ -119,7 +253,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2015, Nicu Tofan.
-      Last updated on May 10, 2015.
+      Last updated on May 20, 2015.
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.Theme by <a href="http://github.com/vkvn">vkvn</a>
     </div>
   </body>
