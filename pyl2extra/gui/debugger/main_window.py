@@ -1,26 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-
-@author: Nicu Tofan <nicu.tofan@gmail.com>
+Main window for the debugger.
 """
-
-from PyQt4 import QtGui, QtCore
+__authors__ = "Nicu Tofan"
+__copyright__ = "Copyright 2015, Nicu Tofan"
+__credits__ = ["Nicu Tofan"]
+__license__ = "3-clause BSD"
+__maintainer__ = "Nicu Tofan"
+__email__ = "nicu.tofan@gmail.com"
 
 import logging
-
 from pylearn2.config import yaml_parse
 from pylearn2.utils import serial
+from PyQt4 import QtGui, QtCore
 
-from learn_spot.gui.dataset_window import DatasetWindow
-from learn_spot.gui.variable_window import VariableWindow
-from learn_spot.gui.object_tree_window import ObjectTreeWindow
-from learn_spot.gui.remote_window import RemoteDialog
-from learn_spot.gui.debugger_proxy import DebuggerProxy
-from learn_spot.gui.gui import center
-from learn_spot.gui.utils import make_act
-from learn_spot.gui import debugger
-from learn_spot.gui.signal_handler import OnlineDebugger
+from pyl2extra.gui.guihelpers import center
+from pyl2extra.gui.guihelpers import make_act
+
+from pyl2extra.gui.dataset_window import DatasetWindow
+from pyl2extra.gui.variable_window import VariableWindow
+from pyl2extra.gui.object_tree_window import ObjectTreeWindow
+from pyl2extra.gui.remote_window import RemoteDialog
+from pyl2extra.gui.debugger_proxy import DebuggerProxy
+
+from pyl2extra.gui import debugger
+from pyl2extra.gui.signal_handler import OnlineDebugger
 
 logger = logging.getLogger(__name__)
 
@@ -34,26 +39,6 @@ MSG_STS_STOPPED = 'The debugger is stopped. ' + \
 MSG_STS_WAIT_PAUSE = 'The debuger is running and it will pause at the end of current epoch...'
 MSG_STS_WAIT_STOP = 'The debuger is running and it will stop at the end of current epoch...'
 MSG_STS_WAIT_LOAD = 'The debuger is loading the file...'
-
-class CustomConsoleHandler(logging.StreamHandler):
-    """
-    Catches the logging output and redirects it to a text box.
-    """
-    def __init__(self, textctrl):
-        """
-        Constructor.
-        """
-        logging.StreamHandler.__init__(self)
-        self.textctrl = textctrl
-
-    def emit(self, record):
-        """
-        Notified about messages.
-        """
-        msg = self.format(record)
-        self.textctrl.append(msg)
-        self.flush()
-
 
 class MainWindow(QtGui.QMainWindow):
     """

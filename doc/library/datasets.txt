@@ -1,0 +1,24 @@
+========
+Datasets
+========
+
+.. automodule:: pyl2extra.datasets
+
+.. contents::
+   :depth: 3
+
+ImgDataset
+==========
+
+.. automodule:: pyl2extra.datasets.img_dataset
+
+.. autoclass:: pyl2extra.datasets.img_dataset.dataset.ImgDataset
+
+
+CosDataset
+==========
+
+This is mostly deprecated and will be replaced with a more generic dataset that
+generates values from functions.
+
+.. autoclass:: pyl2extra.datasets.cos_dataset.CosDataset

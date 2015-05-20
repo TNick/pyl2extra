@@ -8,7 +8,7 @@ a Machine Learning library based on [Theano][2].
 
 The structure of the code tries to mimic that of the
 [Pylearn2][1] library. Some support files (
-LICENSE.txt, MANIFEST.in, setup.py, etc) were reused.
+`LICENSE.txt`, `MANIFEST.in`, `setup.py`, etc) were reused.
 
 [Pylearn2][1] was also added as a submodule, so you can:
 
@@ -21,6 +21,8 @@ will call it just like you would:
 
     cd pylearn2
     python setup.py develop --user
+
+Sphynx generated documentation is available at [tnick.github.io/pyl2extra][8].
 
 Please note that I am in no way affiliated with
 the folks at [Lisa lab][3] that developed [Pylearn2][1] library.
@@ -55,3 +57,5 @@ and [ZMQ][6] for networking.
   [4]: http://pyqt.sourceforge.net/ "PyQt4"
   [5]: http://www.pyqtgraph.org/ "PyQtGraph - Scientific Graphics and GUI Library for Python"
   [6]: https://github.com/zeromq/pyzmq "GitHub repository for pyzmq"
+  [7]: http://sphinx-doc.org/ "Sphinx - Python Documentation Generator"
+  [8]: http://tnick.github.io/pyl2extra/ "Pyl2Extra Documentation"

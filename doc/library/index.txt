@@ -1,0 +1,14 @@
+.. _libdoc:
+
+=====================
+Library Documentation
+=====================
+
+.. toctree::
+   :maxdepth: 3
+
+   datasets
+   config
+   devtools
+   scripts
+   gui

@@ -61,3 +61,7 @@ target/
 *.*~
 .vim
 *.kate-swp
+
+# ignore the html directory as it hosts
+# our gh-ppages branch
+html/

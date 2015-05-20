@@ -1,7 +1,7 @@
 """Support code for YAML parsing of experiment descriptions."""
 import yaml
-from pylearn2.config.multi_seq import MultiSeq
-from pylearn2.config.proxy import Proxy
+
+
 from pylearn2.utils import serial
 from pylearn2.utils.exc import reraise_as
 from pylearn2.utils.string_utils import preprocess
@@ -12,6 +12,9 @@ import logging
 import warnings
 import re
 from theano.compat import six
+
+from pyl2extra.config.multi_seq import MultiSeq
+from pyl2extra.config.proxy import Proxy
 
 SCIENTIFIC_NOTATION_REGEXP = r'^[\-\+]?(\d+\.?\d*|\d*\.?\d+)?[eE][\-\+]?\d+$'
 

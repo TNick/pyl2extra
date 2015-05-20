@@ -22,7 +22,7 @@ else
     exit 1
 fi
 
-[ -d $CALTECH256_DIR ] && echo "$CALTECH256_DIR already exists." && exit 1
+# [ -d $CALTECH256_DIR ] && echo "$CALTECH256_DIR already exists." && exit 1
 mkdir -p $CALTECH256_DIR
 
 echo "Downloading and unzipping CALTECH256 dataset into $CALTECH256_DIR..."

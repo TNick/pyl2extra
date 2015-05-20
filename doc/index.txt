@@ -1,0 +1,24 @@
+.. _index:
+
+Welcome
+=======
+
+This website hosts the documentation for Pyl2Extra project.
+The code is released under a 3-claused BSD license, so it may be
+used for commercial purposes.
+
+
+.. toctree::
+   :maxdepth: 1
+
+
+   overview
+   library/index
+   LICENSE
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
