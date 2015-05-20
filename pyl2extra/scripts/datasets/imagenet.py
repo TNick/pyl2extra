@@ -3,19 +3,24 @@
 """
 Module to interact with ImageNet resources.
 
-@author: Nicu Tofan <nicu.tofan@gmail.com>
 """
+__authors__ = "Nicu Tofan"
+__copyright__ = "Copyright 2015, Nicu Tofan"
+__credits__ = ["Nicu Tofan"]
+__license__ = "3-clause BSD"
+__maintainer__ = "Nicu Tofan"
+__email__ = "nicu.tofan@gmail.com"
 
-import os
-import json
 import argparse
+import hashlib
+import json
 import logging
-import urllib2
+import magic
+import os
+import Queue
 import threading
 import time
-import Queue
-import magic
-import hashlib
+import urllib2
 from xml.dom import minidom
 
 logger = None
@@ -469,6 +474,7 @@ class ImageDownloader(object):
                          imname, imurl, exc_info=True)
         return b_ok
 
+    @staticmethod
     def worker(myself, thid):
         """
         The thread.
