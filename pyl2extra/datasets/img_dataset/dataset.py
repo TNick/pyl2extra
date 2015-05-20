@@ -153,6 +153,24 @@ class ImgDataset(Dataset):
             adj.tear_down()
         self.generator.tear_down()
 
+    def categ_len(self):
+        """
+        Number of categories.
+        """
+        return self.data_provider.categ_len()
+
+    def categories(self):
+        """
+        List of categories.
+        """
+        return self.data_provider.categories()
+
+    def channels_len(self):
+        """
+        Number of channels for images provided by this dataset.
+        """
+        return 3
+
     def _check_data_provider(self, data_provider):
         """
         Helps the constructor check data_provider
@@ -220,7 +238,8 @@ class ImgDataset(Dataset):
         Helps the constructor generate data specs
         """
         ctg_cnt = self.data_provider.categ_len()
-        x_space = Conv2DSpace(shape=self.shape, num_channels=3,
+        x_space = Conv2DSpace(shape=self.shape,
+                              num_channels=self.channels_len(),
                               axes=self.axes)
         x_source = 'features'
         if ctg_cnt == 0:
@@ -342,7 +361,7 @@ class ImgDataset(Dataset):
                 result = adj.process(result)
         else:
             result = result[:, :, :, :3]
-        if result.shape[3] != 3:
+        if result.shape[3] != self.channels_len():
             raise AssertionError("Adjusters must be organized in such a way "
                                  "that at the end of the processing cycle "
                                  "the result is in RGB form (as opposed to "
@@ -362,4 +381,3 @@ class ImgDataset(Dataset):
         """
         # TODO: implement
         raise NotImplementedError()
-
