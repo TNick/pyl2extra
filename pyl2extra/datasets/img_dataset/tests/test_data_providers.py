@@ -224,9 +224,12 @@ class BaseCsvProvider():
         self.assertEqual(vlist, self.vlist)
 
     def prepare(self):
-        self.keys = ['a', 'b', 'c', 'd']
-        self.vlist = [1, 2, 3, 4]
         self.tmp_dir = tempfile.mkdtemp()
+        keys = ['a', 'b', 'c', 'd']
+        self.keys = []
+        self.vlist = [1, 2, 3, 4]
+        for key in keys:
+            self.keys.append(os.path.join(self.tmp_dir, key))
         csv_file = os.path.join(self.tmp_dir, 'test.csv')
         return csv_file
 

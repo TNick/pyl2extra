@@ -11,7 +11,9 @@ __email__ = "nicu.tofan@gmail.com"
 import csv
 import functools
 import Image
+import logging
 import numpy
+import os
 from pylearn2.utils import as_floatX
 from pylearn2.utils.string_utils import preprocess
 from pylearn2.utils.rng import make_np_rng
@@ -116,6 +118,7 @@ class Provider(object):
             second is the category.
         """
         categ = self.category(f_path)
+        logging.debug('generator reading [%s] from %s', categ, f_path)
         im = Image.open(f_path)
         return self.normalize_image(im), categ
 
@@ -166,7 +169,7 @@ class Provider(object):
             ctg = self.category(key)
             if not ctg in self.categs:
                 self.categs.append(ctg)
-        return self.categs        
+        return self.categs
 
     def categ2int(self, categ):
         """
@@ -237,10 +240,10 @@ class Provider(object):
     def get(self, offset, count):
         """
         Get the files in a given range.
-        
+
         The method does not throw errors if the range is outside allowed
         range. instead, the list of files is treated as a ring.
-        
+
         Parameters
         ----------
         offset : int
@@ -253,7 +256,7 @@ class Provider(object):
         evrt = self.everything()
         evrt_len = len(evrt)
         keys = evrt.keys()
-        
+
         result = []
         while count > 0:
             # bring offset in valid range
@@ -263,10 +266,10 @@ class Provider(object):
             # how many are we going to get on this round
             this_round = min(valid_range, count)
             result.extend(keys[offset:offset+this_round])
-            
+
             offset = offset + this_round
             count = count - this_round
-            
+
         return result
 
 class DictProvider(Provider):
@@ -290,7 +293,11 @@ class DictProvider(Provider):
 
     @functools.wraps(Provider.category)
     def next(self):
-        return self.keys_iter.next()
+        try:
+            return self.keys_iter.next()
+        except StopIteration:
+            self.keys_iter = self.data.keys().__iter__()
+            raise
 
     @functools.wraps(Provider.category)
     def category(self, f_path):
@@ -315,16 +322,16 @@ class DictProvider(Provider):
         if not hasattr(self, 'categs'):
             self.get_categs()
             assert hasattr(self, 'categs')
-        
+
         return {'data': self.data, 'categs': self.categs}
-        
+
     def __setstate__(self, state):
         """
         Help un-pickle this instance.
         """
         self.data = state['data']
         self.categs = state['categs']
-        
+
         #: The list of paths used for iteration purposes.
         self.keys_iter = self.data.keys().__iter__()
 
@@ -357,6 +364,15 @@ class CsvProvider(DictProvider):
         A one-character string used to quote fields containing special
         characters, such as the delimiter or quotechar,
         or which contain new-line characters. It defaults to ``"``.
+
+    Notes
+    -----
+    The class is only interested in two columns: the class and the path.
+    Both results are passed through pylearn2.utils.string_utils.preprocess
+    so you can use environment variables to customize their final value.
+
+    The paths inside csv file, if relative, are considered relative to
+    the path of the .csv file.
     """
     def __init__(self, csv_path, col_path=1, col_class=0, has_header=False,
                  delimiter=',', quotechar='"'):
@@ -367,6 +383,10 @@ class CsvProvider(DictProvider):
             assert has_header
         else:
             col_min = max(col_path, col_class)
+
+        # make the path absolute and extract base directory
+        csv_path = os.path.abspath(csv_path)
+        csv_base = os.path.split(csv_path)[0]
 
         # collect data in a dictionary
         data = {}
@@ -388,8 +408,12 @@ class CsvProvider(DictProvider):
                           'columns but it only has %d'
                     raise ValueError(err % (csv_path, i, col_min, len(row)))
                 else:
-                    ppd = preprocess(row[col_class])
-                    data[preprocess(row[col_path])] = ppd
+                    class_name = preprocess(row[col_class])
+                    fpath = preprocess(row[col_path])
+                    if len(fpath) > 0:
+                        if not os.path.isabs(fpath):
+                            fpath = os.path.join(csv_base, fpath)
+                    data[fpath] = class_name
 
         # everything else is provided by DictProvider
         super(CsvProvider, self).__init__(data)
@@ -421,6 +445,7 @@ class RandomProvider(DictProvider):
 
     @functools.wraps(Provider.read)
     def read(self, f_path):
+        logging.debug('generator reading file %s', f_path)
         categ = f_path
         im = self.content[f_path]
         return self.normalize_image(im), categ
@@ -434,7 +459,7 @@ class RandomProvider(DictProvider):
         state['alpha'] = self.alpha
         state['size'] = self.size
         return state
-        
+
     def __setstate__(self, state):
         """
         Help un-pickle this instance.
@@ -444,7 +469,7 @@ class RandomProvider(DictProvider):
         self.size = state['size']
         self.data = self.prepare()
         self.keys_iter = self.data.keys().__iter__()
-        
+
     def prepare(self):
         self.content = {}
         data = {}
@@ -453,7 +478,7 @@ class RandomProvider(DictProvider):
         for i in range(self.count):
             file_name = str(i+1)
             imarray = numpy.random.rand(self.size[0],
-                                        self.size[1], 
+                                        self.size[1],
                                         channels) * 255
             im = Image.fromarray(imarray.astype('uint8'))
             self.content[file_name] = im.convert(modes[i % len(modes)])
