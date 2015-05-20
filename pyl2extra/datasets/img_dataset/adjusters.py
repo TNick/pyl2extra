@@ -51,6 +51,12 @@ class Adjuster(object):
         pass
         #assert isinstance(dataset, ImgDataset)
 
+    def tear_down(self):
+        """
+        Called by the dataset fromits tear_down() method.
+        """
+        pass
+    
     def transf_count(self):
         """
         Tell the number of images will be generated from a single image.

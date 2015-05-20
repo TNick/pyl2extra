@@ -4,18 +4,21 @@ Tests for dataset
 
 import functools
 import Image
+import logging
 import numpy
 import os
 import shutil
 import tempfile
 import unittest
+import pickle
 from pylearn2.space import CompositeSpace, VectorSpace, Conv2DSpace, IndexSpace
 
 
 from pyl2extra.datasets.img_dataset.data_providers import RandomProvider
 from pyl2extra.datasets.img_dataset.generators import (InlineGen, Generator,
                                                        ProcessGen,
-                                                       ThreadedGen)
+                                                       ThreadedGen,
+                                                       gen_from_string)
 from pyl2extra.datasets.img_dataset.adjusters import (FlipAdj, RotationAdj,
                                                       ScalePatchAdj, GcaAdj,
                                                       MakeSquareAdj, Adjuster,
@@ -31,35 +34,36 @@ class BaseImgDset(object):
 
     def prepare(self):
         self.tmp_dir = tempfile.mkdtemp()
-        
+
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
         shutil.rmtree(self.tmp_dir)
         del self.tmp_dir
+        self.testee.tear_down()
         del self.testee
 
     def test_basic_iterator(self):
         """
         Test the iterator with default values.
         """
-        itr = self.testee.iterator(mode=None, 
+        itr = self.testee.iterator(mode=None,
                                    batch_size=53,
                                    num_batches=None,
                                    rng=None,
-                                   data_specs=None, 
+                                   data_specs=None,
                                    return_tuple=False)
         r = itr.next()
         self.assertEqual(len(r), 2)
-        self.assertEqual(len(r[0].shape), 4)     
+        self.assertEqual(len(r[0].shape), 4)
         self.assertEqual(r[0].shape[0], 53)
         self.assertEqual(r[0].shape[1], 128)
         self.assertEqual(r[0].shape[2], 128)
         self.assertEqual(r[0].shape[3], 3)
-        
+
         self.assertEqual(len(r[1].shape), 2)
         self.assertEqual(r[1].shape[0], 53)
         self.assertEqual(r[1].shape[1], 1)
-        
+
 
 class TestImgDatasetConstructor(unittest.TestCase, BaseImgDset):
     """
@@ -109,20 +113,20 @@ class TestImgDatasetConstructor(unittest.TestCase, BaseImgDset):
         self.assertEqual(len(source), 2)
         self.assertEqual(source[0], 'features')
         self.assertEqual(source[1], 'targets')
-        
-        
+
+
         self.assertTrue(self.testee.has_targets)
         self.assertEqual(self.testee.get_num_examples(), self.testee.totlen)
         self.assertEqual(len(self.testee), self.testee.totlen)
-        self.assertEqual(self.testee.get_data_specs(), 
+        self.assertEqual(self.testee.get_data_specs(),
                          self.testee._data_specs())
-        
+
         self.assertFalse(self.testee._iter_subset_class is None)
 
     #def test_iterator(self):
     #    self.test_basic_iterator()
-    
-        
+
+
 class TestImgDatasetBackground(unittest.TestCase, BaseImgDset):
     """
     Tests for ImgDataset
@@ -140,17 +144,17 @@ class TestImgDatasetBackground(unittest.TestCase, BaseImgDset):
                                  axes=None,
                                  cache_loc=self.tmp_dir,
                                  rng=None)
-        
+
     def test_background(self):
         """
         Test the background adjuster.
         """
         pass
-    
-    
-def create_test_img_dataset(cache_loc):
+
+
+def create_test_img_dataset(cache_loc, gen='inline'):
         data_provider = RandomProvider()
-        generator = InlineGen()
+        generator = gen_from_string(gen)
         adjusters = [MakeSquareAdj(size=128),
                      BackgroundAdj(backgrounds=[(0, 0, 64),
                                                 (0, 64, 64),
@@ -164,8 +168,8 @@ def create_test_img_dataset(cache_loc):
                                                 (0, 0, 0)]),
                      FlipAdj(horizontal=True,
                              vertical=False),
-                     RotationAdj(min_deg=-45.0, 
-                                 max_deg=45.0, 
+                     RotationAdj(min_deg=-45.0,
+                                 max_deg=45.0,
                                  step=15.0),
                      ScalePatchAdj(outsize=None,
                                    start_factor=0.8,
@@ -176,8 +180,8 @@ def create_test_img_dataset(cache_loc):
                             end_scale=1.,
                             step_scale=0.,
                             subtract_mean=None, use_std=None,
-                            start_sqrt_bias=0., 
-                            end_sqrt_bias=0., 
+                            start_sqrt_bias=0.,
+                            end_sqrt_bias=0.,
                             step_sqrt_bias=0.)]
         return ImgDataset(data_provider=data_provider,
                           adjusters=adjusters,
@@ -185,8 +189,8 @@ def create_test_img_dataset(cache_loc):
                           shape=None,
                           axes=None,
                           cache_loc=cache_loc,
-                          rng=None)    
-    
+                          rng=None)
+
 class TestImgDatasetAll(unittest.TestCase, BaseImgDset):
     """
     Tests for ImgDataset
@@ -195,28 +199,90 @@ class TestImgDatasetAll(unittest.TestCase, BaseImgDset):
     def setUp(self):
         self.prepare()
         self.testee = create_test_img_dataset(self.tmp_dir)
-        
+
     def test_process(self):
         """
         Test the background adjuster.
         """
-        itr = self.testee.iterator(mode=None, 
+        itr = self.testee.iterator(mode=None,
                                    batch_size=None,
                                    num_batches=None,
                                    rng=None,
                                    data_specs=None,
                                    return_tuple=False)
-        itr.next()
+        result = itr.next()
+        #print result
+
+class TestImgDatasetPickle(unittest.TestCase):
+    """
+    Tests for ImgDataset
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp()
+        self.testee = create_test_img_dataset(self.tmp_dir)
+        
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        del self.testee
+        shutil.rmtree(self.tmp_dir)
+    
+    def test_pickle(self):
+        """
+        Make sure that we can pickle the dataset.
+        """
+        pkl = pickle.dumps(self.testee)
+        reload_tt = pickle.loads(pkl)
+        self.assertEqual(len(self.testee.adjusters), len(reload_tt.adjusters)) 
+
+
+    
+
+#def explore_pick():
+#    testee = create_test_img_dataset("/var/tmp/xxxx")
+#    pkl = pickle.dumps(testee)
+#    reload_tt = pickle.loads(pkl)
+    #for de in testee.__dict__:
+    #    print de, de.__class__
+
+#    for de in testee.data_provider.__dict__:
+#        print de, testee.data_provider.__dict__[de].__class__
+#    for adj in testee.adjusters:
+#        for de in adj.__dict__:
+#            print de, adj.__dict__[de].__class__
+#    for de in testee.generator.__dict__:
+#        print de, testee.generator.__dict__[de].__class__
+        
+#    for de in testee.__dict__:
+#        obj = testee.__dict__[de]
+#        print de, obj.__class__
+#        pickle.dumps(obj)
+#    print '-' * 64
+#    for de in testee.data_provider.__dict__:
+#        obj = testee.data_provider.__dict__[de]
+#        print de, obj.__class__
+#        if not de in ['dataset']:
+#            pickle.dumps(obj)
+#        print '*' * 64
     
 def simple_stand_alone_test():
-    imd = create_test_img_dataset("/var/tmp/xxxx")
-    itr = imd.iterator(mode=None, 
+    root_logger = logging.getLogger()
+    if 1:
+        root_logger.setLevel(logging.DEBUG)
+    else:
+        root_logger.setLevel(logging.INFO)
+    imd = create_test_img_dataset("/var/tmp/xxxx", gen='process')
+    itr = imd.iterator(mode=None,
                        batch_size=4,
                        num_batches=4,
                        rng=None,
                        data_specs=None,
                        return_tuple=False)
-    itr.next()    
-    
+    result = itr.next()
+    imd.tear_down()
+    print result
+
 if __name__ == '__main__':
-    unittest.main()
+    simple_stand_alone_test()
+    #explore_pick()
+    #unittest.main()

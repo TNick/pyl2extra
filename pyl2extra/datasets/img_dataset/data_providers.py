@@ -79,6 +79,12 @@ class Provider(object):
         pass
         #assert isinstance(dataset, ImgDataset)
 
+    def tear_down(self):
+        """
+        Called by the dataset fromits tear_down() method.
+        """
+        pass
+
     def normalize_image(self, im):
         """
         Converts an image into the format used by ``read()``.
@@ -150,12 +156,17 @@ class Provider(object):
         if hasattr(self, 'categs'):
             return self.categs
         else:
-            self.categs = []
-            for key in self:
-                ctg = self.category(key)
-                if not ctg in self.categs:
-                    self.categs.append(ctg)
-            return self.categs
+            return self.get_categs()
+
+    def get_categs(self):
+        """
+        """
+        self.categs = []
+        for key in self:
+            ctg = self.category(key)
+            if not ctg in self.categs:
+                self.categs.append(ctg)
+        return self.categs        
 
     def categ2int(self, categ):
         """
@@ -223,6 +234,40 @@ class Provider(object):
             hdict = hdict ^ (hash(k) << 1) ^ (hash(evr[k]) << 2)
         return  hdict
 
+    def get(self, offset, count):
+        """
+        Get the files in a given range.
+        
+        The method does not throw errors if the range is outside allowed
+        range. instead, the list of files is treated as a ring.
+        
+        Parameters
+        ----------
+        offset : int
+            Zero-based indes of the first file to retreive.
+        count : int
+            Number of files to retreive.
+        """
+        assert offset >= 0
+        assert count > 0
+        evrt = self.everything()
+        evrt_len = len(evrt)
+        keys = evrt.keys()
+        
+        result = []
+        while count > 0:
+            # bring offset in valid range
+            offset = offset % evrt_len
+            # max number of items
+            valid_range = evrt_len - offset
+            # how many are we going to get on this round
+            this_round = min(valid_range, count)
+            result.extend(keys[offset:offset+this_round])
+            
+            offset = offset + this_round
+            count = count - this_round
+            
+        return result
 
 class DictProvider(Provider):
     """
@@ -262,6 +307,26 @@ class DictProvider(Provider):
         except StopIteration:
             self.keys_iter = self.data.keys().__iter__()
             return self.next()
+
+    def __getstate__(self):
+        """
+        Help pickle this instance.
+        """
+        if not hasattr(self, 'categs'):
+            self.get_categs()
+            assert hasattr(self, 'categs')
+        
+        return {'data': self.data, 'categs': self.categs}
+        
+    def __setstate__(self, state):
+        """
+        Help un-pickle this instance.
+        """
+        self.data = state['data']
+        self.categs = state['categs']
+        
+        #: The list of paths used for iteration purposes.
+        self.keys_iter = self.data.keys().__iter__()
 
 class CsvProvider(DictProvider):
     """
@@ -345,15 +410,11 @@ class RandomProvider(DictProvider):
     def __init__(self, rng=None, count=100, alpha=False, size=(128, 128)):
         self.rng = make_np_rng(rng)
         self.content = {}
-        data = {}
-        modes = ['RGBA', 'RGB', '1', 'L', 'P', 'CMYK', 'I', 'F']
-        channels = 4 if alpha else 3
-        for i in range(count):
-            file_name = str(i+1)
-            imarray = numpy.random.rand(size[0], size[1], channels) * 255
-            im = Image.fromarray(imarray.astype('uint8'))
-            self.content[file_name] = im.convert(modes[i % len(modes)])
-            data[file_name] = file_name
+        self.rng = rng
+        self.count = count
+        self.alpha = alpha
+        self.size = size
+        data = self.prepare()
 
         # everything else is provided by DictProvider
         super(RandomProvider, self).__init__(data)
@@ -363,3 +424,38 @@ class RandomProvider(DictProvider):
         categ = f_path
         im = self.content[f_path]
         return self.normalize_image(im), categ
+
+    def __getstate__(self):
+        """
+        Help pickle this instance.
+        """
+        state = {}
+        state['count'] = self.count
+        state['alpha'] = self.alpha
+        state['size'] = self.size
+        return state
+        
+    def __setstate__(self, state):
+        """
+        Help un-pickle this instance.
+        """
+        self.count = state['count']
+        self.alpha = state['alpha']
+        self.size = state['size']
+        self.data = self.prepare()
+        self.keys_iter = self.data.keys().__iter__()
+        
+    def prepare(self):
+        self.content = {}
+        data = {}
+        modes = ['RGBA', 'RGB', '1', 'L', 'P', 'CMYK', 'I', 'F']
+        channels = 4 if self.alpha else 3
+        for i in range(self.count):
+            file_name = str(i+1)
+            imarray = numpy.random.rand(self.size[0],
+                                        self.size[1], 
+                                        channels) * 255
+            im = Image.fromarray(imarray.astype('uint8'))
+            self.content[file_name] = im.convert(modes[i % len(modes)])
+            data[file_name] = file_name
+        return data

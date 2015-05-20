@@ -30,7 +30,7 @@ from pyl2extra.datasets.img_dataset.adjusters import (Adjuster,
                                                       adj_from_string)
 from pyl2extra.datasets.img_dataset.generators import (Generator,
                                                        InlineGen,
-                                                       genFromString)
+                                                       gen_from_string)
 
 
 class ImgDataset(Dataset):
@@ -143,6 +143,16 @@ class ImgDataset(Dataset):
 
         super(ImgDataset, self).__init__()
 
+    def tear_down(self):
+        """
+        Done with the dataset. Calls `tear_down()` for all components.
+        """
+        # intialize components
+        self.data_provider.tear_down()
+        for adj in self.adjusters:
+            adj.tear_down()
+        self.generator.tear_down()
+
     def _check_data_provider(self, data_provider):
         """
         Helps the constructor check data_provider
@@ -167,7 +177,7 @@ class ImgDataset(Dataset):
         if generator is None:
             generator = InlineGen()
         elif isinstance(generator, basestring):
-            generator = genFromString(generator)
+            generator = gen_from_string(generator)
         elif not isinstance(generator, Generator):
             raise ValueError("ImgDataset constructor accepts for its "
                              "generator a string (the name of a Generator) "

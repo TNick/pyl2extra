@@ -99,6 +99,18 @@ class TestDictProvider(unittest.TestCase):
         for i in range(1000):
             self.assertTrue(self.testee.cnext() in self.keys)
 
+    def test_get(self):
+        """
+        Get based on offset and count
+        """
+        result = self.testee.get(0, 4)
+        result.sort()
+        self.assertListEqual(result, self.keys)
+        for i in range(0, 100):
+            result = self.testee.get(i, 3)
+            for relem in result:
+                self.assertIn(relem, self.keys)
+        
 class TestDummyImages(unittest.TestCase):
     """
     Tests for DictProvider.

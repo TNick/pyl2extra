@@ -12,10 +12,10 @@ __email__ = "nicu.tofan@gmail.com"
 import functools
 import unittest
 
-from pyl2extra.datasets.img_dataset.generators import (InlineGen, 
+from pyl2extra.datasets.img_dataset.generators import (InlineGen,
                                                        ThreadedGen,
                                                        ProcessGen,
-                                                       genFromString)
+                                                       gen_from_string)
 
 
 class TestInlineGen(unittest.TestCase):
@@ -29,14 +29,14 @@ class TestInlineGen(unittest.TestCase):
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
         del self.testee
-        
+
     def test_is_inline(self):
         """
         Check the transf_count() for InlineGen
         """
         instloc = InlineGen()
         self.assertTrue(instloc.is_inline())
-        
+
 
 class TestThreadedGen(unittest.TestCase):
     """
@@ -49,14 +49,14 @@ class TestThreadedGen(unittest.TestCase):
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
         del self.testee
-        
+
     def test_is_inline(self):
         """
         Check the transf_count() for ThreadedGen
         """
         instloc = ThreadedGen()
         self.assertFalse(instloc.is_inline())
-        
+
 
 class TestProcessGen(unittest.TestCase):
     """
@@ -69,18 +69,18 @@ class TestProcessGen(unittest.TestCase):
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
         del self.testee
-        
+
     def test_is_inline(self):
         """
         Check the transf_count() for ProcessGen
         """
         instloc = ProcessGen()
         self.assertFalse(instloc.is_inline())
-        
-        
+
+
 class TestGenFromString(unittest.TestCase):
     """
-    Tests for genFromString().
+    Tests for gen_from_string().
     """
     @functools.wraps(unittest.TestCase.setUp)
     def setUp(self):
@@ -92,13 +92,13 @@ class TestGenFromString(unittest.TestCase):
 
     def test_simple(self):
         """
-        Create generators via genFromString().
+        Create generators via gen_from_string().
         """
-        adj = genFromString('inline')
+        adj = gen_from_string('inline')
         self.assertIsInstance(adj, InlineGen)
-        adj = genFromString('threads')
+        adj = gen_from_string('threads')
         self.assertIsInstance(adj, ThreadedGen)
-        adj = genFromString('process')
+        adj = gen_from_string('process')
         self.assertIsInstance(adj, ProcessGen)
 
 
