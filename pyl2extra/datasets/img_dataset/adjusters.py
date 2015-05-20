@@ -99,17 +99,28 @@ class BackgroundAdj(Adjuster):
         will be scaled to desired size), a color represented as a RGB tuple,
         a color represented as a string or a list of any combination of
         the above.
-
+    image_files : list of strings, optional
+        Paths towards image files to be used as backgrounds.
+        It is recomended to use this member to provide images instead of
+        providing images directly, as there seems to be a bug in serializing 
+        Image instances (this is important if inter-process communication 
+        is required).
+        
     Notes
     -----
     See webcolors module for valid string formats for the ``background``
     member.
     """
-    def __init__(self, backgrounds=None):
+    def __init__(self, backgrounds=None, image_files=None):
 
         #: list of colors and images to use as backgrounds
         self.backgrounds = []
-        BackgroundAdj._normalize_back(self.backgrounds, backgrounds)
+        self.original_backgrounds = backgrounds
+        self.original_image_files = image_files
+        
+        BackgroundAdj._normalize_back(self.backgrounds,
+                                      backgrounds, 
+                                      image_files)
         assert len(self.backgrounds) > 0
         super(BackgroundAdj, self).__init__()
 
@@ -117,6 +128,7 @@ class BackgroundAdj(Adjuster):
     def setup(self, dataset, mode):
         #assert isinstance(dataset, ImgDataset)
         self.prmstore = ParamStore([self.backgrounds], mode=mode)
+        self.mode = mode
 
     @functools.wraps(Adjuster.transf_count)
     def transf_count(self):
@@ -133,7 +145,7 @@ class BackgroundAdj(Adjuster):
         return hash_val
 
     @staticmethod
-    def _normalize_back(result, value):
+    def _normalize_back(result, value, image_files=None):
         """
         Converts user provided list of backgrounds into a list of colors
         and images.
@@ -162,6 +174,13 @@ class BackgroundAdj(Adjuster):
         else:
             raise ValueError("%s is not a valid value for "
                              "MakeSquareAdj's backgrounds" % str(value))
+
+        # image files
+        if not image_files is None:
+            if isinstance(image_files, basestring):
+                image_files = [image_files]
+            for imgf in image_files:
+                result.append(Image.open(imgf))
 
         return result
 
@@ -209,7 +228,33 @@ class BackgroundAdj(Adjuster):
                                   numpy.multiply(bkmask, bkg)) / 256
         return result
 
-
+    def __getstate__(self):
+        """
+        Help pickle this instance.
+        """
+        state = {}
+        state['backgrounds'] = self.original_backgrounds
+        state['image_file'] = self.original_image_files
+        state['mode'] = self.mode if hasattr(self, 'mode') else None
+        return state
+        
+    def __setstate__(self, state):
+        """
+        Help un-pickle this instance.
+        """
+        
+        self.mode = state['mode']
+        self.original_backgrounds = state['backgrounds']
+        self.original_image_files = state['image_file']
+        
+        self.backgrounds = []
+        BackgroundAdj._normalize_back(self.backgrounds,
+                                      self.original_backgrounds, 
+                                      self.original_image_files)
+        self.prmstore = ParamStore([self.backgrounds], mode=self.mode)
+        assert len(self.backgrounds) > 0
+        
+        
 class MakeSquareAdj(Adjuster):
     """
     Scales the image up or down and moves it at the center of the square.

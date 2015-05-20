@@ -55,7 +55,9 @@ class ParamStore(object):
     rng : RNG object or integer or list of integers, optional
         Used to generate random indices with ``rand_`` modes.
     """
-    def __init__(self, parameters, mode='rand_one', rng=None):
+    def __init__(self, parameters, mode=None, rng=None):
+        if mode is None:
+            mode = 'rand_one'
         #: the list of valid values for parameters
         self.parameters = parameters
         #: mode used to generate ext set of parameters
