@@ -396,6 +396,8 @@ class CsvProvider(DictProvider):
                               quotechar=quotechar)
             # collect all rows
             for i, row in enumerate(csvr):
+                if len(row) == 0:
+                    continue
                 if has_header:
                     # find the actual indices for columns of interest
                     if isinstance(col_class, basestring):
@@ -403,6 +405,7 @@ class CsvProvider(DictProvider):
                     if isinstance(col_path, basestring):
                         col_path = row.index(col_path)
                     has_header = False
+                    col_min = max(col_path, col_class)
                 elif len(row) < col_min:
                     err = '%s[%d] should have at least %d ' + \
                           'columns but it only has %d'

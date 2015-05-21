@@ -225,9 +225,15 @@ class ImgDataset(Dataset):
         """
         Helps the constructor check the axes.
         """
+        def axtype(axes):
+            if isinstance(axes, tuple):
+                return True
+            if isinstance(axes, list):
+                return True
+            return False
         if axes is None:
             axes = ('b', 0, 1, 'c')
-        elif not isinstance(axes, tuple) or len(axes) != 4:
+        elif not axtype(axes) or len(axes) != 4:
             raise ValueError("ImgDataset constructor accepts for its "
                              "axes a tuple consisting of some "
                              "permutation of 'b', 0, 1, 'c'")
