@@ -357,7 +357,7 @@ class ImgDataset(Dataset):
         -------
         batch : numpy.array
             The resulted batch, processed. The result's shape is
-            ('b', W, H, 'c'), with c being 4: red, green, blue (no alpha).
+            ('b', W, H, 'c'), with c being 3: red, green, blue (no alpha).
         """
         assert len(batch.shape) == 4
         assert batch.shape[3] == 4
