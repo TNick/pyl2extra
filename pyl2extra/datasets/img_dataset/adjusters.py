@@ -780,12 +780,16 @@ class GcaAdj(Adjuster):
             
         if subtract_mean is None:
             subtract_mean = (True, False)
+        elif isinstance(subtract_mean, bool):
+            subtract_mean = (subtract_mean)
         else:
             subtract_mean = tuple(subtract_mean)
         #: substract the mean or not or both
         self.subtract_mean = subtract_mean
         if use_std is None:
             use_std = (True, False)
+        elif isinstance(use_std, bool):
+            subtract_mean = (use_std)
         else:
             use_std = tuple(use_std)
         #: Normalize by the per-example std-dev, vector norm or both

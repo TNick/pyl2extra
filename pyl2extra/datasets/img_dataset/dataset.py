@@ -87,10 +87,10 @@ class ImgDataset(Dataset):
         if not cache_loc is None:
             if not os.path.isdir(cache_loc):
                 raise ValueError("ImgDataset constructor accepts for its "
-                                 "generator a path towards an existing, "
+                                 "cache_loc a path towards an existing, "
                                  "writable directory that stores the cache; "
                                  "the user provided a %s" %
-                                 str(generator.__class__))
+                                 str(cache_loc.__class__))
         #: location of the cache
         self.cache_loc = cache_loc
 

@@ -152,7 +152,7 @@ class TestImgDatasetBackground(unittest.TestCase, BaseImgDset):
         pass
 
 
-def create_test_img_dataset(cache_loc, gen='inline'):
+def create_mock_img_dataset(cache_loc, gen='inline'):
         data_provider = RandomProvider()
         generator = gen_from_string(gen)
         adjusters = [MakeSquareAdj(size=128),
@@ -198,7 +198,7 @@ class TestImgDatasetAll(unittest.TestCase, BaseImgDset):
     @functools.wraps(unittest.TestCase.setUp)
     def setUp(self):
         self.prepare()
-        self.testee = create_test_img_dataset(self.tmp_dir)
+        self.testee = create_mock_img_dataset(self.tmp_dir)
 
     def test_process(self):
         """
@@ -220,7 +220,7 @@ class TestImgDatasetPickle(unittest.TestCase):
     @functools.wraps(unittest.TestCase.setUp)
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
-        self.testee = create_test_img_dataset(self.tmp_dir)
+        self.testee = create_mock_img_dataset(self.tmp_dir)
         
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
@@ -242,7 +242,7 @@ class TestImgDatasetYaml(unittest.TestCase):
     @functools.wraps(unittest.TestCase.setUp)
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
-        self.testee = create_test_img_dataset(self.tmp_dir)
+        self.testee = create_mock_img_dataset(self.tmp_dir)
         col_path = 'Column for Path'
         col_class = 'Column for Class'
         
@@ -361,7 +361,7 @@ class TestImgDatasetYaml(unittest.TestCase):
         self.assertEqual(len(imdset.adjusters), 6)
         
 #def explore_pick():
-#    testee = create_test_img_dataset("/var/tmp/xxxx")
+#    testee = create_mock_img_dataset("/var/tmp/xxxx")
 #    pkl = pickle.dumps(testee)
 #    reload_tt = pickle.loads(pkl)
     #for de in testee.__dict__:
@@ -393,7 +393,7 @@ def simple_stand_alone_test():
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
-    imd = create_test_img_dataset("/var/tmp/xxxx", gen='process')
+    imd = create_mock_img_dataset("/var/tmp/xxxx", gen='process')
     itr = imd.iterator(mode=None,
                        batch_size=4,
                        num_batches=4,
@@ -407,4 +407,7 @@ def simple_stand_alone_test():
 if __name__ == '__main__':
     #simple_stand_alone_test()
     #explore_pick()
-    unittest.main(argv=['--verbose', 'TestImgDatasetYaml'])
+    if True:
+        unittest.main(argv=['--verbose'])
+    else:
+        unittest.main(argv=['--verbose', 'TestImgDatasetYaml'])
