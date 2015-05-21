@@ -781,7 +781,7 @@ class GcaAdj(Adjuster):
         if subtract_mean is None:
             subtract_mean = (True, False)
         elif isinstance(subtract_mean, bool):
-            subtract_mean = (subtract_mean)
+            subtract_mean = (subtract_mean,)
         else:
             subtract_mean = tuple(subtract_mean)
         #: substract the mean or not or both
@@ -789,7 +789,7 @@ class GcaAdj(Adjuster):
         if use_std is None:
             use_std = (True, False)
         elif isinstance(use_std, bool):
-            subtract_mean = (use_std)
+            use_std = (use_std,)
         else:
             use_std = tuple(use_std)
         #: Normalize by the per-example std-dev, vector norm or both
@@ -853,8 +853,8 @@ class GcaAdj(Adjuster):
             count = count * (numpy.floor((self.end_sqrt_bias -
                                           self.start_sqrt_bias) /
                                          self.step_sqrt_bias) + 1)
-        count = count * 2 if self.subtract_mean is None else count * 1
-        count = count * 2 if self.use_std is None else count * 1
+        count = count * len(self.subtract_mean)
+        count = count * len(self.use_std)
 
         return count
 

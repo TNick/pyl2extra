@@ -388,12 +388,13 @@ class TestImgDatasetYaml(unittest.TestCase):
 #        print '*' * 64
     
 def simple_stand_alone_test():
+    cache_dir = tempfile.mkdtemp()
     root_logger = logging.getLogger()
     if 1:
         root_logger.setLevel(logging.DEBUG)
     else:
         root_logger.setLevel(logging.INFO)
-    imd = create_mock_img_dataset("/var/tmp/xxxx", gen='process')
+    imd = create_mock_img_dataset(cache_dir, gen='process')
     itr = imd.iterator(mode=None,
                        batch_size=4,
                        num_batches=4,
@@ -402,6 +403,7 @@ def simple_stand_alone_test():
                        return_tuple=False)
     result = itr.next()
     imd.tear_down()
+    shutil.rmtree(cache_dir)
     print result
 
 if __name__ == '__main__':
