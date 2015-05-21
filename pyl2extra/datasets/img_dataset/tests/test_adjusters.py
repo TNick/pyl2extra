@@ -9,12 +9,14 @@ __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
 import functools
+import Image, ImageDraw
 import numpy
+import os
+import cPickle
 import shutil
 import tempfile
-import unittest
-import Image, ImageDraw
 import theano
+import unittest
 
 from pyl2extra.datasets.img_dataset.adjusters import (FlipAdj, RotationAdj,
                                                       ScalePatchAdj, GcaAdj,
@@ -128,6 +130,24 @@ class TestBackgroundAdj(unittest.TestCase, BaseAdjusters):
         im_bkg = create_rgb_image()
         self.testee = BackgroundAdj(backgrounds=[im_bkg, (250, 0, 250)])
         self.testee.setup(None, 'seq_one')
+
+    def test_pickle(self):
+        """
+        Make sure we can pickle-unpickle
+        """
+        im_bkg = create_rgb_image()
+        pickle_png = os.path.join(self.tmp_dir, "pickle.png")
+        im_bkg.save(pickle_png)
+        local_testee =  BackgroundAdj(backgrounds=[(250, 0, 250)],
+                                      image_files=pickle_png)
+        
+        dmp = cPickle.dumps(local_testee)
+        reloaded = cPickle.loads(dmp)
+        batch_sz = 5
+        batch = create_batch(batch_sz)
+        batch = reloaded.process(batch)
+        self.assertEqual(batch.shape[0], batch_sz)
+        
 
     def test_transf_count(self):
         """
