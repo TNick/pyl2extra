@@ -221,19 +221,61 @@ class TestImgDatasetPickle(unittest.TestCase):
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
         self.testee = create_mock_img_dataset(self.tmp_dir)
-        
+
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
         del self.testee
         shutil.rmtree(self.tmp_dir)
-    
+
     def test_pickle(self):
         """
         Make sure that we can pickle the dataset.
         """
         pkl = pickle.dumps(self.testee)
         reload_tt = pickle.loads(pkl)
-        self.assertEqual(len(self.testee.adjusters), len(reload_tt.adjusters)) 
+        self.assertEqual(len(self.testee.adjusters), len(reload_tt.adjusters))
+
+def create_background(tmp_dir):
+    """
+    """
+    back_file = os.path.join(tmp_dir, 'background.png')
+    bak_img = numpy.ones(shape=(256, 256, 3), dtype='uint8')
+    bak_img = Image.fromarray(bak_img.astype('uint8'))
+    bak_img = bak_img.convert('RGB')
+    bak_img.save(back_file)
+    return back_file, bak_img
+
+def create_images_csv(tmp_dir, count=4, width=128, height=128):
+    """
+    Create a set of random images and associated csv file.
+    """
+    keys, vlist = create_images(tmp_dir, count, width, height)
+    csv_file = os.path.join(tmp_dir, 'yaml_test.csv')
+    col_path = 'Path'
+    col_class = 'Class'
+    with open(csv_file, "wt") as fhand:
+        fhand.write('"%s","%s"\n' % (col_path, col_class))
+        for key,value in zip(keys, vlist):
+            fhand.write('"%s","%d"\n' % (key, value))
+    return keys, vlist, csv_file
+
+def create_images(tmp_dir, count=4, width=128, height=128):
+    """
+    Create a set of random images.
+    """
+    keys = []
+    vlist = [1, 2, 3, 4]
+    modes = ['RGBA', 'RGB', '1', 'L', 'P', 'CMYK', 'I', 'F']
+    for i in range(count):
+        key = 'random_%d.png' % i
+        file_name = os.path.join(tmp_dir, key)
+        keys.append(file_name)
+        imarray = numpy.random.rand(width, height, 4) * 255
+        im = Image.fromarray(imarray.astype('uint8'))
+        im = im.convert(modes[i % len(modes)])
+        im.save(file_name)
+
+    return keys, vlist
 
 class TestImgDatasetYaml(unittest.TestCase):
     """
@@ -245,7 +287,7 @@ class TestImgDatasetYaml(unittest.TestCase):
         self.testee = create_mock_img_dataset(self.tmp_dir)
         col_path = 'Column for Path'
         col_class = 'Column for Class'
-        
+
         yaml_content = """
         dataset: !obj:pyl2extra.datasets.img_dataset.dataset.ImgDataset {
             data_provider: !obj:pyl2extra.datasets.img_dataset.data_providers.CsvProvider {
@@ -311,19 +353,17 @@ class TestImgDatasetYaml(unittest.TestCase):
 """
         csv_file = os.path.join(self.tmp_dir, 'yaml_test.csv')
         yaml_file = os.path.join(self.tmp_dir, 'yaml_test.YAML')
-        back_file = os.path.join(self.tmp_dir, 'background.png')
         cache_loc = os.path.join(self.tmp_dir, 'cache')
         os.mkdir(cache_loc)
-        yaml_content = yaml_content % (csv_file, col_path, 
-                                       col_class, back_file, 
-                                       cache_loc)
-        
+
         # create the background
-        bak_img = numpy.ones(shape=(256, 256, 3), dtype='uint8')
-        bak_img = Image.fromarray(bak_img.astype('uint8'))
-        bak_img = bak_img.convert('RGB')
-        bak_img.save(back_file)
-        
+        back_file, bak_img = create_background(self.tmp_dir)
+
+        yaml_content = yaml_content % (csv_file, col_path,
+                                       col_class, back_file,
+                                       cache_loc)
+
+
         # create a set of images
         keys = ['a.png', 'b.png', 'c.png', 'd.png']
         self.keys = []
@@ -344,14 +384,14 @@ class TestImgDatasetYaml(unittest.TestCase):
                         'not>interested>"%s">in\n' % (col_path, col_class))
             for key,value in zip(keys, self.vlist):
                 fhand.write('a>"b">c>d>%s>x>y>z>t>"%d"\n' % (key, value))
-            
+
         self.yaml_file = yaml_file
-        
+
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
         del self.testee
         shutil.rmtree(self.tmp_dir)
-        
+
     def test_load_from_yaml(self):
         """
         Load dataset from an yaml file.
@@ -359,34 +399,43 @@ class TestImgDatasetYaml(unittest.TestCase):
         imdset = yaml_parse.load_path(self.yaml_file)
         imdset = imdset['dataset']
         self.assertEqual(len(imdset.adjusters), 6)
-        
-#def explore_pick():
-#    testee = create_mock_img_dataset("/var/tmp/xxxx")
-#    pkl = pickle.dumps(testee)
-#    reload_tt = pickle.loads(pkl)
-    #for de in testee.__dict__:
-    #    print de, de.__class__
 
-#    for de in testee.data_provider.__dict__:
-#        print de, testee.data_provider.__dict__[de].__class__
-#    for adj in testee.adjusters:
-#        for de in adj.__dict__:
-#            print de, adj.__dict__[de].__class__
-#    for de in testee.generator.__dict__:
-#        print de, testee.generator.__dict__[de].__class__
-        
-#    for de in testee.__dict__:
-#        obj = testee.__dict__[de]
-#        print de, obj.__class__
-#        pickle.dumps(obj)
-#    print '-' * 64
-#    for de in testee.data_provider.__dict__:
-#        obj = testee.data_provider.__dict__[de]
-#        print de, obj.__class__
-#        if not de in ['dataset']:
-#            pickle.dumps(obj)
-#        print '*' * 64
-    
+# unittest.TestCase
+class TestImgDatasetYamlTrain():
+    """
+    Load the dataset from YAML
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp()
+
+        # create the background
+        back_file, bak_img = create_background(self.tmp_dir)
+        keys, vlist, csv_file = create_images_csv(self.tmp_dir)
+        save_path = os.path.join(self.tmp_dir, 'trained_model')
+
+        # read yaml file and place variables inside
+        self.yaml_file = os.path.join(os.path.dirname(__file__),
+                                      'train_dataset.yaml')
+        with open(self.yaml_file, 'rt') as fhand:
+            self.yaml_content = fhand.read()
+        self.yaml_content = self.yaml_content % (csv_file,
+                                                 back_file,
+                                                 save_path)
+
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+
+    def test_load_from_yaml(self):
+        """
+        Train a model with our dataset as a backend.
+        """
+        train_obj = yaml_parse.load(self.yaml_content)
+        train_obj.main_loop(time_budget=1)
+        #self.assertTrue(train_obj.model.monitor.training_succeeded)
+
+
 def simple_stand_alone_test():
     cache_dir = tempfile.mkdtemp()
     root_logger = logging.getLogger()
@@ -409,7 +458,12 @@ def simple_stand_alone_test():
 if __name__ == '__main__':
     #simple_stand_alone_test()
     #explore_pick()
-    if True:
+    if False:
         unittest.main(argv=['--verbose'])
+    elif False:
+        unittest.main(argv=['--verbose', 'TestImgDatasetYamlTrain'])
     else:
-        unittest.main(argv=['--verbose', 'TestImgDatasetYaml'])
+        ttt = TestImgDatasetYamlTrain()
+        ttt.setUp()
+        ttt.test_load_from_yaml()
+        ttt.tearDown()
