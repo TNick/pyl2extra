@@ -411,7 +411,8 @@ class TestImgDatasetYamlTrain():
 
         # create the background
         back_file, bak_img = create_background(self.tmp_dir)
-        keys, vlist, csv_file = create_images_csv(self.tmp_dir)
+        keys, vlist, csv_file = create_images_csv(self.tmp_dir, 
+                                                  width=32, height=32)
         save_path = os.path.join(self.tmp_dir, 'trained_model')
 
         # read yaml file and place variables inside
