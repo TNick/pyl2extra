@@ -291,13 +291,13 @@ class DictProvider(Provider):
         #: The list of paths used for iteration purposes.
         self.keys_iter = data.keys().__iter__()
 
-    @functools.wraps(Provider.category)
+    @functools.wraps(Provider.__iter__)
+    def __iter__(self):
+        return self.data.keys().__iter__()
+
+    @functools.wraps(Provider.next)
     def next(self):
-        try:
-            return self.keys_iter.next()
-        except StopIteration:
-            self.keys_iter = self.data.keys().__iter__()
-            raise
+        return self.keys_iter.next()
 
     @functools.wraps(Provider.category)
     def category(self, f_path):
@@ -406,7 +406,7 @@ class CsvProvider(DictProvider):
                         col_path = row.index(col_path)
                     has_header = False
                     col_min = max(col_path, col_class)
-                elif len(row) < col_min:
+                elif len(row) <= col_min:
                     err = '%s[%d] should have at least %d ' + \
                           'columns but it only has %d'
                     raise ValueError(err % (csv_path, i, col_min, len(row)))

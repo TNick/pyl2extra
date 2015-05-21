@@ -209,6 +209,13 @@ class BaseCsvProvider():
         """
         klist = []
         vlist = []
+#        try:
+#            while True:
+#                k = self.testee.next()
+#                klist.append(k)
+#                vlist.append(self.testee.category(k))            
+#        except StopIteration:
+#            pass
         for k in self.testee:
             klist.append(k)
             vlist.append(self.testee.category(k))
@@ -274,10 +281,10 @@ class TestCsvProviderSeparator(unittest.TestCase, BaseCsvProvider):
         csv_file = self.prepare()
         with open(csv_file, 'wt') as fhand:
             for key,value in zip(self.keys, self.vlist):
-                fhand.write('%s/%d\n' % (key, value))
+                fhand.write('%s>%d\n' % (key, value))
 
         self.testee = CsvProvider(csv_file, col_path=0,
-                                  col_class=1, delimiter='/')
+                                  col_class=1, delimiter='>')
 
 
 class TestCsvProviderQuote(unittest.TestCase, BaseCsvProvider):
@@ -290,10 +297,10 @@ class TestCsvProviderQuote(unittest.TestCase, BaseCsvProvider):
         csv_file = self.prepare()
         with open(csv_file, 'wt') as fhand:
             for key,value in zip(self.keys, self.vlist):
-                fhand.write('$%s$/$%d$\n' % (key, value))
+                fhand.write('$%s$>$%d$\n' % (key, value))
 
         self.testee = CsvProvider(csv_file, col_path=0,
-                                  col_class=1, delimiter='/',
+                                  col_class=1, delimiter='>',
                                   quotechar='$')
 
 
@@ -307,11 +314,33 @@ class TestCsvProviderMulCol(unittest.TestCase, BaseCsvProvider):
         csv_file = self.prepare()
         with open(csv_file, 'wt') as fhand:
             for key,value in zip(self.keys, self.vlist):
-                fhand.write('a/"b"/c/d/%s/x/y/z/t/"%d"\n' % (key, value))
+                fhand.write('a>"b">c>d>%s>x>y>z>t>"%d"\n' % (key, value))
 
         self.testee = CsvProvider(csv_file, col_path=4,
-                                  col_class=9, delimiter='/')
+                                  col_class=9, delimiter='>')
 
+
+class TestCsvProviderHeader(unittest.TestCase, BaseCsvProvider):
+    """
+    Tests for CsvProvider.
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+
+        csv_file = self.prepare()
+        with open(csv_file, 'wt') as fhand:
+            col_path = 'Path Column'
+            col_class = 'Class Column'
+            fhand.write('>"some">column>here>%s>thet>we\'re>'
+                        'not>interested>"%s">in\n' % (col_path, col_class))
+            for key,value in zip(self.keys, self.vlist):
+                fhand.write('a>"b">c>d>%s>x>y>z>t>"%d"\n' % (key, value))
+
+        self.testee = CsvProvider(csv_file, 
+                                  has_header=True,
+                                  col_path=col_path,
+                                  col_class=col_class,
+                                  delimiter='>')
 
 class TestRandomProvider(unittest.TestCase):
     """
