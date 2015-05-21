@@ -136,7 +136,7 @@
         ],
 
         input_space: !obj:pylearn2.space.Conv2DSpace {
-            shape: [128, 128],
+            shape: [32, 32],
             num_channels: 3,
             axes: ['b', 0, 1, 'c']
         }
