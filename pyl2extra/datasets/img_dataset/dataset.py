@@ -136,7 +136,9 @@ class ImgDataset(Dataset):
             self._iter_num_batches = self._iter_num_batches  + 1
 
         #: default random number generator
-        self.rng = make_np_rng(rng)
+        self.rng = make_np_rng(rng_or_seed=rng, 
+                               default_seed=[2017, 5, 17], 
+                               which_method=["random_integers"])
 
         #: default data specs
         self._iter_data_specs = self._data_specs()

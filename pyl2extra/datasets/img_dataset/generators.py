@@ -186,7 +186,7 @@ class InlineGen(Generator):
         """
         Help un-pickle this instance.
         """
-        super(InlineGen, self).__setstate__()
+        super(InlineGen, self).__setstate__(state)
 
 class AsyncMixin(object):
     """

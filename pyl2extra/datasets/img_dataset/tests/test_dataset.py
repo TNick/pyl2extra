@@ -12,7 +12,7 @@ import tempfile
 import unittest
 import pickle
 from pylearn2.space import CompositeSpace, VectorSpace, Conv2DSpace, IndexSpace
-
+from pylearn2.config import yaml_parse
 
 from pyl2extra.datasets.img_dataset.data_providers import RandomProvider
 from pyl2extra.datasets.img_dataset.generators import (InlineGen, Generator,
@@ -235,9 +235,131 @@ class TestImgDatasetPickle(unittest.TestCase):
         reload_tt = pickle.loads(pkl)
         self.assertEqual(len(self.testee.adjusters), len(reload_tt.adjusters)) 
 
+class TestImgDatasetYaml(unittest.TestCase):
+    """
+    Load the dataset from YAML
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp()
+        self.testee = create_test_img_dataset(self.tmp_dir)
+        col_path = 'Column for Path'
+        col_class = 'Column for Class'
+        
+        yaml_content = """
+        dataset: !obj:pyl2extra.datasets.img_dataset.dataset.ImgDataset {
+            data_provider: !obj:pyl2extra.datasets.img_dataset.data_providers.CsvProvider {
+                csv_path: '%s',
+                col_path: '%s',
+                col_class: '%s',
+                has_header: True,
+                delimiter: '>',
+                quotechar: '"'
+            },
+            adjusters: [
+                !obj:pyl2extra.datasets.img_dataset.adjusters.BackgroundAdj {
+                    backgrounds: [
+                        [0,     0,   0],
+                        [255, 255, 255],
+                        [128, 128, 128]
+                    ],
+                    image_files: [
+                        '%s'
+                    ]
+                },
+                !obj:pyl2extra.datasets.img_dataset.adjusters.MakeSquareAdj {
+                    size: 128
+                },
+                !obj:pyl2extra.datasets.img_dataset.adjusters.FlipAdj {
+                    horizontal: True,
+                    vertical: True
+                },
+                !obj:pyl2extra.datasets.img_dataset.adjusters.RotationAdj {
+                    min_deg: !float '-45.0',
+                    max_deg: !float '45.0',
+                    step: !float '15.0'
+                },
+                !obj:pyl2extra.datasets.img_dataset.adjusters.ScalePatchAdj {
+                    start_factor: !float '0.8',
+                    end_factor: !float '0.99',
+                    step: !float '0.05',
+                    placements: [
+                        'top_left',
+                        'top_right',
+                        'btm_left',
+                        'btm_right',
+                        'center'
+                    ]
+                },
+                !obj:pyl2extra.datasets.img_dataset.adjusters.GcaAdj {
+                    start_scale: !float '1.0',
+                    end_scale: !float '2.0',
+                    step_scale: !float '0.5',
+                    subtract_mean: [True, False],
+                    use_std: [True, False],
+                    start_sqrt_bias: !float '0.0',
+                    end_sqrt_bias: !float '2.0',
+                    step_sqrt_bias: !float '0.2'
+                }
+            ],
+            generator: !obj:pyl2extra.datasets.img_dataset.generators.InlineGen {},
+            shape: [128, 128],
+            axes: ['b', 0, 1, 'c'],
+            cache_loc: '%s',
+            rng: [2017, 4, 16]
+        }
+"""
+        csv_file = os.path.join(self.tmp_dir, 'yaml_test.csv')
+        yaml_file = os.path.join(self.tmp_dir, 'yaml_test.YAML')
+        back_file = os.path.join(self.tmp_dir, 'background.png')
+        cache_loc = os.path.join(self.tmp_dir, 'cache')
+        os.mkdir(cache_loc)
+        yaml_content = yaml_content % (csv_file, col_path, 
+                                       col_class, back_file, 
+                                       cache_loc)
+        
+        # create the background
+        bak_img = numpy.ones(shape=(256, 256, 3), dtype='uint8')
+        bak_img = Image.fromarray(bak_img.astype('uint8'))
+        bak_img = bak_img.convert('RGB')
+        bak_img.save(back_file)
+        
+        # create a set of images
+        keys = ['a.png', 'b.png', 'c.png', 'd.png']
+        self.keys = []
+        self.vlist = [1, 2, 3, 4]
+        modes = ['RGBA', 'RGB', '1', 'L', 'P', 'CMYK', 'I', 'F']
+        for i, key in enumerate(keys):
+            file_name = os.path.join(self.tmp_dir, key)
+            self.keys.append(file_name)
+            imarray = numpy.random.rand(128, 128, 4) * 255
+            im = Image.fromarray(imarray.astype('uint8'))
+            im = im.convert(modes[i % len(modes)])
+            im.save(file_name)
 
-    
-
+        with open(yaml_file, "wt") as fhand:
+            fhand.write(yaml_content)
+        with open(csv_file, "wt") as fhand:
+            fhand.write('>"some">column>here>%s>thet>we\'re>'
+                        'not>interested>"%s">in\n' % (col_path, col_class))
+            for key,value in zip(keys, self.vlist):
+                fhand.write('a>"b">c>d>%s>x>y>z>t>"%d"\n' % (key, value))
+            
+        self.yaml_file = yaml_file
+        
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        del self.testee
+        shutil.rmtree(self.tmp_dir)
+        
+    def test_load_from_yaml(self):
+        """
+        Load dataset from an yaml file.
+        """
+        imdset = yaml_parse.load_path(self.yaml_file)
+        imdset = imdset['dataset']
+        self.assertEqual(len(imdset.adjusters), 6)
+        
 #def explore_pick():
 #    testee = create_test_img_dataset("/var/tmp/xxxx")
 #    pkl = pickle.dumps(testee)
@@ -283,6 +405,6 @@ def simple_stand_alone_test():
     print result
 
 if __name__ == '__main__':
-    simple_stand_alone_test()
+    #simple_stand_alone_test()
     #explore_pick()
-    #unittest.main()
+    unittest.main(argv=['--verbose', 'TestImgDatasetYaml'])

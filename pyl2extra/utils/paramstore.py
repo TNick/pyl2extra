@@ -59,7 +59,9 @@ class ParamStore(object):
         if mode is None:
             mode = 'rand_one'
         #: the list of valid values for parameters
-        self.parameters = parameters
+        self.parameters = []
+        for par in parameters:
+            self.parameters.append(tuple(par))
         #: mode used to generate ext set of parameters
         self.mode = mode
         #: random number generator
@@ -108,7 +110,7 @@ class ParamStore(object):
             if self.crt_status[i] >= len(self.parameters[i]):
                 self.crt_status[i] = 0
             result.append(self.parameters[i][self.crt_status[i]])
-        return result
+        return tuple(result)
 
     def next_seq_one(self):
         """
@@ -129,7 +131,7 @@ class ParamStore(object):
         self.param_idx = self.param_idx + 1
         if self.param_idx >= len(self.parameters):
             self.param_idx = 0
-        return result
+        return tuple(result)
 
     def next_rnd_all(self):
         """
@@ -142,7 +144,7 @@ class ParamStore(object):
                                                           high=high,
                                                           size=1)
             result.append(self.parameters[i][self.crt_status[i]])
-        return result
+        return tuple(result)
 
     def next_rnd_one(self):
         """
@@ -161,7 +163,7 @@ class ParamStore(object):
         self.param_idx = self.param_idx + 1
         if self.param_idx >= len(self.parameters):
             self.param_idx = 0
-        return result
+        return tuple(result)
 
     def next(self):
         """

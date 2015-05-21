@@ -150,11 +150,11 @@ class BackgroundAdj(Adjuster):
         Converts user provided list of backgrounds into a list of colors
         and images.
         """
-        if (isinstance(value, tuple) and
+        if ((isinstance(value, tuple) or isinstance(value, list)) and
                 len(value) == 3 and
                 all([isinstance(i, int) for i in value])):
             # a single color represented as a RBG tuple
-            result.append(value)
+            result.append(tuple(value))
         elif isinstance(value, basestring):
             # a single color represented as a string
             if value.startswith('#'):
@@ -777,9 +777,17 @@ class GcaAdj(Adjuster):
         if start_scale > end_scale:
             self.start_scale = end_scale
             self.end_scale = start_scale
-
+            
+        if subtract_mean is None:
+            subtract_mean = (True, False)
+        else:
+            subtract_mean = tuple(subtract_mean)
         #: substract the mean or not or both
         self.subtract_mean = subtract_mean
+        if use_std is None:
+            use_std = (True, False)
+        else:
+            use_std = tuple(use_std)
         #: Normalize by the per-example std-dev, vector norm or both
         self.use_std = use_std
 
@@ -807,6 +815,7 @@ class GcaAdj(Adjuster):
             while scale <= self.end_scale:
                 scales.append(scale)
                 scale = scale + self.step_scale
+        scales = tuple(scales)
 
         biases = []
         bias = self.start_sqrt_bias
@@ -816,15 +825,16 @@ class GcaAdj(Adjuster):
             while bias <= self.end_sqrt_bias:
                 biases.append(bias)
                 bias = bias + self.step_sqrt_bias
+        biases = tuple(biases)
 
         if self.subtract_mean is None:
-            subtract_mean = [True, False]
+            subtract_mean = (True, False)
         else:
-            subtract_mean = [self.subtract_mean]
+            subtract_mean = tuple(self.subtract_mean)
         if self.use_std is None:
-            use_std = [True, False]
+            use_std = (True, False)
         else:
-            use_std = [self.use_std]
+            use_std = tuple(self.use_std)
         self.prmstore = ParamStore([scales, subtract_mean, use_std, biases],
                                    mode=mode)
 
