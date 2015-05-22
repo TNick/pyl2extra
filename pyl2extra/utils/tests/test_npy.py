@@ -14,6 +14,61 @@ import numpy
 from pyl2extra.utils.npy import slice_1d, slice_2d, slice_3d
 import unittest
 
+
+class TestLimit(unittest.TestCase):
+    """
+    Tests for ImgDataset
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+        pass
+
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        pass
+
+    def test_1d(self):
+        """
+        Slice an array in 1D pices
+        """
+        cnt = 0
+        ary = numpy.array(range(6)).reshape(6)
+        for (address, pice) in slice_1d(ary):
+            cnt = cnt + 1
+            self.assertEqual(len(pice), 6)
+            self.assertEqual(len(address), 0)
+        self.assertEqual(cnt, 1)
+
+    def test_2d(self):
+        """
+        Slice an array in 2D pices
+        """
+        cnt = 0
+        ary = numpy.array(range(6*6)).reshape(6, 6)
+        for (address, pice) in slice_2d(ary):
+            cnt = cnt + 1
+            self.assertEqual(len(pice.shape), 2)
+            self.assertEqual(pice.shape[0], 6)
+            self.assertEqual(pice.shape[1], 6)
+            self.assertEqual(len(address), 0)
+        self.assertEqual(cnt, 1)
+
+    def test_3d(self):
+        """
+        Slice an array in 3D pices
+        """
+        cnt = 0
+        ary = numpy.array(range(6*6*6)).reshape(6, 6, 6)
+        for (address, pice) in slice_3d(ary):
+            cnt = cnt + 1
+            self.assertEqual(len(pice.shape), 3)
+            self.assertEqual(pice.shape[0], 6)
+            self.assertEqual(pice.shape[1], 6)
+            self.assertEqual(pice.shape[2], 6)
+            self.assertEqual(len(address), 0)
+        self.assertEqual(cnt, 1)
+
+
 class TestSlice(unittest.TestCase):
     """
     Tests for ImgDataset

@@ -26,7 +26,9 @@ def _slice(array, outlen, address=None):
             loc_addr.append(i)
         return loc_addr
 
-    if len(array.shape) > outlen+1:
+    if len(array.shape) == outlen:
+        yield [], array
+    elif len(array.shape) > outlen+1:
         for i in range(array.shape[0]):
             loc_addr = _loc_address(i)
             for addr, arr in _slice(array[i], outlen, loc_addr):
