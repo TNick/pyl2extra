@@ -1,0 +1,160 @@
+
+!obj:pylearn2.train.Train {
+
+    dataset: &trndataset !obj:pyl2extra.datasets.img_dataset.dataset.ImgDataset {
+
+        data_provider: !obj:pyl2extra.datasets.img_dataset.data_providers.CsvProvider {
+            csv_path: '%s',
+            col_path: 'Path',
+            col_class: 'Class',
+            has_header: True,
+            delimiter: ',',
+            quotechar: '"'
+        },
+
+        adjusters: [
+            !obj:pyl2extra.datasets.img_dataset.adjusters.BackgroundAdj {
+                backgrounds: [
+                    [0,     0,   0],
+                    [255, 255, 255],
+                    [128, 128, 128]
+                ],
+                image_files: [
+                    '%s'
+                ]
+            },
+            !obj:pyl2extra.datasets.img_dataset.adjusters.MakeSquareAdj {
+                size: 32
+            },
+            !obj:pyl2extra.datasets.img_dataset.adjusters.FlipAdj {
+                horizontal: True,
+                vertical: True
+            },
+            !obj:pyl2extra.datasets.img_dataset.adjusters.RotationAdj {
+                min_deg: !float '-45.0',
+                max_deg: !float '45.0',
+                step: !float '15.0'
+            },
+            !obj:pyl2extra.datasets.img_dataset.adjusters.ScalePatchAdj {
+                start_factor: !float '0.8',
+                end_factor: !float '0.99',
+                step: !float '0.05',
+                placements: [
+                    'top_left',
+                    'top_right',
+                    'btm_left',
+                    'btm_right',
+                    'center'
+                ]
+            },
+            !obj:pyl2extra.datasets.img_dataset.adjusters.GcaAdj {
+                start_scale: !float '1.0',
+                end_scale: !float '2.0',
+                step_scale: !float '0.5',
+                subtract_mean: [True, False],
+                use_std: [True, False],
+                start_sqrt_bias: !float '0.0',
+                end_sqrt_bias: !float '2.0',
+                step_sqrt_bias: !float '0.2'
+            }
+        ],
+        generator: !obj:pyl2extra.datasets.img_dataset.generators.InlineGen {},
+        shape: [32, 32],
+        axes: ['b', 0, 1, 'c'],
+        cache_loc: '/var/tmp',
+        rng: [2017, 4, 16]
+    },
+
+
+    # ================================================================== #
+    # =========[                  M o d e l                   ]========= #
+    # ================================================================== #
+    model: !obj:pylearn2.models.mlp.MLP {
+        layers : [
+            !obj:pylearn2.models.maxout.MaxoutLocalC01B {
+                layer_name: 'h2',
+                tied_b: 1,
+                W_lr_scale: .05,
+                b_lr_scale: .05,
+                num_channels: 192,
+                num_pieces: 2,
+                kernel_shape: [5, 5],
+                irange: .005,
+                max_kernel_norm: 1.9365
+            },
+            !obj:pylearn2.models.maxout.Maxout {
+                layer_name: 'h3',
+                irange: .005,
+                num_units: 500,
+                num_pieces: 5,
+                max_col_norm: 1.9
+            },
+            # OUTPUT
+            !obj:pylearn2.models.mlp.Softmax {
+                layer_name: 'y',
+                n_classes:  4,
+                max_col_norm: 1.9365,
+                istdev: .05
+            }
+        ],
+
+        input_space: !obj:pylearn2.space.Conv2DSpace {
+            shape: [32, 32],
+            num_channels: 3,
+            axes: ['b', 0, 1, 'c']
+        }
+    },
+
+
+    # ================================================================== #
+    # =========[              A l g o r i t h m               ]========= #
+    # ================================================================== #
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        learning_rate: 0.005,
+        batch_size: 8,
+
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: 0.5
+        },
+
+        cost: !obj:pylearn2.costs.cost.MethodCost {
+            method: 'cost_from_X'
+        },
+
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.MonitorBased {
+                    channel_name: "valid_y_misclass",
+                    prop_decrease: 0.01,
+                    N: 20
+                },
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: 1000
+                },
+            ]
+        },
+
+        #theano_function_mode: !obj:pyl2extra.devtools.printvalmode.NanGuardMode {
+        #    nan_is_error: True,
+        #    inf_is_error: False,
+        #    big_is_error: False
+        #},
+
+
+        monitoring_dataset: {
+            #valid: &tstdataset !pkl: "${DATASET_TEST}",
+            #train: *trndataset
+            valid: *trndataset
+        }
+
+    },
+
+
+    # ================================================================== #
+    # =========[                  O t h e r s                 ]========= #
+    # ================================================================== #
+    save_freq: 100,
+    save_path: "%s",
+    allow_overwrite: True
+}
+
