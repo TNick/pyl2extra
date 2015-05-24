@@ -602,6 +602,11 @@ class ProcessGen(Generator, AsyncMixin):
             self.control_sender.send(dill.dumps(self.dataset))
             self.dataset_provided = True
             time.sleep(0.5)
+            refill = self.cache_refill_treshold
+            assert self.cache_refill_count > 0
+            while refill > 0:
+                self.push_request(self.cache_refill_count)
+                refill = refill - self.cache_refill_count
         return self._get(source, next_index)
 
     def _wait_for_data(self, count):
