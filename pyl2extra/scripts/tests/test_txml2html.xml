@@ -1,0 +1,1499 @@
+<?xml version="1.0" ?>
+<xmlvalmode>
+<nodes>
+<node hash="8753397324045" name="DimShuffle{x,0}(sgd_params[0])" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397324285" />
+</parents>
+<inputs>
+ <list level="1" variable="sgd_params[0]" hash="8753397324285">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.268448|-0.263953|-0.616243</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x,0}.0" hash="8753397329157">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.268448|-0.263953|-0.616243</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329173" name="DimShuffle{x,x}(TensorConstant{2})" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329169" />
+</parents>
+<inputs>
+ <list level="1" variable="TensorConstant{2}" hash="8753397329169">
+  <integer value="2" dtype="int8" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x,x}.0" hash="8753397329161">
+  <ndarray shape="1,1" dtype="int8">
+   <part address="0">2</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329185" name="Elemwise{mul,no_inplace}(learning_rate, TensorConstant{1.0})" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397324049" />
+ <parent id="1" hash="8753397329181" />
+</parents>
+<inputs>
+ <list level="1" variable="learning_rate" hash="8753397324049">
+  <real value="0.001000" dtype="float32" />
+ </list>
+ <list level="1" variable="TensorConstant{1.0}" hash="8753397329181">
+  <real value="1.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329165">
+  <real value="0.001000" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329197" name="Elemwise{mul,no_inplace}(SGD[features], DimShuffle{x,0}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397324041" />
+ <parent id="1" hash="8753397329157" />
+</parents>
+<inputs>
+ <list level="1" variable="SGD[features]" hash="8753397324041">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.725967|0.50397|-0.205704</part>
+   <part address="1">0.979985|-1.3807|-1.09573</part>
+   <part address="2">-3.37775|0.486068|2.21119</part>
+   <part address="3">0.977411|0.484334|-1.01141</part>
+   <part address="4">1.19279|-0.172158|1.61974</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="DimShuffle{x,0}.0" hash="8753397329157">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.268448|-0.263953|-0.616243</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329193">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.194884|-0.133024|0.126763</part>
+   <part address="1">0.263075|0.364439|0.675236</part>
+   <part address="2">-0.906751|-0.128299|-1.36263</part>
+   <part address="3">0.262384|-0.127841|0.623276</part>
+   <part address="4">0.320201|0.0454415|-0.99815</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329205" name="DimShuffle{x}(Elemwise{mul,no_inplace}.0)" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329165" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329165">
+  <real value="0.001000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x}.0" hash="8753397329201">
+  <ndarray shape="1" dtype="float32">
+   <part address="">0.001</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329213" name="Softmax(Elemwise{mul,no_inplace}.0)" op="theano.tensor.nnet.nnet.Softmax" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329193" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329193">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.194884|-0.133024|0.126763</part>
+   <part address="1">0.263075|0.364439|0.675236</part>
+   <part address="2">-0.906751|-0.128299|-1.36263</part>
+   <part address="3">0.262384|-0.127841|0.623276</part>
+   <part address="4">0.320201|0.0454415|-0.99815</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Softmax.0" hash="8753397329209">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.376708|0.271391|0.351901</part>
+   <part address="1">0.276491|0.305987|0.417523</part>
+   <part address="2">0.26233|0.571381|0.166289</part>
+   <part address="3">0.321387|0.217548|0.461065</part>
+   <part address="4">0.493259|0.374756|0.131984</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329221" name="Softmax(Elemwise{mul,no_inplace}.0)" op="theano.tensor.nnet.nnet.Softmax" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329193" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329193">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.194884|-0.133024|0.126763</part>
+   <part address="1">0.263075|0.364439|0.675236</part>
+   <part address="2">-0.906751|-0.128299|-1.36263</part>
+   <part address="3">0.262384|-0.127841|0.623276</part>
+   <part address="4">0.320201|0.0454415|-0.99815</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Softmax.0" hash="8753397329217">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.376708|0.271391|0.351901</part>
+   <part address="1">0.276491|0.305987|0.417523</part>
+   <part address="2">0.26233|0.571381|0.166289</part>
+   <part address="3">0.321387|0.217548|0.461065</part>
+   <part address="4">0.493259|0.374756|0.131984</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329229" name="Elemwise{sub,no_inplace}(Softmax.0, SGD[targets])" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329217" />
+ <parent id="1" hash="8753397324281" />
+</parents>
+<inputs>
+ <list level="1" variable="Softmax.0" hash="8753397329217">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.376708|0.271391|0.351901</part>
+   <part address="1">0.276491|0.305987|0.417523</part>
+   <part address="2">0.26233|0.571381|0.166289</part>
+   <part address="3">0.321387|0.217548|0.461065</part>
+   <part address="4">0.493259|0.374756|0.131984</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="SGD[targets]" hash="8753397324281">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0|1.0|0.0</part>
+   <part address="1">0.0|0.0|1.0</part>
+   <part address="2">1.0|0.0|0.0</part>
+   <part address="3">1.0|0.0|0.0</part>
+   <part address="4">1.0|0.0|0.0</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{sub,no_inplace}.0" hash="8753397329225">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.376708|-0.728609|0.351901</part>
+   <part address="1">0.276491|0.305987|-0.582477</part>
+   <part address="2">-0.73767|0.571381|0.166289</part>
+   <part address="3">-0.678613|0.217548|0.461065</part>
+   <part address="4">-0.506741|0.374756|0.131984</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329237" name="Elemwise{sqr,no_inplace}(Elemwise{sub,no_inplace}.0)" op="theano.tensor.elemwise.Elemwise" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329225" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{sub,no_inplace}.0" hash="8753397329225">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.376708|-0.728609|0.351901</part>
+   <part address="1">0.276491|0.305987|-0.582477</part>
+   <part address="2">-0.73767|0.571381|0.166289</part>
+   <part address="3">-0.678613|0.217548|0.461065</part>
+   <part address="4">-0.506741|0.374756|0.131984</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{sqr,no_inplace}.0" hash="8753397329233">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.141909|0.530871|0.123834</part>
+   <part address="1">0.0764471|0.0936279|0.33928</part>
+   <part address="2">0.544157|0.326476|0.027652</part>
+   <part address="3">0.460516|0.0473273|0.212581</part>
+   <part address="4">0.256786|0.140442|0.0174199</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329245" name="Shape(Elemwise{sqr,no_inplace}.0)" op="theano.compile.ops.Shape" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329233" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{sqr,no_inplace}.0" hash="8753397329233">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.141909|0.530871|0.123834</part>
+   <part address="1">0.0764471|0.0936279|0.33928</part>
+   <part address="2">0.544157|0.326476|0.027652</part>
+   <part address="3">0.460516|0.0473273|0.212581</part>
+   <part address="4">0.256786|0.140442|0.0174199</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Shape.0" hash="8753397329241">
+  <ndarray shape="2" dtype="int64">
+   <part address="">5|3</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329253" name="Sum{acc_dtype=float64}(Elemwise{sqr,no_inplace}.0)" op="theano.tensor.elemwise.Sum" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329233" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{sqr,no_inplace}.0" hash="8753397329233">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.141909|0.530871|0.123834</part>
+   <part address="1">0.0764471|0.0936279|0.33928</part>
+   <part address="2">0.544157|0.326476|0.027652</part>
+   <part address="3">0.460516|0.0473273|0.212581</part>
+   <part address="4">0.256786|0.140442|0.0174199</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Sum{acc_dtype=float64}.0" hash="8753397329249">
+  <real value="3.339325" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329261" name="Elemwise{Cast{float32}}(Shape.0)" op="theano.tensor.elemwise.Elemwise" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329241" />
+</parents>
+<inputs>
+ <list level="1" variable="Shape.0" hash="8753397329241">
+  <ndarray shape="2" dtype="int64">
+   <part address="">5|3</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{Cast{float32}}.0" hash="8753397329257">
+  <ndarray shape="2" dtype="float32">
+   <part address="">5.0|3.0</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329269" name="Subtensor{int64}(Elemwise{Cast{float32}}.0, Constant{0})" op="theano.tensor.subtensor.Subtensor" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329257" />
+ <parent id="1" hash="8753397329265" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{Cast{float32}}.0" hash="8753397329257">
+  <ndarray shape="2" dtype="float32">
+   <part address="">5.0|3.0</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Constant{0}" hash="8753397329265">
+  <value>0</value>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329189">
+  <real value="5.000000" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329281" name="Subtensor{int64}(Elemwise{Cast{float32}}.0, Constant{1})" op="theano.tensor.subtensor.Subtensor" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329257" />
+ <parent id="1" hash="8753397329277" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{Cast{float32}}.0" hash="8753397329257">
+  <ndarray shape="2" dtype="float32">
+   <part address="">5.0|3.0</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Constant{1}" hash="8753397329277">
+  <value>1</value>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329177">
+  <real value="3.000000" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329293" name="Elemwise{true_div,no_inplace}(Sum{acc_dtype=float64}.0, Subtensor{int64}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329249" />
+ <parent id="1" hash="8753397329189" />
+</parents>
+<inputs>
+ <list level="1" variable="Sum{acc_dtype=float64}.0" hash="8753397329249">
+  <real value="3.339325" dtype="float32" />
+ </list>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329189">
+  <real value="5.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{true_div,no_inplace}.0" hash="8753397329289">
+  <real value="0.667865" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329301" name="Elemwise{true_div,no_inplace}(Elemwise{true_div,no_inplace}.0, Subtensor{int64}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329289" />
+ <parent id="1" hash="8753397329177" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{true_div,no_inplace}.0" hash="8753397329289">
+  <real value="0.667865" dtype="float32" />
+ </list>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329177">
+  <real value="3.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{true_div,no_inplace}.0" hash="8753397329297">
+  <real value="0.222622" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329309" name="Elemwise{second,no_inplace}(Elemwise{true_div,no_inplace}.0, TensorConstant{1.0})" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329297" />
+ <parent id="1" hash="8753397329181" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{true_div,no_inplace}.0" hash="8753397329297">
+  <real value="0.222622" dtype="float32" />
+ </list>
+ <list level="1" variable="TensorConstant{1.0}" hash="8753397329181">
+  <real value="1.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{second,no_inplace}.0" hash="8753397329305">
+  <real value="1.000000" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329317" name="Elemwise{true_div}(Elemwise{second,no_inplace}.0, Subtensor{int64}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329305" />
+ <parent id="1" hash="8753397329177" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{second,no_inplace}.0" hash="8753397329305">
+  <real value="1.000000" dtype="float32" />
+ </list>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329177">
+  <real value="3.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{true_div}.0" hash="8753397329313">
+  <real value="0.333333" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329325" name="Elemwise{true_div}(Elemwise{true_div}.0, Subtensor{int64}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329313" />
+ <parent id="1" hash="8753397329189" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{true_div}.0" hash="8753397329313">
+  <real value="0.333333" dtype="float32" />
+ </list>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329189">
+  <real value="5.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{true_div}.0" hash="8753397329321">
+  <real value="0.066667" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329333" name="DimShuffle{x,x}(Elemwise{true_div}.0)" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329321" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{true_div}.0" hash="8753397329321">
+  <real value="0.066667" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x,x}.0" hash="8753397329329">
+  <ndarray shape="1,1" dtype="float32">
+   <part address="0">0.0666667</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329341" name="Elemwise{second}(Elemwise{sqr,no_inplace}.0, DimShuffle{x,x}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329233" />
+ <parent id="1" hash="8753397329329" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{sqr,no_inplace}.0" hash="8753397329233">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.141909|0.530871|0.123834</part>
+   <part address="1">0.0764471|0.0936279|0.33928</part>
+   <part address="2">0.544157|0.326476|0.027652</part>
+   <part address="3">0.460516|0.0473273|0.212581</part>
+   <part address="4">0.256786|0.140442|0.0174199</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="DimShuffle{x,x}.0" hash="8753397329329">
+  <ndarray shape="1,1" dtype="float32">
+   <part address="0">0.0666667</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{second}.0" hash="8753397329337">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0666667|0.0666667|0.0666667</part>
+   <part address="1">0.0666667|0.0666667|0.0666667</part>
+   <part address="2">0.0666667|0.0666667|0.0666667</part>
+   <part address="3">0.0666667|0.0666667|0.0666667</part>
+   <part address="4">0.0666667|0.0666667|0.0666667</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329349" name="Elemwise{mul}(Elemwise{second}.0, Elemwise{sub,no_inplace}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329337" />
+ <parent id="1" hash="8753397329225" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{second}.0" hash="8753397329337">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0666667|0.0666667|0.0666667</part>
+   <part address="1">0.0666667|0.0666667|0.0666667</part>
+   <part address="2">0.0666667|0.0666667|0.0666667</part>
+   <part address="3">0.0666667|0.0666667|0.0666667</part>
+   <part address="4">0.0666667|0.0666667|0.0666667</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Elemwise{sub,no_inplace}.0" hash="8753397329225">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.376708|-0.728609|0.351901</part>
+   <part address="1">0.276491|0.305987|-0.582477</part>
+   <part address="2">-0.73767|0.571381|0.166289</part>
+   <part address="3">-0.678613|0.217548|0.461065</part>
+   <part address="4">-0.506741|0.374756|0.131984</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329345">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0251139|-0.0485739|0.0234601</part>
+   <part address="1">0.0184327|0.0203991|-0.0388318</part>
+   <part address="2">-0.049178|0.0380921|0.0110859</part>
+   <part address="3">-0.0452409|0.0145032|0.0307376</part>
+   <part address="4">-0.0337827|0.0249837|0.00879896</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329357" name="Elemwise{mul}(Elemwise{mul}.0, DimShuffle{x,x}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329345" />
+ <parent id="1" hash="8753397329161" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329345">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0251139|-0.0485739|0.0234601</part>
+   <part address="1">0.0184327|0.0203991|-0.0388318</part>
+   <part address="2">-0.049178|0.0380921|0.0110859</part>
+   <part address="3">-0.0452409|0.0145032|0.0307376</part>
+   <part address="4">-0.0337827|0.0249837|0.00879896</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="DimShuffle{x,x}.0" hash="8753397329161">
+  <ndarray shape="1,1" dtype="int8">
+   <part address="0">2</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329353">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0502277|-0.0971478|0.0469201</part>
+   <part address="1">0.0368654|0.0407982|-0.0776637</part>
+   <part address="2">-0.098356|0.0761841|0.0221719</part>
+   <part address="3">-0.0904817|0.0290065|0.0614753</part>
+   <part address="4">-0.0675654|0.0499675|0.0175979</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329365" name="SoftmaxGrad(Elemwise{mul}.0, Softmax.0)" op="theano.tensor.nnet.nnet.SoftmaxGrad" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329353" />
+ <parent id="1" hash="8753397329209" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329353">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0502277|-0.0971478|0.0469201</part>
+   <part address="1">0.0368654|0.0407982|-0.0776637</part>
+   <part address="2">-0.098356|0.0761841|0.0221719</part>
+   <part address="3">-0.0904817|0.0290065|0.0614753</part>
+   <part address="4">-0.0675654|0.0499675|0.0175979</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Softmax.0" hash="8753397329209">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.376708|0.271391|0.351901</part>
+   <part address="1">0.276491|0.305987|0.417523</part>
+   <part address="2">0.26233|0.571381|0.166289</part>
+   <part address="3">0.321387|0.217548|0.461065</part>
+   <part address="4">0.493259|0.374756|0.131984</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="SoftmaxGrad.0" hash="8753397329361">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0155054|-0.0288259|0.0133204</part>
+   <part address="1">0.0128886|0.015467|-0.0283556</part>
+   <part address="2">-0.0314196|0.0312938|0.000125803</part>
+   <part address="3">-0.0308713|0.00509754|0.0257738</part>
+   <part address="4">-0.0272705|0.0233273|0.00394329</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329373" name="Elemwise{mul}(SoftmaxGrad.0, SGD[features])" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329361" />
+ <parent id="1" hash="8753397324041" />
+</parents>
+<inputs>
+ <list level="1" variable="SoftmaxGrad.0" hash="8753397329361">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0155054|-0.0288259|0.0133204</part>
+   <part address="1">0.0128886|0.015467|-0.0283556</part>
+   <part address="2">-0.0314196|0.0312938|0.000125803</part>
+   <part address="3">-0.0308713|0.00509754|0.0257738</part>
+   <part address="4">-0.0272705|0.0233273|0.00394329</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="SGD[features]" hash="8753397324041">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.725967|0.50397|-0.205704</part>
+   <part address="1">0.979985|-1.3807|-1.09573</part>
+   <part address="2">-3.37775|0.486068|2.21119</part>
+   <part address="3">0.977411|0.484334|-1.01141</part>
+   <part address="4">1.19279|-0.172158|1.61974</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329369">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0112564|-0.0145274|-0.00274006</part>
+   <part address="1">0.0126307|-0.0213553|0.0310701</part>
+   <part address="2">0.106128|0.0152109|0.000278175</part>
+   <part address="3">-0.0301739|0.00246891|-0.0260679</part>
+   <part address="4">-0.032528|-0.00401597|0.00638708</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329381" name="Sum{axis=[0], acc_dtype=float64}(Elemwise{mul}.0)" op="theano.tensor.elemwise.Sum" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329369" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329369">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0112564|-0.0145274|-0.00274006</part>
+   <part address="1">0.0126307|-0.0213553|0.0310701</part>
+   <part address="2">0.106128|0.0152109|0.000278175</part>
+   <part address="3">-0.0301739|0.00246891|-0.0260679</part>
+   <part address="4">-0.032528|-0.00401597|0.00638708</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Sum{axis=[0], acc_dtype=float64}.0" hash="8753397329377">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.067313|-0.0222187|0.00892742</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329389" name="DimShuffle{x,0}(Sum{axis=[0], acc_dtype=float64}.0)" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329377" />
+</parents>
+<inputs>
+ <list level="1" variable="Sum{axis=[0], acc_dtype=float64}.0" hash="8753397329377">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.067313|-0.0222187|0.00892742</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x,0}.0" hash="8753397329385">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.067313|-0.0222187|0.00892742</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329397" name="Elemwise{identity}(DimShuffle{x,0}.0)" op="theano.tensor.elemwise.Elemwise" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329385" />
+</parents>
+<inputs>
+ <list level="1" variable="DimShuffle{x,0}.0" hash="8753397329385">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.067313|-0.0222187|0.00892742</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{identity}.0" hash="8753397329393">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.067313|-0.0222187|0.00892742</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329405" name="DimShuffle{1}(Elemwise{identity}.0)" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329393" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{identity}.0" hash="8753397329393">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.067313|-0.0222187|0.00892742</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="grad(objective, sgd_params[0])" hash="8753397329401">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.067313|-0.0222187|0.00892742</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329285" name="Elemwise{mul,no_inplace}(DimShuffle{x}.0, grad(objective, sgd_params[0]))" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329201" />
+ <parent id="1" hash="8753397329401" />
+</parents>
+<inputs>
+ <list level="1" variable="DimShuffle{x}.0" hash="8753397329201">
+  <ndarray shape="1" dtype="float32">
+   <part address="">0.001</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="grad(objective, sgd_params[0])" hash="8753397329401">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.067313|-0.0222187|0.00892742</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329273">
+  <ndarray shape="3" dtype="float32">
+   <part address="">6.7313e-05|-2.22187e-05|8.92742e-06</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397298961" name="Elemwise{sub,no_inplace}(sgd_params[0], Elemwise{mul,no_inplace}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397324285" />
+ <parent id="1" hash="8753397329273" />
+</parents>
+<inputs>
+ <list level="1" variable="sgd_params[0]" hash="8753397324285">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.268448|-0.263953|-0.616243</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329273">
+  <ndarray shape="3" dtype="float32">
+   <part address="">6.7313e-05|-2.22187e-05|8.92742e-06</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="sgd_update(sgd_params[0])" hash="8753397298957">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.26838|-0.26393|-0.616252</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397324045" name="DimShuffle{x,0}(sgd_params[0])" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397324285" />
+</parents>
+<inputs>
+ <list level="1" variable="sgd_params[0]" hash="8753397324285">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.26838|-0.26393|-0.616252</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x,0}.0" hash="8753397329157">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.26838|-0.26393|-0.616252</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329173" name="DimShuffle{x,x}(TensorConstant{2})" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329169" />
+</parents>
+<inputs>
+ <list level="1" variable="TensorConstant{2}" hash="8753397329169">
+  <integer value="2" dtype="int8" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x,x}.0" hash="8753397329161">
+  <ndarray shape="1,1" dtype="int8">
+   <part address="0">2</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329185" name="Elemwise{mul,no_inplace}(learning_rate, TensorConstant{1.0})" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397324049" />
+ <parent id="1" hash="8753397329181" />
+</parents>
+<inputs>
+ <list level="1" variable="learning_rate" hash="8753397324049">
+  <real value="0.001000" dtype="float32" />
+ </list>
+ <list level="1" variable="TensorConstant{1.0}" hash="8753397329181">
+  <real value="1.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329165">
+  <real value="0.001000" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329197" name="Elemwise{mul,no_inplace}(SGD[features], DimShuffle{x,0}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397324041" />
+ <parent id="1" hash="8753397329157" />
+</parents>
+<inputs>
+ <list level="1" variable="SGD[features]" hash="8753397324041">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">-0.98754|0.325674|0.830971</part>
+   <part address="1">-0.499834|1.15209|-0.789341</part>
+   <part address="2">-0.978999|-2.00317|0.757207</part>
+   <part address="3">0.475878|-0.273451|-0.371774</part>
+   <part address="4">0.706933|1.08736|1.20339</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="DimShuffle{x,0}.0" hash="8753397329157">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.26838|-0.26393|-0.616252</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329193">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">-0.265036|-0.0859554|-0.512087</part>
+   <part address="1">-0.134146|-0.304072|0.486433</part>
+   <part address="2">-0.262744|0.528697|-0.46663</part>
+   <part address="3">0.127716|0.0721721|0.229107</part>
+   <part address="4">0.189727|-0.286986|-0.741589</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329205" name="DimShuffle{x}(Elemwise{mul,no_inplace}.0)" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329165" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329165">
+  <real value="0.001000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x}.0" hash="8753397329201">
+  <ndarray shape="1" dtype="float32">
+   <part address="">0.001</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329213" name="Softmax(Elemwise{mul,no_inplace}.0)" op="theano.tensor.nnet.nnet.Softmax" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329193" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329193">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">-0.265036|-0.0859554|-0.512087</part>
+   <part address="1">-0.134146|-0.304072|0.486433</part>
+   <part address="2">-0.262744|0.528697|-0.46663</part>
+   <part address="3">0.127716|0.0721721|0.229107</part>
+   <part address="4">0.189727|-0.286986|-0.741589</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Softmax.0" hash="8753397329209">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.335884|0.401757|0.262359</part>
+   <part address="1">0.269998|0.227805|0.502197</part>
+   <part address="2">0.248625|0.548608|0.202767</part>
+   <part address="3">0.327581|0.309882|0.362537</part>
+   <part address="4">0.496314|0.308122|0.195565</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329221" name="Softmax(Elemwise{mul,no_inplace}.0)" op="theano.tensor.nnet.nnet.Softmax" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329193" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329193">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">-0.265036|-0.0859554|-0.512087</part>
+   <part address="1">-0.134146|-0.304072|0.486433</part>
+   <part address="2">-0.262744|0.528697|-0.46663</part>
+   <part address="3">0.127716|0.0721721|0.229107</part>
+   <part address="4">0.189727|-0.286986|-0.741589</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Softmax.0" hash="8753397329217">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.335884|0.401757|0.262359</part>
+   <part address="1">0.269998|0.227805|0.502197</part>
+   <part address="2">0.248625|0.548608|0.202767</part>
+   <part address="3">0.327581|0.309882|0.362537</part>
+   <part address="4">0.496314|0.308122|0.195565</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329229" name="Elemwise{sub,no_inplace}(Softmax.0, SGD[targets])" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329217" />
+ <parent id="1" hash="8753397324281" />
+</parents>
+<inputs>
+ <list level="1" variable="Softmax.0" hash="8753397329217">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.335884|0.401757|0.262359</part>
+   <part address="1">0.269998|0.227805|0.502197</part>
+   <part address="2">0.248625|0.548608|0.202767</part>
+   <part address="3">0.327581|0.309882|0.362537</part>
+   <part address="4">0.496314|0.308122|0.195565</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="SGD[targets]" hash="8753397324281">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0|1.0|0.0</part>
+   <part address="1">0.0|0.0|1.0</part>
+   <part address="2">0.0|0.0|1.0</part>
+   <part address="3">0.0|0.0|1.0</part>
+   <part address="4">0.0|1.0|0.0</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{sub,no_inplace}.0" hash="8753397329225">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.335884|-0.598243|0.262359</part>
+   <part address="1">0.269998|0.227805|-0.497803</part>
+   <part address="2">0.248625|0.548608|-0.797233</part>
+   <part address="3">0.327581|0.309882|-0.637463</part>
+   <part address="4">0.496314|-0.691878|0.195565</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329237" name="Elemwise{sqr,no_inplace}(Elemwise{sub,no_inplace}.0)" op="theano.tensor.elemwise.Elemwise" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329225" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{sub,no_inplace}.0" hash="8753397329225">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.335884|-0.598243|0.262359</part>
+   <part address="1">0.269998|0.227805|-0.497803</part>
+   <part address="2">0.248625|0.548608|-0.797233</part>
+   <part address="3">0.327581|0.309882|-0.637463</part>
+   <part address="4">0.496314|-0.691878|0.195565</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{sqr,no_inplace}.0" hash="8753397329233">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.112818|0.357895|0.0688324</part>
+   <part address="1">0.072899|0.0518949|0.247808</part>
+   <part address="2">0.0618142|0.300971|0.63558</part>
+   <part address="3">0.107309|0.0960268|0.406359</part>
+   <part address="4">0.246327|0.478696|0.0382456</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329245" name="Shape(Elemwise{sqr,no_inplace}.0)" op="theano.compile.ops.Shape" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329233" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{sqr,no_inplace}.0" hash="8753397329233">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.112818|0.357895|0.0688324</part>
+   <part address="1">0.072899|0.0518949|0.247808</part>
+   <part address="2">0.0618142|0.300971|0.63558</part>
+   <part address="3">0.107309|0.0960268|0.406359</part>
+   <part address="4">0.246327|0.478696|0.0382456</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Shape.0" hash="8753397329241">
+  <ndarray shape="2" dtype="int64">
+   <part address="">5|3</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329253" name="Sum{acc_dtype=float64}(Elemwise{sqr,no_inplace}.0)" op="theano.tensor.elemwise.Sum" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329233" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{sqr,no_inplace}.0" hash="8753397329233">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.112818|0.357895|0.0688324</part>
+   <part address="1">0.072899|0.0518949|0.247808</part>
+   <part address="2">0.0618142|0.300971|0.63558</part>
+   <part address="3">0.107309|0.0960268|0.406359</part>
+   <part address="4">0.246327|0.478696|0.0382456</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Sum{acc_dtype=float64}.0" hash="8753397329249">
+  <real value="3.283476" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329261" name="Elemwise{Cast{float32}}(Shape.0)" op="theano.tensor.elemwise.Elemwise" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329241" />
+</parents>
+<inputs>
+ <list level="1" variable="Shape.0" hash="8753397329241">
+  <ndarray shape="2" dtype="int64">
+   <part address="">5|3</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{Cast{float32}}.0" hash="8753397329257">
+  <ndarray shape="2" dtype="float32">
+   <part address="">5.0|3.0</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329269" name="Subtensor{int64}(Elemwise{Cast{float32}}.0, Constant{0})" op="theano.tensor.subtensor.Subtensor" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329257" />
+ <parent id="1" hash="8753397329265" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{Cast{float32}}.0" hash="8753397329257">
+  <ndarray shape="2" dtype="float32">
+   <part address="">5.0|3.0</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Constant{0}" hash="8753397329265">
+  <value>0</value>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329189">
+  <real value="5.000000" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329281" name="Subtensor{int64}(Elemwise{Cast{float32}}.0, Constant{1})" op="theano.tensor.subtensor.Subtensor" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329257" />
+ <parent id="1" hash="8753397329277" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{Cast{float32}}.0" hash="8753397329257">
+  <ndarray shape="2" dtype="float32">
+   <part address="">5.0|3.0</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Constant{1}" hash="8753397329277">
+  <value>1</value>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329177">
+  <real value="3.000000" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329293" name="Elemwise{true_div,no_inplace}(Sum{acc_dtype=float64}.0, Subtensor{int64}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329249" />
+ <parent id="1" hash="8753397329189" />
+</parents>
+<inputs>
+ <list level="1" variable="Sum{acc_dtype=float64}.0" hash="8753397329249">
+  <real value="3.283476" dtype="float32" />
+ </list>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329189">
+  <real value="5.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{true_div,no_inplace}.0" hash="8753397329289">
+  <real value="0.656695" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329301" name="Elemwise{true_div,no_inplace}(Elemwise{true_div,no_inplace}.0, Subtensor{int64}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329289" />
+ <parent id="1" hash="8753397329177" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{true_div,no_inplace}.0" hash="8753397329289">
+  <real value="0.656695" dtype="float32" />
+ </list>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329177">
+  <real value="3.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{true_div,no_inplace}.0" hash="8753397329297">
+  <real value="0.218898" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329309" name="Elemwise{second,no_inplace}(Elemwise{true_div,no_inplace}.0, TensorConstant{1.0})" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329297" />
+ <parent id="1" hash="8753397329181" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{true_div,no_inplace}.0" hash="8753397329297">
+  <real value="0.218898" dtype="float32" />
+ </list>
+ <list level="1" variable="TensorConstant{1.0}" hash="8753397329181">
+  <real value="1.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{second,no_inplace}.0" hash="8753397329305">
+  <real value="1.000000" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329317" name="Elemwise{true_div}(Elemwise{second,no_inplace}.0, Subtensor{int64}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329305" />
+ <parent id="1" hash="8753397329177" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{second,no_inplace}.0" hash="8753397329305">
+  <real value="1.000000" dtype="float32" />
+ </list>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329177">
+  <real value="3.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{true_div}.0" hash="8753397329313">
+  <real value="0.333333" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329325" name="Elemwise{true_div}(Elemwise{true_div}.0, Subtensor{int64}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329313" />
+ <parent id="1" hash="8753397329189" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{true_div}.0" hash="8753397329313">
+  <real value="0.333333" dtype="float32" />
+ </list>
+ <list level="1" variable="Subtensor{int64}.0" hash="8753397329189">
+  <real value="5.000000" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{true_div}.0" hash="8753397329321">
+  <real value="0.066667" dtype="float32" />
+ </list>
+</outputs>
+</node>
+<node hash="8753397329333" name="DimShuffle{x,x}(Elemwise{true_div}.0)" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329321" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{true_div}.0" hash="8753397329321">
+  <real value="0.066667" dtype="float32" />
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x,x}.0" hash="8753397329329">
+  <ndarray shape="1,1" dtype="float32">
+   <part address="0">0.0666667</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329341" name="Elemwise{second}(Elemwise{sqr,no_inplace}.0, DimShuffle{x,x}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329233" />
+ <parent id="1" hash="8753397329329" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{sqr,no_inplace}.0" hash="8753397329233">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.112818|0.357895|0.0688324</part>
+   <part address="1">0.072899|0.0518949|0.247808</part>
+   <part address="2">0.0618142|0.300971|0.63558</part>
+   <part address="3">0.107309|0.0960268|0.406359</part>
+   <part address="4">0.246327|0.478696|0.0382456</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="DimShuffle{x,x}.0" hash="8753397329329">
+  <ndarray shape="1,1" dtype="float32">
+   <part address="0">0.0666667</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{second}.0" hash="8753397329337">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0666667|0.0666667|0.0666667</part>
+   <part address="1">0.0666667|0.0666667|0.0666667</part>
+   <part address="2">0.0666667|0.0666667|0.0666667</part>
+   <part address="3">0.0666667|0.0666667|0.0666667</part>
+   <part address="4">0.0666667|0.0666667|0.0666667</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329349" name="Elemwise{mul}(Elemwise{second}.0, Elemwise{sub,no_inplace}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329337" />
+ <parent id="1" hash="8753397329225" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{second}.0" hash="8753397329337">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0666667|0.0666667|0.0666667</part>
+   <part address="1">0.0666667|0.0666667|0.0666667</part>
+   <part address="2">0.0666667|0.0666667|0.0666667</part>
+   <part address="3">0.0666667|0.0666667|0.0666667</part>
+   <part address="4">0.0666667|0.0666667|0.0666667</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Elemwise{sub,no_inplace}.0" hash="8753397329225">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.335884|-0.598243|0.262359</part>
+   <part address="1">0.269998|0.227805|-0.497803</part>
+   <part address="2">0.248625|0.548608|-0.797233</part>
+   <part address="3">0.327581|0.309882|-0.637463</part>
+   <part address="4">0.496314|-0.691878|0.195565</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329345">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0223923|-0.0398829|0.0174906</part>
+   <part address="1">0.0179999|0.015187|-0.0331868</part>
+   <part address="2">0.016575|0.0365739|-0.0531489</part>
+   <part address="3">0.0218387|0.0206588|-0.0424975</part>
+   <part address="4">0.0330876|-0.0461252|0.0130377</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329357" name="Elemwise{mul}(Elemwise{mul}.0, DimShuffle{x,x}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329345" />
+ <parent id="1" hash="8753397329161" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329345">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0223923|-0.0398829|0.0174906</part>
+   <part address="1">0.0179999|0.015187|-0.0331868</part>
+   <part address="2">0.016575|0.0365739|-0.0531489</part>
+   <part address="3">0.0218387|0.0206588|-0.0424975</part>
+   <part address="4">0.0330876|-0.0461252|0.0130377</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="DimShuffle{x,x}.0" hash="8753397329161">
+  <ndarray shape="1,1" dtype="int8">
+   <part address="0">2</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329353">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0447845|-0.0797658|0.0349812</part>
+   <part address="1">0.0359997|0.0303739|-0.0663737</part>
+   <part address="2">0.0331499|0.0731478|-0.106298</part>
+   <part address="3">0.0436775|0.0413176|-0.0849951</part>
+   <part address="4">0.0661751|-0.0922504|0.0260753</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329365" name="SoftmaxGrad(Elemwise{mul}.0, Softmax.0)" op="theano.tensor.nnet.nnet.SoftmaxGrad" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329353" />
+ <parent id="1" hash="8753397329209" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329353">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0447845|-0.0797658|0.0349812</part>
+   <part address="1">0.0359997|0.0303739|-0.0663737</part>
+   <part address="2">0.0331499|0.0731478|-0.106298</part>
+   <part address="3">0.0436775|0.0413176|-0.0849951</part>
+   <part address="4">0.0661751|-0.0922504|0.0260753</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Softmax.0" hash="8753397329209">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.335884|0.401757|0.262359</part>
+   <part address="1">0.269998|0.227805|0.502197</part>
+   <part address="2">0.248625|0.548608|0.202767</part>
+   <part address="3">0.327581|0.309882|0.362537</part>
+   <part address="4">0.496314|0.308122|0.195565</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="SoftmaxGrad.0" hash="8753397329361">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0176712|-0.0289021|0.011231</part>
+   <part address="1">0.0142271|0.0107222|-0.0249493</part>
+   <part address="2">0.00157436|0.0254171|-0.0269914</part>
+   <part address="3">0.0155207|0.0139509|-0.0294716</part>
+   <part address="4">0.0281194|-0.0313573|0.00323789</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329373" name="Elemwise{mul}(SoftmaxGrad.0, SGD[features])" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329361" />
+ <parent id="1" hash="8753397324041" />
+</parents>
+<inputs>
+ <list level="1" variable="SoftmaxGrad.0" hash="8753397329361">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">0.0176712|-0.0289021|0.011231</part>
+   <part address="1">0.0142271|0.0107222|-0.0249493</part>
+   <part address="2">0.00157436|0.0254171|-0.0269914</part>
+   <part address="3">0.0155207|0.0139509|-0.0294716</part>
+   <part address="4">0.0281194|-0.0313573|0.00323789</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="SGD[features]" hash="8753397324041">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">-0.98754|0.325674|0.830971</part>
+   <part address="1">-0.499834|1.15209|-0.789341</part>
+   <part address="2">-0.978999|-2.00317|0.757207</part>
+   <part address="3">0.475878|-0.273451|-0.371774</part>
+   <part address="4">0.706933|1.08736|1.20339</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329369">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">-0.017451|-0.00941269|0.00933261</part>
+   <part address="1">-0.00711117|0.0123529|0.0196935</part>
+   <part address="2">-0.00154129|-0.0509146|-0.0204381</part>
+   <part address="3">0.00738598|-0.00381488|0.0109568</part>
+   <part address="4">0.0198785|-0.0340965|0.00389644</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329381" name="Sum{axis=[0], acc_dtype=float64}(Elemwise{mul}.0)" op="theano.tensor.elemwise.Sum" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329369" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{mul}.0" hash="8753397329369">
+  <ndarray shape="5,3" dtype="float32">
+   <part address="0">-0.017451|-0.00941269|0.00933261</part>
+   <part address="1">-0.00711117|0.0123529|0.0196935</part>
+   <part address="2">-0.00154129|-0.0509146|-0.0204381</part>
+   <part address="3">0.00738598|-0.00381488|0.0109568</part>
+   <part address="4">0.0198785|-0.0340965|0.00389644</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Sum{axis=[0], acc_dtype=float64}.0" hash="8753397329377">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.00116106|-0.0858857|0.0234412</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329389" name="DimShuffle{x,0}(Sum{axis=[0], acc_dtype=float64}.0)" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329377" />
+</parents>
+<inputs>
+ <list level="1" variable="Sum{axis=[0], acc_dtype=float64}.0" hash="8753397329377">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.00116106|-0.0858857|0.0234412</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="DimShuffle{x,0}.0" hash="8753397329385">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.00116106|-0.0858857|0.0234412</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329397" name="Elemwise{identity}(DimShuffle{x,0}.0)" op="theano.tensor.elemwise.Elemwise" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329385" />
+</parents>
+<inputs>
+ <list level="1" variable="DimShuffle{x,0}.0" hash="8753397329385">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.00116106|-0.0858857|0.0234412</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{identity}.0" hash="8753397329393">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.00116106|-0.0858857|0.0234412</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329405" name="DimShuffle{1}(Elemwise{identity}.0)" op="theano.tensor.elemwise.DimShuffle" inputs="1" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329393" />
+</parents>
+<inputs>
+ <list level="1" variable="Elemwise{identity}.0" hash="8753397329393">
+  <ndarray shape="1,3" dtype="float32">
+   <part address="0">0.00116106|-0.0858857|0.0234412</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="grad(objective, sgd_params[0])" hash="8753397329401">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.00116106|-0.0858857|0.0234412</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397329285" name="Elemwise{mul,no_inplace}(DimShuffle{x}.0, grad(objective, sgd_params[0]))" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397329201" />
+ <parent id="1" hash="8753397329401" />
+</parents>
+<inputs>
+ <list level="1" variable="DimShuffle{x}.0" hash="8753397329201">
+  <ndarray shape="1" dtype="float32">
+   <part address="">0.001</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="grad(objective, sgd_params[0])" hash="8753397329401">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.00116106|-0.0858857|0.0234412</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329273">
+  <ndarray shape="3" dtype="float32">
+   <part address="">1.16106e-06|-8.58857e-05|2.34412e-05</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+<node hash="8753397298961" name="Elemwise{sub,no_inplace}(sgd_params[0], Elemwise{mul,no_inplace}.0)" op="theano.tensor.elemwise.Elemwise" inputs="2" outputs="1">
+<parents>
+ <parent id="0" hash="8753397324285" />
+ <parent id="1" hash="8753397329273" />
+</parents>
+<inputs>
+ <list level="1" variable="sgd_params[0]" hash="8753397324285">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.26838|-0.26393|-0.616252</part>
+  </ndarray>
+ </list>
+ <list level="1" variable="Elemwise{mul,no_inplace}.0" hash="8753397329273">
+  <ndarray shape="3" dtype="float32">
+   <part address="">1.16106e-06|-8.58857e-05|2.34412e-05</part>
+  </ndarray>
+ </list>
+</inputs>
+<outputs>
+ <list level="1" variable="sgd_update(sgd_params[0])" hash="8753397298957">
+  <ndarray shape="3" dtype="float32">
+   <part address="">0.268379|-0.263845|-0.616275</part>
+  </ndarray>
+ </list>
+</outputs>
+</node>
+</nodes>
+</xmlvalmode>
