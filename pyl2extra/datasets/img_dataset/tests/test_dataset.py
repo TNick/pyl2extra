@@ -424,7 +424,7 @@ class TestImgDatasetYamlTrain():
 
         # read yaml file and place variables inside
         self.yaml_file = os.path.join(os.path.dirname(__file__),
-                                      'train_dataset.yaml')
+                                      'train_dataset_cpu.yaml')
         with open(self.yaml_file, 'rt') as fhand:
             self.yaml_content = fhand.read()
         self.yaml_content = self.yaml_content % (csv_file,
@@ -440,7 +440,7 @@ class TestImgDatasetYamlTrain():
         Train a model with our dataset as a backend.
         """
         train_obj = yaml_parse.load(self.yaml_content)
-        train_obj.main_loop(time_budget=1)
+        train_obj.main_loop(time_budget=60*60)
         #self.assertTrue(train_obj.model.monitor.training_succeeded)
 
 
