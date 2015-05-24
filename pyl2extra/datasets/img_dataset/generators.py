@@ -590,8 +590,8 @@ class ProcessGen(Generator, AsyncMixin):
             time.sleep(0.1)
             timeout_count = timeout_count - 1
             if timeout_count <= 0:
-                raise RuntimeError('Timeout waiting for a thread to provide '
-                                   'processed images in ThreadedGen.')
+                raise RuntimeError('Timeout waiting for a process to provide '
+                                   'processed images in ProcessGen.')
         
     def push_request(self, count):
         """
