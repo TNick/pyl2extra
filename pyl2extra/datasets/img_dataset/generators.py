@@ -628,7 +628,7 @@ class ProcessGen(Generator, AsyncMixin):
         count : int
             Number of images to retreive.
         """
-        if self.outstanding_requests >= self.self.max_outstanding:
+        if self.outstanding_requests >= self.max_outstanding:
             logging.debug('The number of outstanding requests is too '
                           'high (%d); request for %d images ignored' %
                           self.outstanding_requests, count)
