@@ -443,7 +443,7 @@ class CsvProvider(DictProvider):
                           'columns but it only has %d'
                     raise ValueError(err % (csv_path, i, col_min, len(row)))
                 else:
-                    class_name = preprocess(row[col_class])
+                    class_name = preprocess(row[col_class]).strip().lower()
                     fpath = preprocess(row[col_path])
                     if len(fpath) > 0:
                         if not os.path.isabs(fpath):
