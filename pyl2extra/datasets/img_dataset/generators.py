@@ -509,10 +509,14 @@ class ProcessGen(Generator, AsyncMixin):
     _code: https://github.com/taotetek/blog_examples/blob/master/python_multiprocessing_with_zeromq/workqueue_example.py
     _TAO: http://taotetek.net/2011/02/02/python-multiprocessing-with-zeromq/
     """
-
-    RESULTS_ADDRESS = 'tcp://127.0.0.1:12460'
-    CONTROL_ADDRESS = 'tcp://127.0.0.1:12461'
-    VENTILATOR_ADDRESS = 'tcp://127.0.0.1:12462'
+    if 0:
+        RESULTS_ADDRESS = 'tcp://127.0.0.1:12460'
+        CONTROL_ADDRESS = 'tcp://127.0.0.1:12461'
+        VENTILATOR_ADDRESS = 'tcp://127.0.0.1:12462'
+    else:
+        RESULTS_ADDRESS = 'ipc:///tmp/pyl2x-procgen-results.ipc'
+        CONTROL_ADDRESS = 'ipc:///tmp/pyl2x-procgen-control.ipc'
+        VENTILATOR_ADDRESS = 'ipc:///tmp/pyl2x-procgen-ventilator.ipc'
 
     CTRL_FINISH = 'FINISHED'
 
@@ -630,7 +634,7 @@ class ProcessGen(Generator, AsyncMixin):
         """
         if self.outstanding_requests >= self.max_outstanding:
             logging.debug('The number of outstanding requests is too '
-                          'high (%d); request for %d images ignored' %
+                          'high (%d); request for %d images ignored',
                           self.outstanding_requests, count)
         self.outstanding_requests = self.outstanding_requests + 1
         work_message = {'offset': self.provider_offset, 'count' : count}
