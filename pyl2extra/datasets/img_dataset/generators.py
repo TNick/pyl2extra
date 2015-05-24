@@ -143,7 +143,10 @@ class Basket(object):
         """
         Get the number of processed images.
         """
-        return self.batch.shape[0]
+        if self.batch is None:
+            return 0
+        else:
+            return self.batch.shape[0]
 
 
 class InlineGen(Generator):
@@ -209,6 +212,9 @@ class AsyncMixin(object):
         self.workers_count = 0
 
     def _get(self, source, next_index):
+        """
+        Get method common implementation.
+        """
         count, result, idx_features, idx_targets = self._prep_get(source,
                                                                   next_index)
         assert count > 0
@@ -253,16 +259,17 @@ class AsyncMixin(object):
         """
         Help pickle this instance.
         """
-        return super(InlineGen, self).__getstate__()
+        return super(AsyncMixin, self).__getstate__()
 
     def __setstate__(self, state):
         """
         Help un-pickle this instance.
         """
-        super(InlineGen, self).__setstate__()
+        super(AsyncMixin, self).__setstate__(state)
 
 def _process_image(dataset, trg, categ, i, basket, basket_sz):
     """
+    Process image and append it to the basket.
     """
     # process this image
     trg = numpy.reshape(trg,
@@ -277,7 +284,7 @@ def _process_image(dataset, trg, categ, i, basket, basket_sz):
                                           trg.shape[1],
                                           trg.shape[2],
                                           trg.shape[3]),
-                            dtype=trg.dtype)
+                                   dtype=trg.dtype)
         basket.categories = numpy.empty(shape=(basket_sz),
                                         dtype='int32')
 
@@ -347,7 +354,7 @@ class ThreadedGen(Generator, AsyncMixin):
                 while refill > 0:
                     self.push_request(self.cache_refill_count)
                     refill = refill - self.cache_refill_count
-            logging.debug('main threads sleeps waiting for data (%d)' %
+            logging.debug('main threads sleeps waiting for data (%d)',
                           timeout_count)
             # see if, instead of waiting useless here we can process some
             # images online ourselves.
@@ -617,7 +624,7 @@ class ProcessGen(Generator, AsyncMixin):
             Number of images to retreive.
         """
         self.outstanding_requests = self.outstanding_requests + 1
-        work_message = { 'offset': self.provider_offset, 'count' : count }
+        work_message = {'offset': self.provider_offset, 'count' : count}
         self.provider_offset = self.provider_offset + count
         self.ventilator_send.send_json(work_message)
 
@@ -630,9 +637,13 @@ class ProcessGen(Generator, AsyncMixin):
         while not b_done:
             try:
                 basket = self.results_rcv.recv_pyobj(flags=zmq.NOBLOCK)
-                #logging.debug(str(basket))
+                if len(basket) > 0:
+                    logging.debug("A basket of %d examples has been received",
+                                  len(basket))
+                    self.add_basket(basket)
+                else:
+                    logging.error("Empty basket received")
                 self.outstanding_requests = self.outstanding_requests - 1
-                self.baskets.append(basket)
             except zmq.ZMQError as exc:
                 if exc.errno == zmq.EAGAIN:
                     b_done = True
@@ -645,6 +656,7 @@ class ProcessGen(Generator, AsyncMixin):
 
         Also, keeps `cached_images` syncronized.
         """
+        assert not basket.batch is None
         self.cached_images = self.cached_images + len(basket)
         self.baskets.append(basket)
 
@@ -654,12 +666,15 @@ class ProcessGen(Generator, AsyncMixin):
 
         Also, keeps `cached_images` syncronized.
         """
-        if len(self.baskets) == 0:
-            result = None
-        else:
-            result = self.baskets.pop()
-            self.cached_images = self.cached_images - len(result)
-        return result
+        while True:
+            if len(self.baskets) == 0:
+                return None
+            else:
+                result = self.baskets.pop()
+                if result.batch is None:
+                    continue
+                self.cached_images = self.cached_images - len(result)
+                return result
 
 
     # The "ventilator" function generates a list of numbers from 0 to 10000, and
@@ -672,6 +687,9 @@ class ProcessGen(Generator, AsyncMixin):
 # results manager.
 
 def worker(wrk_num):
+    """
+    Worker process for `ProcessGen`.
+    """
     logging.debug("worker process %d starts", wrk_num)
 
     # Initialize a zeromq context
@@ -736,6 +754,8 @@ def worker(wrk_num):
                     _process_image(dataset, trg, categ,
                                    i, basket, basket_sz)
 
+            if len(basket) == 0:
+                logging.error("Worker %d sending empty basket", wrk_num)
             results_sender.send_pyobj(basket)
 
         # If the message came over the control channel, shut down the worker.
@@ -743,7 +763,8 @@ def worker(wrk_num):
             control_message = dill.loads(control_rcv.recv())
             if isinstance(control_message, basestring):
                 if control_message == ProcessGen.CTRL_FINISH:
-                    print("Worker %i received FINSHED, quitting!" % wrk_num)
+                    logging.info("Worker %i received FINSHED, quitting!",
+                                 wrk_num)
                     break
             elif 'ImgDataset' in str(control_message.__class__):
                 dataset = control_message
