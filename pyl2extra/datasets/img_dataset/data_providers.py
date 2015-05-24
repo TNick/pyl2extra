@@ -87,14 +87,15 @@ class Provider(object):
         """
         pass
 
-    def normalize_image(self, im):
+    @staticmethod
+    def normalize_image(img):
         """
         Converts an image into the format used by ``read()``.
         """
-        if im.mode == 'LAB' or im.mode == 'HSV':
-            raise ValueError('%s image mode is not supported' % im.mode)
-        im = im.convert('RGBA')
-        imarray = as_floatX(numpy.array(im))
+        if img.mode == 'LAB' or img.mode == 'HSV':
+            raise ValueError('%s image mode is not supported' % img.mode)
+        img = img.convert('RGBA')
+        imarray = as_floatX(numpy.array(img))
         assert len(imarray.shape) == 3
         assert imarray.shape[2] == 4
         return imarray
@@ -119,8 +120,8 @@ class Provider(object):
         """
         categ = self.category(f_path)
         logging.debug('generator reading [%s] from %s', categ, f_path)
-        im = Image.open(f_path)
-        return self.normalize_image(im), categ
+        img = Image.open(f_path)
+        return Provider.normalize_image(img), categ
 
     def category(self, f_path):
         """
@@ -163,6 +164,11 @@ class Provider(object):
 
     def get_categs(self):
         """
+        Get a list of all categories in this provider.
+
+        The implementation in the base class caches the result so, in you
+        later want to insert images make sure to update the category
+        yourself.
         """
         self.categs = []
         for key in self:
@@ -346,6 +352,9 @@ class CsvProvider(DictProvider):
     ----------
     csv_path : str
         The path where the csv file can be found.
+     : bool
+        Skip first row if true. ``has_header`` must be True if ``col_path``
+        or ``col_class`` are strings.
     col_path : str or int, optional
         If this is an integer, it represents the zero based index of the column
         that contains image paths.
@@ -364,6 +373,11 @@ class CsvProvider(DictProvider):
         A one-character string used to quote fields containing special
         characters, such as the delimiter or quotechar,
         or which contain new-line characters. It defaults to ``"``.
+    skip_first : int, optional
+        Skip this many rows at the beginning of the file; this does
+        not include the header row that is managed separatelly.
+    skip_last : int, optional
+        Skip this many rows at the end of the file.
 
     Notes
     -----
@@ -373,9 +387,19 @@ class CsvProvider(DictProvider):
 
     The paths inside csv file, if relative, are considered relative to
     the path of the .csv file.
+
+    For the last entries to be removed the entries are parsed
+    and added to a list. They are later removed from the result.
+    This is in order to avoid reading the csv file twice but
+    it has the downside that the entries to be skipped stil
+    have to be valid (enough columns).
     """
     def __init__(self, csv_path, col_path=1, col_class=0, has_header=False,
-                 delimiter=',', quotechar='"'):
+                 delimiter=',', quotechar='"',
+                 skip_first=0, skip_last=0):
+
+        assert skip_first >= 0
+        assert skip_last >= 0
 
         if (isinstance(col_class, basestring) or
                 isinstance(col_path, basestring)):
@@ -390,10 +414,12 @@ class CsvProvider(DictProvider):
 
         # collect data in a dictionary
         data = {}
+        file_list = []
         with open(csv_path, 'rt') as fhand:
             csvr = csv.reader(fhand,
                               delimiter=delimiter,
                               quotechar=quotechar)
+
             # collect all rows
             for i, row in enumerate(csvr):
                 if len(row) == 0:
@@ -406,7 +432,13 @@ class CsvProvider(DictProvider):
                         col_path = row.index(col_path)
                     has_header = False
                     col_min = max(col_path, col_class)
-                elif len(row) <= col_min:
+                    skip_first = skip_first + 1
+                    continue
+
+                if i < skip_first:
+                    continue
+
+                if len(row) <= col_min:
                     err = '%s[%d] should have at least %d ' + \
                           'columns but it only has %d'
                     raise ValueError(err % (csv_path, i, col_min, len(row)))
@@ -417,6 +449,16 @@ class CsvProvider(DictProvider):
                         if not os.path.isabs(fpath):
                             fpath = os.path.join(csv_base, fpath)
                     data[fpath] = class_name
+                    if skip_last > 0:
+                        file_list.append(fpath)
+
+        # remove last entries
+        if skip_last > 0:
+            if len(file_list) <= skip_last:
+                data = {}
+            else:
+                for f2rem in file_list[-skip_last:]:
+                    data.pop(f2rem)
 
         # everything else is provided by DictProvider
         super(CsvProvider, self).__init__(data)
@@ -450,8 +492,8 @@ class RandomProvider(DictProvider):
     def read(self, f_path):
         logging.debug('generator reading file %s', f_path)
         categ = f_path
-        im = self.content[f_path]
-        return self.normalize_image(im), categ
+        img = self.content[f_path]
+        return Provider.normalize_image(img), categ
 
     def __getstate__(self):
         """
@@ -474,6 +516,9 @@ class RandomProvider(DictProvider):
         self.keys_iter = self.data.keys().__iter__()
 
     def prepare(self):
+        """
+        Initializes the instance according to internal attributes.
+        """
         self.content = {}
         data = {}
         modes = ['RGBA', 'RGB', '1', 'L', 'P', 'CMYK', 'I', 'F']
@@ -483,7 +528,7 @@ class RandomProvider(DictProvider):
             imarray = numpy.random.rand(self.size[0],
                                         self.size[1],
                                         channels) * 255
-            im = Image.fromarray(imarray.astype('uint8'))
-            self.content[file_name] = im.convert(modes[i % len(modes)])
+            img = Image.fromarray(imarray.astype('uint8'))
+            self.content[file_name] = img.convert(modes[i % len(modes)])
             data[file_name] = file_name
         return data

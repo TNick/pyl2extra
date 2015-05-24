@@ -110,13 +110,13 @@ class TestDictProvider(unittest.TestCase):
             result = self.testee.get(i, 3)
             for relem in result:
                 self.assertIn(relem, self.keys)
-        
+
 class TestDummyImages(unittest.TestCase):
     """
     Tests for DictProvider.
-    
+
     lab not supported
-    hsv not supported    
+    hsv not supported
     """
     @functools.wraps(unittest.TestCase.setUp)
     def setUp(self):
@@ -213,7 +213,7 @@ class BaseCsvProvider():
 #            while True:
 #                k = self.testee.next()
 #                klist.append(k)
-#                vlist.append(self.testee.category(k))            
+#                vlist.append(self.testee.category(k))
 #        except StopIteration:
 #            pass
         for k in self.testee:
@@ -336,11 +336,130 @@ class TestCsvProviderHeader(unittest.TestCase, BaseCsvProvider):
             for key,value in zip(self.keys, self.vlist):
                 fhand.write('a>"b">c>d>%s>x>y>z>t>"%d"\n' % (key, value))
 
-        self.testee = CsvProvider(csv_file, 
+        self.testee = CsvProvider(csv_file,
                                   has_header=True,
                                   col_path=col_path,
                                   col_class=col_class,
                                   delimiter='>')
+
+
+class TestSkipCsvProvider():
+    """
+    Check to see if we can skip rows.
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp()
+        keys = ['a', 'b', 'c', 'd']
+        self.keys = []
+        self.vlist = [1, 2, 3, 4]
+        for key in keys:
+            self.keys.append(os.path.join(self.tmp_dir, key))
+        self.csv_file = os.path.join(self.tmp_dir, 'test.csv')
+
+        with open(self.csv_file, 'wt') as fhand:
+            self.col_path = 'Path Column'
+            self.col_class = 'Class Column'
+            fhand.write('>"some">column>here>%s>thet>we\'re>'
+                        'not>interested>"%s">in\n' % (self.col_path,
+                                                      self.col_class))
+            for key,value in zip(self.keys, self.vlist):
+                fhand.write('a>"b">c>d>%s>x>y>z>t>"%d"\n' % (key, value))
+
+    """
+    Common code for tests for CsvProvider.
+    """
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+        del self.tmp_dir
+        del self.testee
+
+    def test_skip_first(self):
+        """
+        Check the iteration for CsvProvider
+        """
+
+        self.testee = CsvProvider(self.csv_file,
+                                  has_header=True,
+                                  col_path=self.col_path,
+                                  col_class=self.col_class,
+                                  delimiter='>',
+                                  skip_first=1)
+        klist = []
+        vlist = []
+
+        for k in self.testee:
+            klist.append(k)
+            vlist.append(self.testee.category(k))
+        klist.sort()
+        vlist.sort()
+        self.assertEqual(klist, self.keys[1:])
+
+        evrt = self.testee.everything().keys()
+        evrt.sort()
+        self.assertEqual(klist, evrt)
+
+        vlist = [int(v) for v in vlist]
+        self.assertEqual(vlist, self.vlist[1:])
+
+    def test_skip_last(self):
+        """
+        Check the iteration for CsvProvider
+        """
+
+        self.testee = CsvProvider(self.csv_file,
+                                  has_header=True,
+                                  col_path=self.col_path,
+                                  col_class=self.col_class,
+                                  delimiter='>',
+                                  skip_last=1)
+        klist = []
+        vlist = []
+
+        for k in self.testee:
+            klist.append(k)
+            vlist.append(self.testee.category(k))
+        klist.sort()
+        vlist.sort()
+        self.assertEqual(klist, self.keys[:-1])
+
+        evrt = self.testee.everything().keys()
+        evrt.sort()
+        self.assertEqual(klist, evrt)
+
+        vlist = [int(v) for v in vlist]
+        self.assertEqual(vlist, self.vlist[:-1])
+
+    def test_skip_both(self):
+        """
+        Check the iteration for CsvProvider
+        """
+
+        self.testee = CsvProvider(self.csv_file,
+                                  has_header=True,
+                                  col_path=self.col_path,
+                                  col_class=self.col_class,
+                                  delimiter='>',
+                                  skip_first=1,
+                                  skip_last=1)
+        klist = []
+        vlist = []
+
+        for k in self.testee:
+            klist.append(k)
+            vlist.append(self.testee.category(k))
+        klist.sort()
+        vlist.sort()
+        self.assertEqual(klist, self.keys[1:-1])
+
+        evrt = self.testee.everything().keys()
+        evrt.sort()
+        self.assertEqual(klist, evrt)
+
+        vlist = [int(v) for v in vlist]
+        self.assertEqual(vlist, self.vlist[1:-1])
+
 
 class TestRandomProvider(unittest.TestCase):
     """
@@ -380,12 +499,12 @@ class TestRandomProvider(unittest.TestCase):
         Check hash() method
         """
         self.assertTrue(hash(self.testee))
-        
+
     def test_len(self):
         """
         Check len() method
         """
         self.assertTrue(len(self.testee) > 0)
-        
+
 if __name__ == '__main__':
     unittest.main()
