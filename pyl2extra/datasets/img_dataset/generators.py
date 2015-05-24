@@ -59,7 +59,7 @@ class Generator(object):
         Called by the dataset fromits tear_down() method.
         """
         pass
-    
+
     def __hash__(self):
         """
         Called by built-in function hash() and for operations on members
@@ -121,14 +121,14 @@ class Generator(object):
         Help pickle this instance.
         """
         return {'dataset': self.dataset}
-        
+
     def __setstate__(self, state):
         """
         Help un-pickle this instance.
         """
         self.dataset = state['dataset']
 
-        
+
 class Basket(object):
     """
     Holds a number of processed images
@@ -138,14 +138,14 @@ class Basket(object):
         self.batch = batch
         #: the classes that corespond to processed images
         self.classes = classes
-        
+
     def __len__(self):
         """
         Get the number of processed images.
         """
         return self.batch.shape[0]
-        
-    
+
+
 class InlineGen(Generator):
     """
     Generates the content while the other parties wait on the same thread.
@@ -181,7 +181,7 @@ class InlineGen(Generator):
         Help pickle this instance.
         """
         return super(InlineGen, self).__getstate__()
-        
+
     def __setstate__(self, state):
         """
         Help un-pickle this instance.
@@ -207,13 +207,13 @@ class AsyncMixin(object):
         self._should_terminate = False
         #: number of workers to use
         self.workers_count = 0
-        
+
     def _get(self, source, next_index):
         count, result, idx_features, idx_targets = self._prep_get(source,
                                                                   next_index)
         assert count > 0
         logging.debug('get a batch of %d images', count)
-                      
+
         # where inside result array we're placing the data
         offset = 0
         while count > 0:
@@ -223,7 +223,7 @@ class AsyncMixin(object):
             basket = self.get_basket()
             if basket is None:
                 continue
-            
+
             # copy the things in place
             to_copy = min(count, len(basket))
             if idx_features > -1:
@@ -253,13 +253,13 @@ class AsyncMixin(object):
         Help pickle this instance.
         """
         return super(InlineGen, self).__getstate__()
-        
+
     def __setstate__(self, state):
         """
         Help un-pickle this instance.
         """
         super(InlineGen, self).__setstate__()
-        
+
 def _process_image(dataset, trg, categ, i, basket, basket_sz):
     """
     """
@@ -330,11 +330,11 @@ class ThreadedGen(Generator, AsyncMixin):
             #thr.daemon = True
             self.threads.append(thr)
             thr.start()
-            
+
     @functools.wraps(Generator.get)
     def get(self, source, next_index):
         return self._get(source, next_index)
-        
+
     def _wait_for_data(self, count):
         """
         Waits for some provider to deliver its data.
@@ -378,7 +378,7 @@ class ThreadedGen(Generator, AsyncMixin):
     def add_basket(self, basket):
         """
         Appends a basket to the list.
-        
+
         Also, keeps `cached_images` syncronized.
         """
         self.gen_semaphore.acquire()
@@ -389,7 +389,7 @@ class ThreadedGen(Generator, AsyncMixin):
     def get_basket(self):
         """
         Extracts a basket from the list.
-        
+
         Also, keeps `cached_images` syncronized.
         """
         self.gen_semaphore.acquire()
@@ -482,23 +482,23 @@ class ProcessGen(Generator, AsyncMixin):
     count : int, optional
         The number of worker processes to use. If None, same number of
         processes as the number of cores minus one are used.
-        
+
     Notes
     -----
-    The 0MQ part of the class was heavily inspired by 
+    The 0MQ part of the class was heavily inspired by
     ``Python Multiprocessing with ZeroMQ`` TAO_ post.
     Some parts wre copied straight from provided code_.
-    
+
     _code: https://github.com/taotetek/blog_examples/blob/master/python_multiprocessing_with_zeromq/workqueue_example.py
     _TAO: http://taotetek.net/2011/02/02/python-multiprocessing-with-zeromq/
     """
-    
+
     RESULTS_ADDRESS = 'tcp://127.0.0.1:12460'
     CONTROL_ADDRESS = 'tcp://127.0.0.1:12461'
     VENTILATOR_ADDRESS = 'tcp://127.0.0.1:12462'
-    
+
     CTRL_FINISH = 'FINISHED'
-    
+
     def __init__(self, count=None):
 
         if count is None:
@@ -526,7 +526,7 @@ class ProcessGen(Generator, AsyncMixin):
         self.dataset = dataset
         self.outstanding_requests = 0
         self.dataset_provided = False
-        
+
         # Create a pool of workers to distribute work to
         assert self.workers_count > 0
         self.worker_pool = range(self.workers_count)
@@ -535,23 +535,23 @@ class ProcessGen(Generator, AsyncMixin):
 
         # Initialize a zeromq context
         self.context = zmq.Context()
-    
+
         # Set up a channel to receive results
         self.results_rcv = self.context.socket(zmq.PULL)
         self.results_rcv.bind(ProcessGen.RESULTS_ADDRESS)
-    
+
         # Set up a channel to send control commands
         self.control_sender = self.context.socket(zmq.PUB)
         self.control_sender.bind(ProcessGen.CONTROL_ADDRESS)
-    
+
         # Set up a channel to send work
         self.ventilator_send = self.context.socket(zmq.PUSH)
         self.ventilator_send.bind(ProcessGen.VENTILATOR_ADDRESS)
-        
+
         # Give everything a second to spin up and connect
         time.sleep(0.5)
-        
-        
+
+
     @functools.wraps(Generator.tear_down)
     def tear_down(self):
         """
@@ -561,15 +561,16 @@ class ProcessGen(Generator, AsyncMixin):
         # Signal to all workers that we are finsihed
         self.control_sender.send(dill.dumps(ProcessGen.CTRL_FINISH))
         logging.debug('ProcessGen was being terminated')
-                
+
     @functools.wraps(Generator.get)
     def get(self, source, next_index):
         if not self.dataset_provided:
             # send workers a copy of the dataset
             self.control_sender.send(dill.dumps(self.dataset))
             self.dataset_provided = True
+            time.sleep(0.5)
         return self._get(source, next_index)
-        
+
     def _wait_for_data(self, count):
         """
         Waits for some provider to deliver its data.
@@ -592,15 +593,15 @@ class ProcessGen(Generator, AsyncMixin):
             if timeout_count <= 0:
                 raise RuntimeError('Timeout waiting for a process to provide '
                                    'processed images in ProcessGen.')
-        
+
     def push_request(self, count):
         """
         Adds a request for a specified number of images.
-        
+
         Sends a request for a specified number of images down a zeromq "PUSH"
-        connection to be processed by listening workers, in a round robin 
+        connection to be processed by listening workers, in a round robin
         load balanced fashion.
-        
+
         Parameters
         ----------
         count : int
@@ -613,8 +614,8 @@ class ProcessGen(Generator, AsyncMixin):
 
     def receive_all_messages(self):
         """
-        The "results_manager" function receives each result 
-        from multiple workers.    
+        The "results_manager" function receives each result
+        from multiple workers.
         """
         b_done = False
         while not b_done:
@@ -628,11 +629,11 @@ class ProcessGen(Generator, AsyncMixin):
                     b_done = True
                 else:
                     raise
-        
+
     def add_basket(self, basket):
         """
         Appends a basket to the list.
-        
+
         Also, keeps `cached_images` syncronized.
         """
         self.cached_images = self.cached_images + len(basket)
@@ -641,7 +642,7 @@ class ProcessGen(Generator, AsyncMixin):
     def get_basket(self):
         """
         Extracts a basket from the list.
-        
+
         Also, keeps `cached_images` syncronized.
         """
         if len(self.baskets) == 0:
@@ -650,20 +651,20 @@ class ProcessGen(Generator, AsyncMixin):
             result = self.baskets.pop()
             self.cached_images = self.cached_images - len(result)
         return result
-    
 
-    # The "ventilator" function generates a list of numbers from 0 to 10000, and 
-    # 
 
-        
-# The "worker" functions listen on a zeromq PULL connection for "work" 
+    # The "ventilator" function generates a list of numbers from 0 to 10000, and
+    #
+
+
+# The "worker" functions listen on a zeromq PULL connection for "work"
 # (numbers to be processed) from the ventilator, square those numbers,
-# and send the results down another zeromq PUSH connection to the 
+# and send the results down another zeromq PUSH connection to the
 # results manager.
 
 def worker(wrk_num):
     logging.debug("worker process %d starts", wrk_num)
-    
+
     # Initialize a zeromq context
     context = zmq.Context()
 
@@ -703,22 +704,21 @@ def worker(wrk_num):
 
         # If the message came from work_rcv channel, square the number
         # and send the answer to the results reporter
-        if socks.get(work_rcv) == zmq.POLLIN:
-            assert not dataset is None
+        if socks.get(work_rcv) == zmq.POLLIN and not dataset is None:
             work_message = work_rcv.recv_json()
-            
+
             files = dataset.data_provider.get(work_message['offset'],
                                               work_message['count'])
 
             basket = Basket()
             basket_sz = len(files)
-            logging.debug("worker process %d will process %d images", 
+            logging.debug("worker process %d will process %d images",
                           wrk_num, basket_sz)
 
             for i, fpath in enumerate(files):
                 trg, categ = dataset.data_provider.read(fpath)
                 categ = dataset.data_provider.categ2int(categ)
-                
+
                 _process_image(dataset, trg, categ,
                                i, basket, basket_sz)
 
