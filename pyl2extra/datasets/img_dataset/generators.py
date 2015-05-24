@@ -535,7 +535,7 @@ class ProcessGen(Generator, AsyncMixin):
         #: keep various processes from returning same files
         self.provider_offset = 0
         #: maximum number of outstanding requests
-        self.max_outstanding = 256
+        self.max_outstanding = 64
         #: number of seconds to wait before declaring timeout
         self.wait_timeout = 10
 
@@ -636,6 +636,7 @@ class ProcessGen(Generator, AsyncMixin):
             logging.debug('The number of outstanding requests is too '
                           'high (%d); request for %d images ignored',
                           self.outstanding_requests, count)
+            return
         self.outstanding_requests = self.outstanding_requests + 1
         work_message = {'offset': self.provider_offset, 'count' : count}
         self.provider_offset = self.provider_offset + count
@@ -650,13 +651,17 @@ class ProcessGen(Generator, AsyncMixin):
         while not b_done:
             try:
                 basket = self.results_rcv.recv_pyobj(flags=zmq.NOBLOCK)
+                self.outstanding_requests = self.outstanding_requests - 1
                 if len(basket) > 0:
-                    logging.debug("A basket of %d examples has been received",
-                                  len(basket))
+                    logging.debug('A basket of %d examples has been '
+                                  'received; %d outstanding requests, '
+                                  '%d cached images',
+                                  len(basket),
+                                  self.outstanding_requests,
+                                  self.cached_images)
                     self.add_basket(basket)
                 else:
                     logging.error("Empty basket received")
-                self.outstanding_requests = self.outstanding_requests - 1
                 assert self.outstanding_requests >= 0
             except zmq.ZMQError as exc:
                 if exc.errno == zmq.EAGAIN:
