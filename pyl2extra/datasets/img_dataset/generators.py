@@ -249,6 +249,7 @@ class AsyncMixin(object):
 
         # make sure we're ready for next round
         refill = self.cache_refill_treshold - self.cached_images
+        assert self.cache_refill_count > 0
         while refill > 0:
             self.push_request(self.cache_refill_count)
             refill = refill - self.cache_refill_count
@@ -529,6 +530,10 @@ class ProcessGen(Generator, AsyncMixin):
         self.outstanding_requests = 0
         #: keep various processes from returning same files
         self.provider_offset = 0
+        #: maximum number of outstanding requests
+        self.max_outstanding = 256
+        #: number of seconds to wait before declaring timeout
+        self.wait_timeout = 10
 
     @functools.wraps(Generator.is_inline)
     def is_inline(self):
@@ -591,7 +596,7 @@ class ProcessGen(Generator, AsyncMixin):
         """
         Waits for some provider to deliver its data.
         """
-        timeout_count = 100
+        timeout_count = self.wait_timeout * 10
         while len(self.baskets) == 0:
             if self.outstanding_requests == 0:
                 refill = max(self.cache_refill_count, count)
@@ -623,6 +628,10 @@ class ProcessGen(Generator, AsyncMixin):
         count : int
             Number of images to retreive.
         """
+        if self.outstanding_requests >= self.self.max_outstanding:
+            logging.debug('The number of outstanding requests is too '
+                          'high (%d); request for %d images ignored' %
+                          self.outstanding_requests, count)
         self.outstanding_requests = self.outstanding_requests + 1
         work_message = {'offset': self.provider_offset, 'count' : count}
         self.provider_offset = self.provider_offset + count
@@ -644,11 +653,14 @@ class ProcessGen(Generator, AsyncMixin):
                 else:
                     logging.error("Empty basket received")
                 self.outstanding_requests = self.outstanding_requests - 1
+                assert self.outstanding_requests >= 0
             except zmq.ZMQError as exc:
                 if exc.errno == zmq.EAGAIN:
                     b_done = True
                 else:
                     raise
+        logging.debug("Received all messages; %d outstanding requests",
+                                  self.outstanding_requests)
 
     def add_basket(self, basket):
         """
