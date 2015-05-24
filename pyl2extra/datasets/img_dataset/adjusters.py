@@ -213,7 +213,7 @@ class BackgroundAdj(Adjuster):
                 bkg = numpy.array(bkg)
                 assert bkg.shape[2] == 3
             else:
-                bkg = numpy.array(bkg*width*height).reshape(width, height, 3)
+                bkg = numpy.array(bkg*width*height).reshape(height, width, 3)
 
             # To only use 0 and 255 in alpha band:
             #mask = img[:,:,3] == 0 # 128, 128

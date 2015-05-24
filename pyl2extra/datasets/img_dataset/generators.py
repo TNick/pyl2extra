@@ -537,7 +537,7 @@ class ProcessGen(Generator, AsyncMixin):
         #: maximum number of outstanding requests
         self.max_outstanding = 64
         #: number of seconds to wait before declaring timeout
-        self.wait_timeout = 10
+        self.wait_timeout = 30
 
     @functools.wraps(Generator.is_inline)
     def is_inline(self):
