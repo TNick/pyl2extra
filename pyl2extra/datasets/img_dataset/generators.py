@@ -212,7 +212,8 @@ class AsyncMixin(object):
         count, result, idx_features, idx_targets = self._prep_get(source,
                                                                   next_index)
         assert count > 0
-        logging.debug('get a batch of %d images', count)
+        logging.debug('get a batch of %d images (%d cached)',
+                      count, self.cached_images)
 
         # where inside result array we're placing the data
         offset = 0
@@ -346,6 +347,8 @@ class ThreadedGen(Generator, AsyncMixin):
                 while refill > 0:
                     self.push_request(self.cache_refill_count)
                     refill = refill - self.cache_refill_count
+            logging.debug('main threads sleeps waiting for data (%d)' %
+                          timeout_count)
             # see if, instead of waiting useless here we can process some
             # images online ourselves.
             time.sleep(0.1)
@@ -460,12 +463,18 @@ class ThreadedGen(Generator, AsyncMixin):
             for i, fpath in enumerate(req):
                 # read the file using data provider
                 myself.gen_semaphore.acquire()
-                trg, categ = myself.dataset.data_provider.read(fpath)
-                categ = myself.dataset.data_provider.categ2int(categ)
+                b_ok = False
+                try:
+                    trg, categ = myself.dataset.data_provider.read(fpath)
+                    categ = myself.dataset.data_provider.categ2int(categ)
+                    b_ok = True
+                except IOError, exc:
+                    logging.error('Exception in worker loop: %s', str(exc))
                 myself.gen_semaphore.release()
 
-                _process_image(myself.dataset, trg, categ,
-                               i, basket, basket_sz)
+                if b_ok:
+                    _process_image(myself.dataset, trg, categ,
+                                   i, basket, basket_sz)
 
             # and we're done with this batch
             myself.done_request(thid, basket)
@@ -621,7 +630,7 @@ class ProcessGen(Generator, AsyncMixin):
         while not b_done:
             try:
                 basket = self.results_rcv.recv_pyobj(flags=zmq.NOBLOCK)
-                logging.debug(str(basket))
+                #logging.debug(str(basket))
                 self.outstanding_requests = self.outstanding_requests - 1
                 self.baskets.append(basket)
             except zmq.ZMQError as exc:
@@ -716,11 +725,16 @@ def worker(wrk_num):
                           wrk_num, basket_sz)
 
             for i, fpath in enumerate(files):
-                trg, categ = dataset.data_provider.read(fpath)
-                categ = dataset.data_provider.categ2int(categ)
+                b_ok = False
+                try:
+                    trg, categ = dataset.data_provider.read(fpath)
+                    categ = dataset.data_provider.categ2int(categ)
+                except IOError, exc:
+                    logging.error('Exception in worker loop: %s', str(exc))
 
-                _process_image(dataset, trg, categ,
-                               i, basket, basket_sz)
+                if b_ok:
+                    _process_image(dataset, trg, categ,
+                                   i, basket, basket_sz)
 
             results_sender.send_pyobj(basket)
 
