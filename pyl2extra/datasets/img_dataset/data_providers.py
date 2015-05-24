@@ -458,7 +458,7 @@ class CsvProvider(DictProvider):
                 data = {}
             else:
                 for f2rem in file_list[-skip_last:]:
-                    data.pop(f2rem)
+                    data.pop(f2rem, None)
 
         # everything else is provided by DictProvider
         super(CsvProvider, self).__init__(data)

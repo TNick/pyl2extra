@@ -209,7 +209,7 @@ class BackgroundAdj(Adjuster):
             # get or create the background
             bkg = self.prmstore.next()[0]
             if isinstance(bkg, Image.Image):
-                bkg.thumbnail((width, height), Image.ANTIALIAS)
+                bkg.resize((width, height), Image.ANTIALIAS)
                 bkg = numpy.array(bkg)
                 assert bkg.shape[2] == 3
             else:
