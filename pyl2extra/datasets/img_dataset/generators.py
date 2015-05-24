@@ -203,7 +203,7 @@ class AsyncMixin(object):
         #: if the cache has fewer than this number of images request refill
         self.cache_refill_treshold = 256
         #: number of images to retreive by each thread
-        self.cache_refill_count = 16
+        self.cache_refill_count = 64
         #: on termination counts the workers that exited
         self.finish = 0
         #: one time trigger ofr the threads to exit
@@ -663,8 +663,8 @@ class ProcessGen(Generator, AsyncMixin):
                     b_done = True
                 else:
                     raise
-        logging.debug("Received all messages; %d outstanding requests",
-                                  self.outstanding_requests)
+        #logging.debug("Received all messages; %d outstanding requests",
+        #                          self.outstanding_requests)
 
     def add_basket(self, basket):
         """
