@@ -199,8 +199,8 @@ class BackgroundAdj(Adjuster):
                                     3],
                              dtype=batch.dtype)
 
-        width = batch.shape[1]
-        height = batch.shape[2]
+        width = batch.shape[2]
+        height = batch.shape[1]
 
         # apply the background to each image
         for i in range(batch.shape[0]):
@@ -220,8 +220,8 @@ class BackgroundAdj(Adjuster):
             #mask = (img[:,:,3] == 0).reshape((128, 128, 1)).repeat(3, axis=-1)
             #result[i, :, :, :] = numpy.where(mask, bkg, img[:,:,0:3])
 
-            mask = (img[:, :, 3]).reshape((width,
-                                           height,
+            mask = (img[:, :, 3]).reshape((height,
+                                           width,
                                            1)).repeat(3, axis=-1)
             bkmask = 256 - mask
             result[i, :, :, :] = (numpy.multiply(mask, img[:, :, 0:3]) +
