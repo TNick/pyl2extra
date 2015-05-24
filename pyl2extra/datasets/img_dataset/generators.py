@@ -552,6 +552,13 @@ class ProcessGen(Generator, AsyncMixin):
         self.outstanding_requests = 0
         self.dataset_provided = False
 
+        # the thread used for receiving data
+        self.receiverth = threading.Thread(target=ThreadedGen.worker,
+                                           args=(self),
+                                           name='ProcessGenReceiver')
+        #thr.daemon = True
+        self.receiverth.start()
+
         # Create a pool of workers to distribute work to
         assert self.workers_count > 0
         self.worker_pool = range(self.workers_count)
@@ -583,6 +590,7 @@ class ProcessGen(Generator, AsyncMixin):
         Terminates all threads.
         """
         logging.debug('ProcessGen is being terminated; ')
+        self._should_terminate = True
         # Signal to all workers that we are finsihed
         self.control_sender.send(dill.dumps(ProcessGen.CTRL_FINISH))
         logging.debug('ProcessGen was being terminated')
@@ -607,10 +615,10 @@ class ProcessGen(Generator, AsyncMixin):
                 while refill > 0:
                     self.push_request(self.cache_refill_count)
                     refill = refill - self.cache_refill_count
-            else:
-                self.receive_all_messages()
-                if len(self.baskets) != 0:
-                    break
+            #else:
+            #    self.receive_all_messages()
+            #    if len(self.baskets) != 0:
+            #        break
             # see if, instead of waiting useless here we can process some
             # images online ourselves.
             time.sleep(0.1)
@@ -642,7 +650,7 @@ class ProcessGen(Generator, AsyncMixin):
         self.provider_offset = self.provider_offset + count
         self.ventilator_send.send_json(work_message)
 
-    def receive_all_messages(self):
+    def receive_all_messages(self, no_block=True):
         """
         The "results_manager" function receives each result
         from multiple workers.
@@ -650,7 +658,12 @@ class ProcessGen(Generator, AsyncMixin):
         b_done = False
         while not b_done:
             try:
-                basket = self.results_rcv.recv_pyobj(flags=zmq.NOBLOCK)
+                if no_block:
+                    flags = zmq.NOBLOCK
+                else:
+                    self.results_rcv.pool(timeout=1*1000)
+                    flags = 0
+                basket = self.results_rcv.recv_pyobj(flags=flags)
                 self.outstanding_requests = self.outstanding_requests - 1
                 if len(basket) > 0:
                     logging.debug('A basket of %d examples has been '
@@ -678,8 +691,10 @@ class ProcessGen(Generator, AsyncMixin):
         Also, keeps `cached_images` syncronized.
         """
         assert not basket.batch is None
+        self.gen_semaphore.acquire()
         self.cached_images = self.cached_images + len(basket)
         self.baskets.append(basket)
+        self.gen_semaphore.release()
 
     def get_basket(self):
         """
@@ -691,7 +706,9 @@ class ProcessGen(Generator, AsyncMixin):
             if len(self.baskets) == 0:
                 return None
             else:
+                self.gen_semaphore.acquire()
                 result = self.baskets.pop()
+                self.gen_semaphore.release()
                 if result.batch is None:
                     continue
                 self.cached_images = self.cached_images - len(result)
@@ -701,6 +718,14 @@ class ProcessGen(Generator, AsyncMixin):
     # The "ventilator" function generates a list of numbers from 0 to 10000, and
     #
 
+    @staticmethod
+    def receiver_worker(myself):
+        """
+        Thread entry point.
+        """
+        logging.debug("worker thread starts")
+        while not myself._should_terminate:
+            myself.receive_all_messages(no_block=False)
 
 # The "worker" functions listen on a zeromq PULL connection for "work"
 # (numbers to be processed) from the ventilator, square those numbers,
