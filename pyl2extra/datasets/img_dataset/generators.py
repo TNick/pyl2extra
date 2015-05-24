@@ -747,6 +747,7 @@ def worker(wrk_num):
                 try:
                     trg, categ = dataset.data_provider.read(fpath)
                     categ = dataset.data_provider.categ2int(categ)
+                    b_ok = True
                 except IOError, exc:
                     logging.error('Exception in worker loop: %s', str(exc))
 
