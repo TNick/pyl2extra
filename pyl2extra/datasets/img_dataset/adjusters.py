@@ -284,12 +284,14 @@ class MakeSquareAdj(Adjuster):
     See webcolors module for valid string formats for the ``background``
     member.
     """
-    def __init__(self, size=128, order=3, construct=False):
+    def __init__(self, size=128, order=3, construct=False, cache_loc=None):
 
         #: order of spline
         self.order = order
         #: size of the resulted image
         self.size = size
+        #: location of cache
+        self.cache_loc = cache_loc
         #: preprocess inside setup
         self.construct = construct
         super(MakeSquareAdj, self).__init__()
@@ -300,7 +302,7 @@ class MakeSquareAdj(Adjuster):
         dataset.shape = (self.size, self.size)
         #assert isinstance(dataset, ImgDataset)
         if self.construct:
-            ddm = self.create_ddm(dataset.data_provider)
+            ddm = self.create_ddm(dataset.data_provider, cache_loc)
             new_prov = DeDeMaProvider(ddm)
             new_prov.setup(dataset)
             dataset.data_provider = new_prov
