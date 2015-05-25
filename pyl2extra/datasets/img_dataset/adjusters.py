@@ -56,7 +56,7 @@ class Adjuster(object):
         Called by the dataset fromits tear_down() method.
         """
         pass
-    
+
     def transf_count(self):
         """
         Tell the number of images will be generated from a single image.
@@ -102,10 +102,10 @@ class BackgroundAdj(Adjuster):
     image_files : list of strings, optional
         Paths towards image files to be used as backgrounds.
         It is recomended to use this member to provide images instead of
-        providing images directly, as there seems to be a bug in serializing 
-        Image instances (this is important if inter-process communication 
+        providing images directly, as there seems to be a bug in serializing
+        Image instances (this is important if inter-process communication
         is required).
-        
+
     Notes
     -----
     See webcolors module for valid string formats for the ``background``
@@ -117,9 +117,9 @@ class BackgroundAdj(Adjuster):
         self.backgrounds = []
         self.original_backgrounds = backgrounds
         self.original_image_files = image_files
-        
+
         BackgroundAdj._normalize_back(self.backgrounds,
-                                      backgrounds, 
+                                      backgrounds,
                                       image_files)
         assert len(self.backgrounds) > 0
         super(BackgroundAdj, self).__init__()
@@ -237,24 +237,24 @@ class BackgroundAdj(Adjuster):
         state['image_file'] = self.original_image_files
         state['mode'] = self.mode if hasattr(self, 'mode') else None
         return state
-        
+
     def __setstate__(self, state):
         """
         Help un-pickle this instance.
         """
-        
+
         self.mode = state['mode']
         self.original_backgrounds = state['backgrounds']
         self.original_image_files = state['image_file']
-        
+
         self.backgrounds = []
         BackgroundAdj._normalize_back(self.backgrounds,
-                                      self.original_backgrounds, 
+                                      self.original_backgrounds,
                                       self.original_image_files)
         self.prmstore = ParamStore([self.backgrounds], mode=self.mode)
         assert len(self.backgrounds) > 0
-        
-        
+
+
 class MakeSquareAdj(Adjuster):
     """
     Scales the image up or down and moves it at the center of the square.
@@ -316,16 +316,21 @@ class MakeSquareAdj(Adjuster):
         square[:, deltay:deltay+height, deltax:deltax+width, :] = batch
         # resize it
         if self.size != largest:
-            new_sq = numpy.empty(shape=(batch.shape[0],
-                                        self.size, self.size,
-                                        batch.shape[3]), dtype=batch.dtype)
-            for i in range(batch.shape[0]):
-                img = numpy.cast['uint8'](square[i, :, :, :]) # 128, 128, 4
-                img = Image.fromarray(img)
-                img = img.resize(size=(self.size, self.size),
-                                 resample=Image.CUBIC)
-                new_sq[i, :, :, :] = numpy.array(img, dtype=batch.dtype)
-            square = new_sq
+            factor = self.size / float(largest)
+            square = zoom(square, zoom=(1., factor, factor, 1.),
+                          output=None, order=3, mode='constant',
+                          cval=0.0, prefilter=True)
+#
+#            new_sq = numpy.empty(shape=(batch.shape[0],
+#                                        self.size, self.size,
+#                                        batch.shape[3]), dtype=batch.dtype)
+#            for i in range(batch.shape[0]):
+#                img = numpy.cast['uint8'](square[i, :, :, :]) # 128, 128, 4
+#                img = Image.fromarray(img)
+#                img = img.resize(size=(self.size, self.size),
+#                                 resample=Image.CUBIC)
+#                new_sq[i, :, :, :] = numpy.array(img, dtype=batch.dtype)
+#            square = new_sq
         return square
 
 
@@ -423,18 +428,28 @@ class RotationAdj(Adjuster):
 
     Parameters
     ----------
-    min_deg : float
+    min_deg : float, optional
         The angle (degrees) where the iteration starts.
         First image will have exactly this angle of rotation.
-    max_deg : float
+    max_deg : float, optional
         Maximum angle (degrees); the iteration will stop before or exactly at
         this angle, based on the ``min_deg`` and ``step``.
-    step : float
+    step : float, optional
         The rotation angle is incremented each time with this ammount
         (degrees). If this parameter is 0 a single image will be generated,
         rotated by ``min_deg`` degrees.
+    order : int, optional
+        The order of the spline interpolation, default is 3. The order
+        has to be in the range 0-5.
+    resize : bool, optional
+        If True the image is resized, then the bounding box of the new image
+        is returned (will have dark corners); an additional opperation is
+        needed to scale the image back to original size. If False the image
+        is rotated in place, resulting in corners being cut. By default
+        `resize` is False because is faster.
     """
-    def __init__(self, min_deg=-45.0, max_deg=45.0, step=15.0):
+    def __init__(self, min_deg=-45.0, max_deg=45.0, step=15.0,
+                 order=3, resize=False):
 
         #: first angle to use
         self.min_deg = min_deg
@@ -450,6 +465,12 @@ class RotationAdj(Adjuster):
             self.min_deg = max_deg
             self.max_deg = min_deg
 
+        #: order of spline interpolation
+        self.order = order
+        assert order >= 0 and order <= 5
+
+        #: resize or not
+        self.resize = resize
 
         super(RotationAdj, self).__init__()
 
@@ -479,7 +500,8 @@ class RotationAdj(Adjuster):
         of hashed collections including set, frozenset, and dict.
         """
         return hash(self.__class__.__name__) ^ (hash(self.step) << 2) ^ \
-            (hash(self.max_deg) << 1) ^ hash(self.min_deg)
+            (hash(self.max_deg) << 1) ^ hash(self.min_deg) ^ \
+            (self.order ^ 3) ^ ((self.resize * 5) ^ 4)
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
@@ -493,14 +515,20 @@ class RotationAdj(Adjuster):
             img = batch[i, :, :, :]
             # get parameters for this image
             angle = self.prmstore.next()[0]
-            img = rotate(img, angle, axes=(0, 1), reshape=True,
-                         output=None, order=5,
-                         mode='constant', cval=0.0, prefilter=True)
-            img = zoom(img, zoom=(float(batch.shape[1]) / float(img.shape[0]),
-                                  float(batch.shape[2]) / float(img.shape[1]),
-                                  1.), output=None,
-                       order=5, mode='constant', cval=0.0, prefilter=True)
-            batch[i, :, :, :] = img
+            if self.resize:
+                img = rotate(img, angle, axes=(0, 1), reshape=True,
+                             output=None, order=self.order,
+                             mode='constant', cval=0.0, prefilter=True)
+                zoom(img, zoom=(float(batch.shape[1]) / float(img.shape[0]),
+                                float(batch.shape[2]) / float(img.shape[1]),
+                                1.), output=batch[i, :, :, :],
+                     order=self.order, mode='constant',
+                     cval=0.0, prefilter=True)
+            else:
+                img = rotate(img, angle, axes=(0, 1), reshape=False,
+                             output=img, order=self.order,
+                             mode='constant', cval=0.0, prefilter=True)
+            #batch[i, :, :, :] = img
 
 #        result = None
 #        for i in range(batch.shape[0]):
@@ -508,7 +536,7 @@ class RotationAdj(Adjuster):
 #            # get parameters for this image
 #            angle = self.prmstore.next()[0]
 #            img = rotate(img, angle, axes=(0, 1), reshape=True,
-#                         output=None, order=5,
+#                         output=None, order=self.order,
 #                         mode='constant', cval=0.0, prefilter=True)
 #            if result is None:
 #                # avoid computing the shape by delayed construction TM
@@ -548,6 +576,9 @@ class ScalePatchAdj(Adjuster):
         'btm_right', 'center') or callable objects.
         The callable receives the shape of the image and the ``outsize``
         and must return the placement as a tuple (delta_x, delta_y)
+    order : int, optional
+        The order of the spline interpolation, default is 3. The order
+        has to be in the range 0-5.
 
     Notes
     -----
@@ -568,7 +599,7 @@ class ScalePatchAdj(Adjuster):
     """
     def __init__(self, outsize=None,
                  start_factor=0.8, end_factor=0.9, step=0.1,
-                 placements=None):
+                 placements=None, order=3):
         #: output shape for the image (width, height)
         self.outsize = outsize
         if not outsize is None:
@@ -595,6 +626,10 @@ class ScalePatchAdj(Adjuster):
                     assert hasattr(plcm, '__call__')
         #: list of places where to move the image
         self.placements = placements
+
+        #: order of spline interpolation
+        self.order = order
+        assert order >= 0 and order <= 5
 
         super(ScalePatchAdj, self).__init__()
 
@@ -672,7 +707,8 @@ class ScalePatchAdj(Adjuster):
         of hashed collections including set, frozenset, and dict.
         """
         return hash(self.__class__.__name__) ^ (hash(self.step) << 2) ^ \
-            (hash(self.end_factor) << 1) ^ hash(self.start_factor)
+            (hash(self.end_factor) << 1) ^ hash(self.start_factor) ^ \
+            (self.order << 3) ^ (hash(self.end_factor) << 4)
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
@@ -699,25 +735,30 @@ class ScalePatchAdj(Adjuster):
             # get parameters for this image
             placement, factor = self.prmstore.next()
             img = batch[i, :, :, :]
-            img = zoom(img, zoom=(factor, factor, 1.), output=None,
-                       order=5, mode='constant', cval=0.0, prefilter=True)
-            assert outsize[0] > img.shape[1]
-            assert outsize[1] > img.shape[0]
-            deltax, deltay = placement(img.shape, outsize)
+            scaled_shape = tuple(
+                [int(round(ii * jj)) for ii, jj in zip(batch.shape[1:3],
+                                                       (factor, factor))])
+            assert outsize[0] > scaled_shape[1]
+            assert outsize[1] > scaled_shape[0]
+            deltax, deltay = placement(scaled_shape, outsize)
             assert deltax >= 0 and deltay >= 0
-            endx = deltax + img.shape[1]
-            endy = deltay + img.shape[0]
+            endx = deltax + scaled_shape[1]
+            endy = deltay + scaled_shape[0]
             assert endx <= outsize[0] and endy <= outsize[1]
-            result[i, deltay:endy, deltax:endx, :] = img
+            zoom(img, zoom=(factor, factor, 1.),
+                 output=result[i, deltay:endy, deltax:endx, :],
+                 order=self.order, mode='constant',
+                 cval=0.0, prefilter=True)
+            #result[i, deltay:endy, deltax:endx, :] = img
             if deltay > 0:
-                result[i, 0:deltay, :, :] = 0.
+                result[i, 0:deltay, :, :].fill(0.)
             if deltax > 0:
-                result[i, :, 0:deltax, :] = 0.
+                result[i, :, 0:deltax, :].fill(0.)
             if endy < outsize[1]:
-                result[i, endy:outsize[1], :, :] = 0.
+                result[i, endy:outsize[1], :, :].fill(0.)
             if endx < outsize[0]:
-                result[i, :, endx:outsize[0], :] = 0.
-        return batch
+                result[i, :, endx:outsize[0], :].fill(0.)
+        return result
 
 
 class GcaAdj(Adjuster):
@@ -777,7 +818,7 @@ class GcaAdj(Adjuster):
         if start_scale > end_scale:
             self.start_scale = end_scale
             self.end_scale = start_scale
-            
+
         if subtract_mean is None:
             subtract_mean = (True, False)
         elif isinstance(subtract_mean, bool):
