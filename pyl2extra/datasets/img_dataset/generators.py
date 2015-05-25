@@ -203,7 +203,7 @@ class AsyncMixin(object):
         #: if the cache has fewer than this number of images request refill
         self.cache_refill_treshold = 256
         #: number of images to retreive by each thread
-        self.cache_refill_count = 64
+        self.cache_refill_count = 16
         #: on termination counts the workers that exited
         self.finish = 0
         #: one time trigger ofr the threads to exit
@@ -537,7 +537,9 @@ class ProcessGen(Generator, AsyncMixin):
         #: maximum number of outstanding requests
         self.max_outstanding = 64
         #: number of seconds to wait before declaring timeout
-        self.wait_timeout = 30
+        self.wait_timeout = 60
+        #: used by receiver
+        self.gen_semaphore = threading.BoundedSemaphore(count)
 
     @functools.wraps(Generator.is_inline)
     def is_inline(self):
@@ -553,8 +555,8 @@ class ProcessGen(Generator, AsyncMixin):
         self.dataset_provided = False
 
         # the thread used for receiving data
-        self.receiverth = threading.Thread(target=ThreadedGen.worker,
-                                           args=(self),
+        self.receiverth = threading.Thread(target=ProcessGen.receiver_worker,
+                                           args=(self,),
                                            name='ProcessGenReceiver')
         #thr.daemon = True
         self.receiverth.start()
@@ -729,8 +731,10 @@ class ProcessGen(Generator, AsyncMixin):
         Thread entry point.
         """
         logging.debug("worker thread starts")
+        time.sleep(0.5)
         while not myself._should_terminate:
-            myself.receive_all_messages(no_block=False)
+            myself.receive_all_messages(no_block=True)
+            time.sleep(0.1)
 
 # The "worker" functions listen on a zeromq PULL connection for "work"
 # (numbers to be processed) from the ventilator, square those numbers,
@@ -766,15 +770,16 @@ def worker(wrk_num):
 
     dataset = None
 
-    def pop_request(offset, count):
-        """
-        Gets a list of files to process
-        """
-        result = []
-        for i in range(count):
-            fpath = dataset.data_provider.get(offset, count)
-            result.append(fpath)
-        return result
+   # def pop_request(offset, count):
+   #     """
+   #     Gets a list of files to process
+   #     """
+   #     result = []
+   #     count = count * (wrk_num+1)
+   #     for i in range(count):
+   #         fpath = dataset.data_provider.get(offset, count)
+   #         result.append(fpath)
+   #     return result
 
     # Loop and accept messages from both channels, acting accordingly
     while True:
