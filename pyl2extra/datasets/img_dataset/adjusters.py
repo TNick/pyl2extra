@@ -302,7 +302,7 @@ class MakeSquareAdj(Adjuster):
         dataset.shape = (self.size, self.size)
         #assert isinstance(dataset, ImgDataset)
         if self.construct:
-            ddm = self.create_ddm(dataset.data_provider, cache_loc)
+            ddm = self.create_ddm(dataset.data_provider, self.cache_loc)
             new_prov = DeDeMaProvider(ddm)
             new_prov.setup(dataset)
             dataset.data_provider = new_prov
