@@ -11,11 +11,13 @@ __license__ = "3-clause BSD"
 __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
+from datetime import datetime
 import dill
 import functools
 import logging
 import multiprocessing
 import numpy
+import cProfile
 import Queue
 import threading
 import time
@@ -153,7 +155,13 @@ class InlineGen(Generator):
     """
     Generates the content while the other parties wait on the same thread.
     """
-    def __init__(self):
+
+    def __init__(self, profile=False):
+        self.profile = profile
+        if profile:
+            self.profile_file = '/dev/shm/pyl2x-adj-' + datetime.now().strftime("%Y%m%d-%H%M%S")
+            self.profile_cnt = 1
+
         super(InlineGen, self).__init__()
 
     @functools.wraps(Generator.is_inline)
@@ -162,6 +170,10 @@ class InlineGen(Generator):
 
     @functools.wraps(Generator.is_inline)
     def get(self, source, next_index):
+        if self.profile:
+            pr = cProfile.Profile()
+            pr.enable()
+
         count, result, idx_features, idx_targets = self._prep_get(source,
                                                                   next_index)
         # iterate to collect data
@@ -176,6 +188,12 @@ class InlineGen(Generator):
                 result[idx_features][i, :, :, :] = trg
             if idx_targets > -1:
                 result[idx_targets][i][0] = categ
+
+
+        if self.profile:
+            pr.disable()
+            pr.dump_stats('%s.%d.profile' % (self.profile_file, self.profile_cnt))
+            self.profile_cnt = self.profile_cnt + 1
 
         return tuple(result)
 
