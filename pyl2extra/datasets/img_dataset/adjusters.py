@@ -13,12 +13,17 @@ __email__ = "nicu.tofan@gmail.com"
 
 import functools
 import numpy
+import os
 import Image
 #from pyl2extra.datasets.img_dataset.dataset import ImgDataset
 import webcolors
 from scipy.ndimage.interpolation import rotate, zoom
+from pylearn2.datasets.dense_design_matrix import DenseDesignMatrix
 from pylearn2.expr.preprocessing import global_contrast_normalize
+from pylearn2.utils import serial
+
 from pyl2extra.utils.paramstore import ParamStore
+from pyl2extra.datasets.img_dataset.data_providers import DeDeMaProvider
 
 class Adjuster(object):
     """
@@ -265,17 +270,28 @@ class MakeSquareAdj(Adjuster):
     ----------
     size : int, optional
         The size of the resulted image.
-
+    order : int, optional
+        The order of the spline interpolation, default is 3. The order
+        has to be in the range 0-5.
+    construct : bool, optional
+        Profiler shows that this is one of the most expensive opperation and,
+        because it adds no parameters can be performed at setup time. If this
+        option is enabled the adjuster will request all images from currently
+        installed data provider, adjust them, create a DenseDesignMatrix
+        for it and sue it as the data provider.
     Notes
     -----
     See webcolors module for valid string formats for the ``background``
     member.
     """
-    def __init__(self, size=128):
+    def __init__(self, size=128, order=3, construct=False):
 
+        #: order of spline
+        self.order = order
         #: size of the resulted image
         self.size = size
-
+        #: preprocess inside setup
+        self.construct = construct
         super(MakeSquareAdj, self).__init__()
 
     @functools.wraps(Adjuster.setup)
@@ -283,6 +299,74 @@ class MakeSquareAdj(Adjuster):
         # override dataset shape because we know better
         dataset.shape = (self.size, self.size)
         #assert isinstance(dataset, ImgDataset)
+        if self.construct:
+            ddm = self.create_ddm(dataset.data_provider)
+            new_prov = DeDeMaProvider(ddm)
+            new_prov.setup(dataset)
+            dataset.data_provider = new_prov
+
+    def create_ddm(self, datap, cache_loc=None):
+        """
+        Creates a DenseDesignMatrix from a data provider.
+
+        Parameters
+        ----------
+        datap : pyl2extra.datasets.img_dataset.data_providers.Provider
+            The provider to use.
+        cache_loc : str, optional
+            If provided, must be a path towards a pickled dataset. If the
+            file exists it is loaded and returned; otherwise new dataset
+            is saved to that location.
+
+        Returns
+        -------
+        ddm : pylearn2.datasets.dense_design_matrix.DenseDesignMatrix
+            The new dataset.
+        """
+        if cache_loc and os.path.isfile(cache_loc):
+            ddm = serial.load(cache_loc)
+            return ddm
+
+        # number of examples
+        excnt = len(datap)
+        assert excnt > 0
+        # this will hold all examples in topological order
+        examples = numpy.empty(shape=(excnt, self.size, self.size, 4),
+                               dtype='uint8')
+        categs = range(excnt)
+        for i, f_path in enumerate(datap):
+            # returned image always has 4 channels
+            imarray, categs[i] = datap.read(f_path)
+            width = imarray.shape[1]
+            height = imarray.shape[0]
+
+            if width == height:
+                square = imarray
+                largest = width
+            else:
+                largest = max(width, height)
+                deltax = (largest - width) / 2
+                deltay = (largest - height) / 2
+                # by having zeros the areas not covered by the image
+                # become transparent
+                square = numpy.zeros(shape=(largest, largest,
+                                            imarray.shape[2]), dtype='uint8')
+                square[deltay:deltay+height, deltax:deltax+width, :] = imarray
+
+            if self.size == largest:
+                examples[i, :, :, :] = square
+            else:
+                factor = self.size / float(largest)
+                zoom(square, zoom=(factor, factor, 1.),
+                     output=examples[i, :, :, :],
+                     order=self.order,
+                     mode='constant',
+                     cval=0.0, prefilter=True)
+        ddm = DenseDesignMatrix(topo_view=examples, y=numpy.array(categs))
+        if cache_loc:
+            ddm.use_design_loc(cache_loc + '.npy')
+            serial.save(cache_loc, ddm)
+        return ddm
 
     @functools.wraps(Adjuster.transf_count)
     def transf_count(self):
@@ -318,7 +402,7 @@ class MakeSquareAdj(Adjuster):
         if self.size != largest:
             factor = self.size / float(largest)
             square = zoom(square, zoom=(1., factor, factor, 1.),
-                          output=None, order=3, mode='constant',
+                          output=None, order=self.order, mode='constant',
                           cval=0.0, prefilter=True)
 #
 #            new_sq = numpy.empty(shape=(batch.shape[0],

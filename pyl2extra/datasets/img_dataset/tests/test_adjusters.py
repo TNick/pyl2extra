@@ -24,7 +24,7 @@ from pyl2extra.datasets.img_dataset.adjusters import (FlipAdj, RotationAdj,
                                                       MakeSquareAdj,
                                                       adj_from_string)
 
-
+from pyl2extra.datasets.img_dataset.data_providers import RandomProvider
 
 def create_rgba_image(width=256, height=256, cornerf=(0, 255, 255, 255)):
     """
@@ -138,16 +138,16 @@ class TestBackgroundAdj(unittest.TestCase, BaseAdjusters):
         im_bkg = create_rgb_image()
         pickle_png = os.path.join(self.tmp_dir, "pickle.png")
         im_bkg.save(pickle_png)
-        local_testee =  BackgroundAdj(backgrounds=[(250, 0, 250)],
-                                      image_files=pickle_png)
-        
+        local_testee = BackgroundAdj(backgrounds=[(250, 0, 250)],
+                                     image_files=pickle_png)
+
         dmp = cPickle.dumps(local_testee)
         reloaded = cPickle.loads(dmp)
         batch_sz = 5
         batch = create_batch(batch_sz)
         batch = reloaded.process(batch)
         self.assertEqual(batch.shape[0], batch_sz)
-        
+
 
     def test_transf_count(self):
         """
@@ -271,10 +271,12 @@ class TestMakeSquareAdj(unittest.TestCase):
         self.testee = MakeSquareAdj()
         dataset = MockDataset()
         self.testee.setup(dataset, 'seq_one')
+        self.tmp_dir = tempfile.mkdtemp()
 
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
         del self.testee
+        shutil.rmtree(self.tmp_dir)
 
     def test_transf_count(self):
         """
@@ -297,6 +299,32 @@ class TestMakeSquareAdj(unittest.TestCase):
 
             #img = Image.fromarray(im_rgb)
             #img.show()
+
+    def test_create_ddm_square(self):
+        """
+        Makes dense design dataset.
+        """
+        datap = RandomProvider(count=50)
+        cache_loc = os.path.join(self.tmp_dir, 'ddm.pkl')
+        cache_npy = cache_loc + '.npy'
+        ddm = self.testee.create_ddm(datap, cache_loc=cache_loc)
+
+        self.assertTrue(os.path.isfile(cache_loc))
+        self.assertTrue(os.path.isfile(cache_npy))
+        self.assertEqual(ddm.get_num_examples(), 50)
+
+    def test_create_ddm_non_square(self):
+        """
+        Makes dense design dataset.
+        """
+        datap = RandomProvider(count=50, size=(128, 256))
+        cache_loc = os.path.join(self.tmp_dir, 'ddm.pkl')
+        cache_npy = cache_loc + '.npy'
+        ddm = self.testee.create_ddm(datap, cache_loc=cache_loc)
+
+        self.assertTrue(os.path.isfile(cache_loc))
+        self.assertTrue(os.path.isfile(cache_npy))
+        self.assertEqual(ddm.get_num_examples(), 50)
 
 class TestFlipAdj(unittest.TestCase):
     """
@@ -601,4 +629,7 @@ class TestAdjFromString(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    if True:
+        unittest.main()
+    else:
+        unittest.main(argv=['--verbose', 'TestMakeSquareAdj'])

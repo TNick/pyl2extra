@@ -301,6 +301,10 @@ class DictProvider(Provider):
     def __iter__(self):
         return self.data.keys().__iter__()
 
+    @functools.wraps(Provider.__iter__)
+    def __len__(self):
+        return len(self.data)
+        
     @functools.wraps(Provider.next)
     def next(self):
         return self.keys_iter.next()
@@ -488,6 +492,10 @@ class RandomProvider(DictProvider):
         # everything else is provided by DictProvider
         super(RandomProvider, self).__init__(data)
 
+    @functools.wraps(Provider.__iter__)
+    def __len__(self):
+        return self.count
+        
     @functools.wraps(Provider.read)
     def read(self, f_path):
         logging.debug('generator reading file %s', f_path)
@@ -532,3 +540,77 @@ class RandomProvider(DictProvider):
             self.content[file_name] = img.convert(modes[i % len(modes)])
             data[file_name] = file_name
         return data
+
+
+class DeDeMaProvider(Provider):
+    """
+    A provider based on a DenseDesignMatrix.
+
+    Parameters
+    ----------
+    data : dict of strings
+        A dictionary with the keys being file paths and values being
+        the category.
+    """
+    def __init__(self, dedema):
+        self.dedema = dedema
+        self.dataset_iter = range(dedema.get_num_examples()).__iter__()
+        super(DeDeMaProvider, self).__init__()
+
+    @functools.wraps(Provider.__iter__)
+    def __iter__(self):
+        return self.dataset_iter
+
+    @functools.wraps(Provider.__iter__)
+    def __len__(self):
+        return self.dedema.get_num_examples()
+        
+    @functools.wraps(Provider.next)
+    def next(self):
+        return self.dataset_iter.next()
+
+    @functools.wraps(Provider.category)
+    def category(self, f_path):
+        f_path = int(f_path)
+        assert not self.dedema.y is None
+        return self.dedema.y[f_path]
+
+    @functools.wraps(Provider.everything)
+    def everything(self):
+        rang = range(self.dedema.get_num_examples())
+        data = {}
+        for i in rang:
+            data[i] = self.dedema.y[i]
+        return data
+
+    @functools.wraps(Provider.cnext)
+    def cnext(self):
+        try:
+            return self.next()
+        except StopIteration:
+            rang = range(self.dedema.get_num_examples())
+            self.dataset_iter = rang.__iter__()
+            return self.next()
+
+    def __getstate__(self):
+        """
+        Help pickle this instance.
+        """
+        return {'data': self.dedema}
+
+    def __setstate__(self, state):
+        """
+        Help un-pickle this instance.
+        """
+        self.dedema = state['data']
+        self.dataset_iter = self.dedema.iterator()
+
+    @functools.wraps(Provider.read)
+    def read(self, f_path):
+        f_path = int(f_path)
+        categ = self.category(f_path)
+        ddm = self.dedema.get_design_matrix()
+        view_conv = self.dedema.view_converter.design_mat_to_topo_view
+        exm = view_conv(ddm[f_path].reshape(1, ddm.shape[1]))
+        return exm[0], categ
+        

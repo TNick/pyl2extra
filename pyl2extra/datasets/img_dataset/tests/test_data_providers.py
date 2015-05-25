@@ -16,10 +16,12 @@ import os
 import shutil
 import tempfile
 import unittest
+from pylearn2.datasets.dense_design_matrix import DenseDesignMatrix
 
 from pyl2extra.datasets.img_dataset.data_providers import (DictProvider,
                                                            CsvProvider,
-                                                           RandomProvider)
+                                                           RandomProvider,
+                                                           DeDeMaProvider)
 
 class TestDictProvider(unittest.TestCase):
     """
@@ -475,7 +477,7 @@ class TestRandomProvider(unittest.TestCase):
 
     def test_cnext(self):
         """
-        Check the cnext() for DictProvider
+        Check the cnext() for RandomProvider
 
         It should never trigger StopIteration.
         """
@@ -506,5 +508,65 @@ class TestRandomProvider(unittest.TestCase):
         """
         self.assertTrue(len(self.testee) > 0)
 
+
+class TestDeDeMaProvider(unittest.TestCase):
+    """
+    Tests for DeDeMaProvider.
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+
+        self.count = 20
+        channels = 3
+        imarray = numpy.random.rand(self.count, 128, 128, channels) * 255
+        imgcateg = numpy.array([str(i+1) for i in range(self.count)])
+        ddm = DenseDesignMatrix(topo_view=imarray,
+                                axes=('b', 0, 1, 'c'),
+                                y=imgcateg)
+        self.testee = DeDeMaProvider(ddm)
+
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        del self.testee
+
+    def test_cnext(self):
+        """
+        Check the cnext() for DeDeMaProvider
+
+        It should never trigger StopIteration.
+        """
+        last = -1
+        for i in range(1000):
+            cnx = self.testee.cnext()
+            self.assertTrue(last+1 == cnx or cnx == 0)
+            last = cnx
+
+    def test_read_file(self):
+        """
+        Check read() method
+        """
+        for fpath in range(self.count):
+            imarray, categ = self.testee.read(fpath)
+            self.assertEqual(len(imarray.shape), 3)
+            self.assertEqual(imarray.shape[2], 3)
+            self.assertEqual(str(fpath+1), str(categ))
+            self.assertTrue(str(imarray.dtype).startswith('float'))
+
+    def test_hash(self):
+        """
+        Check hash() method
+        """
+        self.assertTrue(hash(self.testee))
+
+    def test_len(self):
+        """
+        Check len() method
+        """
+        self.assertEqual(len(self.testee), self.count)
+
+
 if __name__ == '__main__':
-    unittest.main()
+    if True:
+        unittest.main()
+    else:
+        unittest.main(argv=['--verbose', 'TestDeDeMaProvider'])
