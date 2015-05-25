@@ -15,6 +15,7 @@ import functools
 import numpy
 import os
 import Image
+import logging
 #from pyl2extra.datasets.img_dataset.dataset import ImgDataset
 import webcolors
 from scipy.ndimage.interpolation import rotate, zoom
@@ -131,6 +132,7 @@ class BackgroundAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
+        logging.debug('%s is being set-up' % self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         self.prmstore = ParamStore([self.backgrounds], mode=mode)
         self.mode = mode
@@ -298,6 +300,7 @@ class MakeSquareAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
+        logging.debug('%s is being set-up' % self.__class__.__name__)
         # override dataset shape because we know better
         dataset.shape = (self.size, self.size)
         #assert isinstance(dataset, ImgDataset)
@@ -326,9 +329,12 @@ class MakeSquareAdj(Adjuster):
             The new dataset.
         """
         if cache_loc and os.path.isfile(cache_loc):
+            logging.debug('create_ddm reads the data from cache (%s)',
+                          cache_loc)
             ddm = serial.load(cache_loc)
             return ddm
 
+        logging.debug('create_ddm creates new dataset')
         # number of examples
         excnt = len(datap)
         assert excnt > 0
@@ -365,7 +371,9 @@ class MakeSquareAdj(Adjuster):
                      mode='constant',
                      cval=0.0, prefilter=True)
         ddm = DenseDesignMatrix(topo_view=examples, y=numpy.array(categs))
+        logging.debug('create_ddm has created the new dataset')
         if cache_loc:
+            logging.debug('create_ddm caches new dataset at %s', cache_loc)
             ddm.use_design_loc(cache_loc + '.npy')
             serial.save(cache_loc, ddm)
         return ddm
@@ -444,6 +452,7 @@ class FlipAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
+        logging.debug('%s is being set-up' % self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         lst = [[True, False]]
         if self.horizontal and self.vertical:
@@ -562,6 +571,7 @@ class RotationAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
+        logging.debug('%s is being set-up' % self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         angles = []
         angle = self.min_deg
@@ -751,6 +761,7 @@ class ScalePatchAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
+        logging.debug('%s is being set-up' % self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         pos = []
         for plcm in self.placements:
@@ -937,6 +948,7 @@ class GcaAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
+        logging.debug('%s is being set-up' % self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         scales = []
         scale = self.start_scale
