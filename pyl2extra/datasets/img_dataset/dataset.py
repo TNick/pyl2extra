@@ -16,6 +16,7 @@ __email__ = "nicu.tofan@gmail.com"
 import functools
 import numpy
 import os
+import logging
 from pylearn2.datasets.dataset import Dataset
 from pylearn2.datasets.dense_design_matrix import FiniteDatasetIterator
 from pylearn2.utils.rng import make_np_rng
@@ -275,11 +276,11 @@ class ImgDataset(Dataset):
         # argument.
         totrawex = len(self.data_provider)
         num_batches = totrawex / batch_size
-        if totrawex > num_batches * batch_size:
-            num_batches = num_batches + 1
+        #if totrawex > num_batches * batch_size:
+        #    num_batches = num_batches + 1
         
         return FiniteDatasetIterator(self,
-                                     mode(totrawex,
+                                     mode(num_batches * batch_size,
                                           batch_size,
                                           num_batches,
                                           rng),
@@ -389,6 +390,21 @@ class ImgDataset(Dataset):
                                  "doing that is to use BackgroundAdj.")
         return result
 
+    def get_cache_loc(self):
+        """
+        Get th location of the cache for this dataset.
+        Returns
+        -------
+        path : str
+            None if caching is disabled or the path towards the cache directory.
+        """
+        if self.cache_loc is None:
+            return None
+        path = os.path.join(self.cache_loc, 'h' + str(hash(self)))
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        return path
+
     def to_dense_design_matrix(self):
         """
         Generates all examples and returns them as a DenseDesignMatrix.
@@ -401,3 +417,4 @@ class ImgDataset(Dataset):
         """
         # TODO: implement
         raise NotImplementedError()
+

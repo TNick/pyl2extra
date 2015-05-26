@@ -11,13 +11,14 @@ __license__ = "3-clause BSD"
 __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
+import cProfile
 from datetime import datetime
 import dill
 import functools
 import logging
 import multiprocessing
 import numpy
-import cProfile
+import os
 import Queue
 import threading
 import time
@@ -140,6 +141,11 @@ class Basket(object):
         self.batch = batch
         #: the classes that corespond to processed images
         self.classes = classes
+        #: a number that identifies this instance
+        self.ident = None
+        self.assign_id()
+
+    id_factory = 1
 
     def __len__(self):
         """
@@ -149,6 +155,14 @@ class Basket(object):
             return 0
         else:
             return self.batch.shape[0]
+
+    def assign_id(self):
+        """
+        Assign an unique identifier to this instance.
+        """
+        #: a number that identifies this instance
+        self.ident = Basket.id_factory
+        Basket.id_factory = Basket.id_factory + 1
 
 
 class InlineGen(Generator):
@@ -233,6 +247,8 @@ class AsyncMixin(object):
         self.keep_baskets = 128
         #: the list of baskets kept around
         self.baskets_backup = []
+        #: number of unique examples
+        self.uniq_ex = 0
 
     def _get(self, source, next_index):
         """
@@ -243,6 +259,9 @@ class AsyncMixin(object):
         assert count > 0
         logging.debug('get a batch of %d images (%d cached)',
                       count, self.cached_images)
+   
+        # deals with both bootstraping and saving for future
+        self.cache_first_batch()
 
         # where inside result array we're placing the data
         offset = 0
@@ -260,7 +279,7 @@ class AsyncMixin(object):
                 btc = basket.batch[0:to_copy, :, :, :]
                 result[idx_features][offset:offset+to_copy, :, :, :] = btc
             if idx_targets > -1:
-                btc = basket.categories[0:to_copy]
+                btc = basket.classes[0:to_copy]
                 result[idx_targets][offset:offset+to_copy, 0] = btc
             count = count - to_copy
 
@@ -268,11 +287,13 @@ class AsyncMixin(object):
             if len(basket) > to_copy:
                 logging.debug("Inefficient use of baskets: %d needed, %d in basket",
                               to_copy, len(basket))
-                basket.batch = basket.batch[to_copy:, :, :, :]
-                basket.categories = basket.categories[to_copy:]
-                self.add_basket(basket)
-            else:
-                self.basked_done(basket)
+                leftover = Basket()
+                leftover.ident = basket.ident
+                leftover.batch = basket.batch[to_copy:, :, :, :]
+                leftover.classes = basket.classes[to_copy:]
+                self.add_basket(leftover, False)
+
+            self.basked_done(basket)
 
         # make sure we're ready for next round
         refill = self.cache_refill_treshold - self.cached_images
@@ -322,7 +343,7 @@ class AsyncMixin(object):
                 while refill > 0:
                     self.push_request(self.cache_refill_count)
                     refill = refill - self.cache_refill_count
-            self.add_basket(self.baskets_backup)
+            self.add_basket(self.baskets_backup, False)
             self.baskets_backup = []
 
     def __getstate__(self):
@@ -337,6 +358,113 @@ class AsyncMixin(object):
         """
         super(AsyncMixin, self).__setstate__(state)
 
+    def _setup(self):
+        """
+        Common setup for asyncroneous providers.
+        """
+        # delayed initialization state
+        self.bootstrap_state = 3
+        # (should be a customizable param.) - number of examples in 1st batch
+        self.bootstrap_count = 1024
+
+    def cache_first_batch(self):
+        """
+        If conditions are optimal and the user wants first batch saved do that now.
+ 
+        We check if the batch was already saved and we do nothing in that case.
+        """
+        if self.bootstrap_state == 0:
+            # caching is disabled, so nothing to do
+            return
+        elif self.bootstrap_state == 1:
+            # there is already a cache entry saved (either by this run or loaded)
+            return
+        elif self.bootstrap_state == 3:
+            # delayed initialization from first get call
+            self.cached_first_batch = self.dataset.get_cache_loc()
+            if self.cached_first_batch is None:
+                logging.debug('Bootstrapping is disables')
+                self.bootstrap_state = 0
+                return
+            self.categ_file = os.path.join(self.cached_first_batch, 
+                                           'bootstrap.categs.npy')
+            self.cached_first_batch = os.path.join(self.cached_first_batch, 
+                                                   'bootstrap.npy')
+            logging.debug('Bootstrapping location: %s', self.cached_first_batch)
+            if os.path.isfile(self.cached_first_batch):
+                # we have a file, so load it
+                array = numpy.load(self.cached_first_batch)
+                self.set_continous(array, numpy.load(self.categ_file))
+                self.bootstrap_state = 1
+                logging.debug('A bootstrap batch of %d examples was loaded from %s',
+                          array.shape[0], self.cached_first_batch)
+                return
+            else:
+                logging.debug('Bootstrapping file missing')
+            self.bootstrap_state = 4
+            return
+        elif self.bootstrap_state == 4:
+            # we need to save a consistent batch for future runs
+            if self.uniq_ex < self.bootstrap_count:
+                return
+            numpy_cache, categs = self.get_continous(self.bootstrap_count)
+            if numpy_cache is None:
+                return
+            numpy.save(self.cached_first_batch, numpy_cache)
+            numpy.save(self.categ_file, categs)
+            del numpy_cache
+            del categs
+            self.bootstrap_state = 1
+            logging.debug('A bootstrap batch of %d examples was saved at %s',
+                          self.bootstrap_count, self.cached_first_batch)
+
+    def get_continous(self, count):
+        """
+        Get a numpy array with specified number of examples.
+
+        This should only be called in main thread.
+        """
+        assert self.uniq_ex >= count 
+        result = None
+        offset = 0
+        categs = None
+        ident_seen = []
+        uniq_baskets = 0
+        for bask in self.baskets:
+            if bask.ident in ident_seen:
+                continue
+            ident_seen.append(bask.ident)
+            uniq_baskets = uniq_baskets + 1
+            if result is None:
+                shape = list(bask.batch.shape)
+                shape[0] = count
+                result = numpy.empty(shape=shape, dtype=bask.batch.dtype)
+                categs = numpy.empty(shape=(count), dtype=bask.classes.dtype)
+            this_run = min(count, len(bask))
+            result[offset:offset+this_run, :, :, :] = bask.batch[0:this_run, :, :, :]
+            categs[offset:offset+this_run] = bask.classes[0:this_run]
+            count = count - this_run
+            offset = offset + this_run
+            if count == 0:
+                break
+        if count != 0:
+            logging.debug('LOGIC ERROR! uniq_ex (%d) should '
+                          'reflect the number of unique baskets (%d) '
+                          'among all batches (%d)',
+                          self.uniq_ex, uniq_baskets, len(self.baskets))
+            return None, None
+        return result, categs
+
+    def set_continous(self, array, categs, brand_new=True):
+        """
+        Initialize the basket with examples created in a previous run.
+        """
+        basket = Basket()
+        basket.batch = array
+        basket.classes = categs
+        self.add_basket(basket, brand_new)
+
+        
 def _process_image(dataset, trg, categ, i, basket, basket_sz):
     """
     Process image and append it to the basket.
@@ -355,12 +483,12 @@ def _process_image(dataset, trg, categ, i, basket, basket_sz):
                                           trg.shape[2],
                                           trg.shape[3]),
                                    dtype=trg.dtype)
-        basket.categories = numpy.empty(shape=(basket_sz),
-                                        dtype='int32')
+        basket.classes = numpy.empty(shape=(basket_sz),
+                                     dtype='int32')
 
     # and we're done with this image
     basket.batch[i, :, :, :] = trg
-    basket.categories[i] = categ
+    basket.classes[i] = categ
 
 
 class ThreadedGen(Generator, AsyncMixin):
@@ -408,6 +536,7 @@ class ThreadedGen(Generator, AsyncMixin):
             #thr.daemon = True
             self.threads.append(thr)
             thr.start()
+        self._setup()
 
     @functools.wraps(Generator.get)
     def get(self, source, next_index):
@@ -461,7 +590,7 @@ class ThreadedGen(Generator, AsyncMixin):
             result.append(fpath)
         return result
 
-    def add_basket(self, basket):
+    def add_basket(self, basket, brand_new):
         """
         Appends a basket to the list.
 
@@ -472,6 +601,9 @@ class ThreadedGen(Generator, AsyncMixin):
         self.gen_semaphore.acquire()
         for bsk in reversed(basket):
             self.cached_images = self.cached_images + len(bsk)
+            if brand_new:
+                self.uniq_ex = self.uniq_ex + len(bsk)
+                bsk.assign_id()
             self.baskets.append(bsk)
         self.gen_semaphore.release()
 
@@ -497,7 +629,7 @@ class ThreadedGen(Generator, AsyncMixin):
         count = len(basket)
         logging.debug('thread %d done with a request of %d images',
                       thid, count)
-        self.add_basket(basket)
+        self.add_basket(basket, True)
         self.queue.task_done()
 
     def thread_ended(self, thid):
@@ -663,6 +795,8 @@ class ProcessGen(Generator, AsyncMixin):
         self.ventilator_send = self.context.socket(zmq.PUSH)
         self.ventilator_send.bind(ProcessGen.VENTILATOR_ADDRESS)
 
+        self._setup()
+
         # Give everything a second to spin up and connect
         time.sleep(0.5)
 
@@ -784,11 +918,11 @@ class ProcessGen(Generator, AsyncMixin):
                 else:
                     raise
         if len(baskets) > 0:
-            self.add_basket(baskets)
+            self.add_basket(baskets, True)
         #logging.debug("Received all messages; %d outstanding requests",
         #                          self.outstanding_requests)
 
-    def add_basket(self, basket):
+    def add_basket(self, basket, brand_new):
         """
         Appends a basket to the list.
 
@@ -800,6 +934,9 @@ class ProcessGen(Generator, AsyncMixin):
         for bsk in reversed(basket):
             self.cached_images = self.cached_images + len(bsk)
             self.baskets.append(bsk)
+            if brand_new:
+                self.uniq_ex = self.uniq_ex + len(bsk)
+                bsk.assign_id()
         self.gen_semaphore.release()
 
     def get_basket(self):
