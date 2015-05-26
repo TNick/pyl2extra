@@ -171,8 +171,8 @@ class InlineGen(Generator):
     @functools.wraps(Generator.is_inline)
     def get(self, source, next_index):
         if self.profile:
-            pr = cProfile.Profile()
-            pr.enable()
+            profiler = cProfile.Profile()
+            profiler.enable()
 
         count, result, idx_features, idx_targets = self._prep_get(source,
                                                                   next_index)
@@ -191,8 +191,8 @@ class InlineGen(Generator):
 
 
         if self.profile:
-            pr.disable()
-            pr.dump_stats('%s.%d.profile' % (self.profile_file, self.profile_cnt))
+            profiler.disable()
+            profiler.dump_stats('%s.%d.profile' % (self.profile_file, self.profile_cnt))
             self.profile_cnt = self.profile_cnt + 1
 
         return tuple(result)
@@ -221,13 +221,18 @@ class AsyncMixin(object):
         #: if the cache has fewer than this number of images request refill
         self.cache_refill_treshold = 5256
         #: number of images to retreive by each thread
-        self.cache_refill_count = 128 
+        self.cache_refill_count = 128
         #: on termination counts the workers that exited
         self.finish = 0
         #: one time trigger ofr the threads to exit
         self._should_terminate = False
         #: number of workers to use
         self.workers_count = 0
+
+        #: number of baskets to keep arraound if we don't have enough data
+        self.keep_baskets = 128
+        #: the list of baskets kept around
+        self.baskets_backup = []
 
     def _get(self, source, next_index):
         """
@@ -242,7 +247,7 @@ class AsyncMixin(object):
         # where inside result array we're placing the data
         offset = 0
         while count > 0:
-            self._wait_for_data(count)
+            self._new_or_backup(count)
 
             # get a basket from our list
             basket = self.get_basket()
@@ -264,6 +269,8 @@ class AsyncMixin(object):
                 basket.batch = basket.batch[to_copy:, :, :, :]
                 basket.categories = basket.categories[to_copy:]
                 self.add_basket(basket)
+            else:
+                self.basked_done(basket)
 
         # make sure we're ready for next round
         refill = self.cache_refill_treshold - self.cached_images
@@ -273,6 +280,46 @@ class AsyncMixin(object):
             refill = refill - self.cache_refill_count
 
         return tuple(result)
+
+    def basked_done(self, basket):
+        """
+        A basket was received and it was extracted from queue.
+
+        After the baskets are used they are normally discarded. If we're
+        unable to provide examples fast enough the network will block
+        waiting (sometimes for tens of seconds). To alleviate that, we keep
+        arround the old examples and we serve them when there anre no
+        new baskets.
+        """
+        if self.keep_baskets == 0:
+            return
+        assert self.keep_baskets > 0
+
+        lkb = len(self.baskets_backup)
+        if lkb >= self.keep_baskets:
+            # make room for the new basket
+            lkb = lkb - self.baskets_backup + 1
+            self.baskets_backup = self.baskets_backup[lkb:]
+        self.baskets_backup.append(basket)
+
+    def _new_or_backup(self, count):
+        """
+        Replacement for `_wait_for_data()` that either gets examples from
+        queue or from the backup list.
+        """
+        if len(self.baskets) > 0:
+            return
+
+        if len(self.baskets_backup) == 0:
+            self._wait_for_data(count)
+        else:
+            if self.queue.empty:
+                refill = max(self.cache_refill_count, count)
+                while refill > 0:
+                    self.push_request(self.cache_refill_count)
+                    refill = refill - self.cache_refill_count
+            self.add_basket(self.baskets_backup)
+            self.baskets_backup = []
 
     def __getstate__(self):
         """
@@ -410,9 +457,12 @@ class ThreadedGen(Generator, AsyncMixin):
 
         Also, keeps `cached_images` syncronized.
         """
+        if isinstance(basket, Basket):
+            basket = [basket]
         self.gen_semaphore.acquire()
-        self.cached_images = self.cached_images + len(basket)
-        self.baskets.append(basket)
+        for bsk in reversed(basket):
+            self.cached_images = self.cached_images + len(bsk)
+            self.baskets.append(bsk)
         self.gen_semaphore.release()
 
     def get_basket(self):
@@ -691,6 +741,7 @@ class ProcessGen(Generator, AsyncMixin):
         from multiple workers.
         """
         b_done = False
+        baskets = []
         while not b_done:
             try:
                 if no_block:
@@ -707,7 +758,7 @@ class ProcessGen(Generator, AsyncMixin):
                                   len(basket),
                                   self.outstanding_requests,
                                   self.cached_images)
-                    self.add_basket(basket)
+                    baskets.append(basket)
                 else:
                     logging.error("Empty basket received")
                 assert self.outstanding_requests >= 0
@@ -716,6 +767,8 @@ class ProcessGen(Generator, AsyncMixin):
                     b_done = True
                 else:
                     raise
+        if len(baskets) > 0:
+            self.add_basket(baskets)
         #logging.debug("Received all messages; %d outstanding requests",
         #                          self.outstanding_requests)
 
@@ -725,10 +778,12 @@ class ProcessGen(Generator, AsyncMixin):
 
         Also, keeps `cached_images` syncronized.
         """
-        assert not basket.batch is None
+        if isinstance(basket, Basket):
+            basket = [basket]
         self.gen_semaphore.acquire()
-        self.cached_images = self.cached_images + len(basket)
-        self.baskets.append(basket)
+        for bsk in reversed(basket):
+            self.cached_images = self.cached_images + len(bsk)
+            self.baskets.append(bsk)
         self.gen_semaphore.release()
 
     def get_basket(self):
