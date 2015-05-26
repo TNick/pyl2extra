@@ -266,6 +266,8 @@ class AsyncMixin(object):
 
             # the basket was larger so we have to put it back
             if len(basket) > to_copy:
+                logging.debug("Inefficient use of baskets: %d needed, %d in basket",
+                              to_copy, len(basket))
                 basket.batch = basket.batch[to_copy:, :, :, :]
                 basket.categories = basket.categories[to_copy:]
                 self.add_basket(basket)
@@ -301,7 +303,8 @@ class AsyncMixin(object):
             lkb = lkb - self.keep_baskets + 1
             self.baskets_backup = self.baskets_backup[lkb:]
         self.baskets_backup.append(basket)
-        logging.debug('basket cached; %d baskets in cache', len(self.baskets_backup))
+        logging.debug('basket of %d images cached; %d baskets in cache',
+                      len(basket), len(self.baskets_backup))
 
     def _new_or_backup(self, count):
         """

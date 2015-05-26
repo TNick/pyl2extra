@@ -12,10 +12,13 @@ def slice_count(slc):
     """
     Computes the number of elements in a slice object.
     """
-    cnt = slc.stop - slc.start
-    if not slc.step is None:
-        if cnt % slc.step > 0:
-            cnt = cnt / slc.step + 1
-        else:
-            cnt = cnt / slc.step
+    try:
+        cnt = slc.stop - slc.start
+        if not slc.step is None:
+            if cnt % slc.step > 0:
+                cnt = cnt / slc.step + 1
+            else:
+                cnt = cnt / slc.step
+    except AttributeError:
+        cnt = len(slc)
     return cnt

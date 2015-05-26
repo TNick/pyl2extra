@@ -131,8 +131,9 @@ class ImgDataset(Dataset):
         self._iter_batch_size = 128
 
         #: default number of batches
-        self._iter_num_batches = self.totlen / self._iter_batch_size
-        if self.totlen > self._iter_num_batches * self._iter_batch_size:
+        totrawex = len(self.data_provider)
+        self._iter_num_batches = totrawex / self._iter_batch_size
+        if totrawex > self._iter_num_batches * self._iter_batch_size:
             self._iter_num_batches = self._iter_num_batches  + 1
 
         #: default random number generator
@@ -268,8 +269,17 @@ class ImgDataset(Dataset):
                  rng=None, data_specs=None, return_tuple=False):
         [mode, batch_size, num_batches, rng, data_specs] = self._init_iterator(
             mode, batch_size, num_batches, rng, data_specs)
+
+        # self._init_iterator will return the default number of batches that 
+        # matches the default batch size; we need a number that reflects batch_size
+        # argument.
+        totrawex = len(self.data_provider)
+        num_batches = totrawex / batch_size
+        if totrawex > num_batches * batch_size:
+            num_batches = num_batches + 1
+        
         return FiniteDatasetIterator(self,
-                                     mode(len(self),
+                                     mode(totrawex,
                                           batch_size,
                                           num_batches,
                                           rng),
@@ -285,7 +295,9 @@ class ImgDataset(Dataset):
 
     @functools.wraps(Dataset.get_num_examples)
     def get_num_examples(self):
-        return len(self)
+        # we can't return len(self) because the number is used by the iterator
+        # (and, as such, the monitor) which is going to run humongous epocs
+        return len(self.data_provider)
 
     def get(self, source, next_index):
         """
