@@ -219,9 +219,9 @@ class AsyncMixin(object):
         #: number of cached images (in all baskets)
         self.cached_images = 0
         #: if the cache has fewer than this number of images request refill
-        self.cache_refill_treshold = 256
+        self.cache_refill_treshold = 5256
         #: number of images to retreive by each thread
-        self.cache_refill_count = 16
+        self.cache_refill_count = 128 
         #: on termination counts the workers that exited
         self.finish = 0
         #: one time trigger ofr the threads to exit
@@ -555,7 +555,10 @@ class ProcessGen(Generator, AsyncMixin):
         #: maximum number of outstanding requests
         self.max_outstanding = 64
         #: number of seconds to wait before declaring timeout
-        self.wait_timeout = 60
+        self.wait_timeout = 660
+        #: number of extra images to request
+        self.xcount = 16
+        self.xcountcrt = 0
         #: used by receiver
         self.gen_semaphore = threading.BoundedSemaphore(count)
 
@@ -666,10 +669,17 @@ class ProcessGen(Generator, AsyncMixin):
             Number of images to retreive.
         """
         if self.outstanding_requests >= self.max_outstanding:
-            logging.debug('The number of outstanding requests is too '
-                          'high (%d); request for %d images ignored',
-                          self.outstanding_requests, count)
+           # logging.debug('The number of outstanding requests is too '
+           #               'high (%d); request for %d images ignored',
+           #               self.outstanding_requests, count)
             return
+
+        self.xcount = 16
+        if self.xcountcrt >= self.xcount:
+            self.xcountcrt = 0
+        count = count + self.xcountcrt
+        self.xcountcrt = self.xcountcrt + 1
+
         self.outstanding_requests = self.outstanding_requests + 1
         work_message = {'offset': self.provider_offset, 'count' : count}
         self.provider_offset = self.provider_offset + count
@@ -752,7 +762,7 @@ class ProcessGen(Generator, AsyncMixin):
         time.sleep(0.5)
         while not myself._should_terminate:
             myself.receive_all_messages(no_block=True)
-            time.sleep(0.1)
+            time.sleep(0.01)
 
 # The "worker" functions listen on a zeromq PULL connection for "work"
 # (numbers to be processed) from the ventilator, square those numbers,
