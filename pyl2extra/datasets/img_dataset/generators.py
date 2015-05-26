@@ -313,7 +313,7 @@ class AsyncMixin(object):
         if len(self.baskets_backup) == 0:
             self._wait_for_data(count)
         else:
-            if self.queue.empty:
+            if self._starving():
                 refill = max(self.cache_refill_count, count)
                 while refill > 0:
                     self.push_request(self.cache_refill_count)
@@ -415,7 +415,7 @@ class ThreadedGen(Generator, AsyncMixin):
         """
         timeout_count = 100
         while len(self.baskets) == 0:
-            if self.queue.empty:
+            if self._starving():
                 refill = max(self.cache_refill_count, count)
                 while refill > 0:
                     self.push_request(self.cache_refill_count)
@@ -435,6 +435,12 @@ class ThreadedGen(Generator, AsyncMixin):
         Adds a request for a specified number of images to the queue.
         """
         self.queue.put((count))
+
+    def _starving(self):
+        """
+        Tell if the queue is empty.
+        """
+        return self.queue.empty
 
     def pop_request(self):
         """
@@ -682,13 +688,19 @@ class ProcessGen(Generator, AsyncMixin):
                 refill = refill - self.cache_refill_count
         return self._get(source, next_index)
 
+    def _starving(self):
+        """
+        Tell if the queue is empty.
+        """
+        return self.outstanding_requests == 0
+        
     def _wait_for_data(self, count):
         """
         Waits for some provider to deliver its data.
         """
         timeout_count = self.wait_timeout * 10
         while len(self.baskets) == 0:
-            if self.outstanding_requests == 0:
+            if self._starving():
                 refill = max(self.cache_refill_count, count)
                 while refill > 0:
                     self.push_request(self.cache_refill_count)
