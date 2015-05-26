@@ -298,9 +298,10 @@ class AsyncMixin(object):
         lkb = len(self.baskets_backup)
         if lkb >= self.keep_baskets:
             # make room for the new basket
-            lkb = lkb - self.baskets_backup + 1
+            lkb = lkb - self.keep_baskets + 1
             self.baskets_backup = self.baskets_backup[lkb:]
         self.baskets_backup.append(basket)
+        logging.debug('basket cached; %d baskets in cache', len(self.baskets_backup))
 
     def _new_or_backup(self, count):
         """
@@ -736,11 +737,11 @@ class ProcessGen(Generator, AsyncMixin):
            #               self.outstanding_requests, count)
             return
 
-        self.xcount = 16
-        if self.xcountcrt >= self.xcount:
-            self.xcountcrt = 0
-        count = count + self.xcountcrt
-        self.xcountcrt = self.xcountcrt + 1
+#        self.xcount = 16
+#        if self.xcountcrt >= self.xcount:
+#            self.xcountcrt = 0
+#        count = count + self.xcountcrt
+#        self.xcountcrt = self.xcountcrt + 1
 
         self.outstanding_requests = self.outstanding_requests + 1
         work_message = {'offset': self.provider_offset, 'count' : count}
