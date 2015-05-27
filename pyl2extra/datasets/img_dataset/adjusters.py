@@ -26,6 +26,7 @@ from pylearn2.utils import serial
 from pyl2extra.utils.paramstore import ParamStore
 from pyl2extra.datasets.img_dataset.data_providers import DeDeMaProvider
 
+
 class Adjuster(object):
     """
     Abstract class providing the interface for adjusters.
@@ -35,6 +36,10 @@ class Adjuster(object):
     def __init__(self):
         #: provides its parameters in required order
         self.prmstore = None
+        #: the dataset that owns this adjuster (set-up by `setup()`)
+        self.dataset = None
+        #: iteration mode for parameters in process() method
+        self.mode = None
         super(Adjuster, self).__init__()
 
     def setup(self, dataset, mode):
@@ -93,6 +98,27 @@ class Adjuster(object):
         """
         raise NotImplementedError()
 
+    def accumulate(self, batch):
+        """
+        The instance is requested to transform the input in all possible ways.
+
+        The size of the output will be input size * transf_count()
+
+        Parameters
+        ----------
+        batch : numpy.array
+            An array to process. The expected shape is ('b', W, H, 'c'),
+            with c being 3 or 4: red, green, blue and (optionally) alpha
+
+        Returns
+        -------
+        batch : numpy.array
+            The resulted batch, processed. The result's shape is
+            ('b', W, H, 'c'), with c being 4: red, green, blue and
+            (optionally) alpha
+        """
+        raise NotImplementedError()
+
 
 class BackgroundAdj(Adjuster):
     """
@@ -132,7 +158,7 @@ class BackgroundAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
-        logging.debug('%s is being set-up' % self.__class__.__name__)
+        logging.debug('%s is being set-up', self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         self.prmstore = ParamStore([self.backgrounds], mode=mode)
         self.mode = mode
@@ -235,6 +261,42 @@ class BackgroundAdj(Adjuster):
                                   numpy.multiply(bkmask, bkg)) / 256
         return result
 
+    @functools.wraps(Adjuster.process)
+    def accumulate(self, batch):
+        tranc = self.transf_count()
+        result = numpy.empty(shape=[batch.shape[0]*tranc,
+                                    batch.shape[1],
+                                    batch.shape[2],
+                                    3],
+                             dtype=batch.dtype)
+
+        width = batch.shape[2]
+        height = batch.shape[1]
+        bkgs = []
+
+        j = 0
+        for bkg in self.prmstore.parameters[0]:
+            if isinstance(bkg, Image.Image):
+                bkg = bkg.resize((width, height), Image.ANTIALIAS)
+                bkg = numpy.array(bkg)
+                assert bkg.shape[2] == 3
+            else:
+                bkg = numpy.array(bkg*width*height).reshape(height, width, 3)
+            bkgs.append(bkg)
+
+            for i in range(batch.shape[0]):
+                img = batch[i, :, :, :]
+
+                mask = (img[:, :, 3]).reshape((height,
+                                               width,
+                                               1)).repeat(3, axis=-1)
+                bkmask = 256 - mask
+                result[j, :, :, :] = (numpy.multiply(mask, img[:, :, 0:3]) +
+                                      numpy.multiply(bkmask, bkg)) / 256
+                j = j + 1
+
+        return result
+
     def __getstate__(self):
         """
         Help pickle this instance.
@@ -300,7 +362,7 @@ class MakeSquareAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
-        logging.debug('%s is being set-up' % self.__class__.__name__)
+        logging.debug('%s is being set-up', self.__class__.__name__)
         # override dataset shape because we know better
         dataset.shape = (self.size, self.size)
         #assert isinstance(dataset, ImgDataset)
@@ -427,6 +489,10 @@ class MakeSquareAdj(Adjuster):
 #            square = new_sq
         return square
 
+    @functools.wraps(Adjuster.process)
+    def accumulate(self, batch):
+        return self.process(batch)
+
 
 class FlipAdj(Adjuster):
     """
@@ -452,7 +518,7 @@ class FlipAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
-        logging.debug('%s is being set-up' % self.__class__.__name__)
+        logging.debug('%s is being set-up', self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         lst = [[True, False]]
         if self.horizontal and self.vertical:
@@ -513,6 +579,29 @@ class FlipAdj(Adjuster):
             batch[i, :, :, :] = img
         return batch
 
+    @functools.wraps(Adjuster.process)
+    def accumulate(self, batch):
+        tranc = self.transf_count()
+        result = numpy.empty(shape=[batch.shape[0]*tranc,
+                                    batch.shape[1],
+                                    batch.shape[2],
+                                    batch.shape[3]],
+                             dtype=batch.dtype)
+        # original image
+        off = 0
+        count = batch.shape[0]
+        result[off:count, :, :, :] = batch[:, :, :, :]
+
+        off = batch.shape[0]
+        if self.vertical:
+            result[off:off+count, :, :, :] = batch[:, ::-1, :, :]
+            count = count * 2
+            off = batch.shape[0] * 2
+        # flip both original and vflipped image
+        if self.horizontal:
+            result[off:off+count, :, :, :] = result[0:off, :, ::-1, :]
+        return result
+
 
 class RotationAdj(Adjuster):
     """
@@ -571,7 +660,7 @@ class RotationAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
-        logging.debug('%s is being set-up' % self.__class__.__name__)
+        logging.debug('%s is being set-up', self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         angles = []
         angle = self.min_deg
@@ -621,29 +710,41 @@ class RotationAdj(Adjuster):
                      order=self.order, mode='constant',
                      cval=0.0, prefilter=True)
             else:
-                img = rotate(img, angle, axes=(0, 1), reshape=False,
-                             output=img, order=self.order,
-                             mode='constant', cval=0.0, prefilter=True)
-            #batch[i, :, :, :] = img
-
-#        result = None
-#        for i in range(batch.shape[0]):
-#            img = batch[i, :, :, :]
-#            # get parameters for this image
-#            angle = self.prmstore.next()[0]
-#            img = rotate(img, angle, axes=(0, 1), reshape=True,
-#                         output=None, order=self.order,
-#                         mode='constant', cval=0.0, prefilter=True)
-#            if result is None:
-#                # avoid computing the shape by delayed construction TM
-#                result = numpy.empty(shape=(batch.shape[0],
-#                                            img.shape[0],
-#                                            img.shape[1],
-#                                            batch.shape[3]),
-#                                     dtype=batch.dtype)
-#            result[i, :, :, :] = img
+                rotate(img, angle, axes=(0, 1), reshape=False,
+                       output=img, order=self.order,
+                       mode='constant', cval=0.0, prefilter=True)
 
         return batch
+
+    @functools.wraps(Adjuster.process)
+    def accumulate(self, batch):
+        tranc = self.transf_count()
+        result = numpy.empty(shape=[batch.shape[0]*tranc,
+                                    batch.shape[1],
+                                    batch.shape[2],
+                                    batch.shape[3]],
+                             dtype=batch.dtype)
+
+        off = 0
+        oend = batch.shape[0]
+        for angle in self.prmstore.parameters[0]:
+            if self.resize:
+                img = rotate(batch, angle, axes=(1, 2), reshape=True,
+                             output=None, order=self.order,
+                             mode='constant', cval=0.0, prefilter=True)
+                zoom(img, zoom=(1.,
+                                float(batch.shape[1]) / float(img.shape[1]),
+                                float(batch.shape[2]) / float(img.shape[2]),
+                                1.), output=result[off:oend, :, :, :],
+                     order=self.order, mode='constant',
+                     cval=0.0, prefilter=True)
+            else:
+                rotate(batch, angle, axes=(1, 2), reshape=False,
+                       output=result[off:oend, :, :, :], order=self.order,
+                       mode='constant', cval=0.0, prefilter=True)
+            off = off + batch.shape[0]
+            oend = oend + batch.shape[0]
+        return result
 
 
 class ScalePatchAdj(Adjuster):
@@ -761,7 +862,7 @@ class ScalePatchAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
-        logging.debug('%s is being set-up' % self.__class__.__name__)
+        logging.debug('%s is being set-up', self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         pos = []
         for plcm in self.placements:
@@ -857,6 +958,49 @@ class ScalePatchAdj(Adjuster):
                 result[i, :, endx:outsize[0], :].fill(0.)
         return result
 
+    @functools.wraps(Adjuster.process)
+    def accumulate(self, batch):
+        tranc = self.transf_count()
+        if self.outsize is None:
+            outsize = (batch.shape[2], batch.shape[1])
+        else:
+            outsize = self.outsize
+
+        result = numpy.empty(shape=(batch.shape[0]*tranc,
+                                    outsize[1],
+                                    outsize[0],
+                                    batch.shape[3]),
+                             dtype=batch.dtype)
+        j = 0
+        for placement in self.prmstore.parameters[0]:
+            for factor in self.prmstore.parameters[1]:
+                scaled_shape = tuple(
+                    [int(round(ii * jj)) for ii, jj in zip(batch.shape[1:3],
+                                                           (factor, factor))])
+                for i in range(batch.shape[0]):
+                    img = batch[i, :, :, :]
+
+                    assert outsize[0] > scaled_shape[1]
+                    assert outsize[1] > scaled_shape[0]
+                    deltax, deltay = placement(scaled_shape, outsize)
+                    assert deltax >= 0 and deltay >= 0
+                    endx = deltax + scaled_shape[1]
+                    endy = deltay + scaled_shape[0]
+                    assert endx <= outsize[0] and endy <= outsize[1]
+                    zoom(img, zoom=(factor, factor, 1.),
+                         output=result[j, deltay:endy, deltax:endx, :],
+                         order=self.order, mode='constant',
+                         cval=0.0, prefilter=True)
+                    if deltay > 0:
+                        result[j, 0:deltay, :, :].fill(0.)
+                    if deltax > 0:
+                        result[j, :, 0:deltax, :].fill(0.)
+                    if endy < outsize[1]:
+                        result[j, endy:outsize[1], :, :].fill(0.)
+                    if endx < outsize[0]:
+                        result[j, :, endx:outsize[0], :].fill(0.)
+                    j = j + 1
+        return result
 
 class GcaAdj(Adjuster):
     """
@@ -948,7 +1092,7 @@ class GcaAdj(Adjuster):
 
     @functools.wraps(Adjuster.setup)
     def setup(self, dataset, mode):
-        logging.debug('%s is being set-up' % self.__class__.__name__)
+        logging.debug('%s is being set-up', self.__class__.__name__)
         #assert isinstance(dataset, ImgDataset)
         scales = []
         scale = self.start_scale
@@ -1042,6 +1186,46 @@ class GcaAdj(Adjuster):
                                          batch.shape[2]))
             img[:, :, 0:3] = gcnarray.swapaxes(0, 2)
         return batch
+
+
+    @functools.wraps(Adjuster.process)
+    def accumulate(self, batch):
+        if batch.shape[3] != 3 and batch.shape[3] != 4:
+            raise AssertionError("GcaAdj expects the input to have "
+                                 "three or four channels (red, "
+                                 "green, blue and alpha); provided shape was "
+                                 "%s" % str(batch.shape))
+        chan_cnt = min(batch.shape[3], 3)
+        chan_sz = batch.shape[1] * batch.shape[2]
+
+        tranc = self.transf_count()
+        result = numpy.empty(shape=[batch.shape[0]*tranc,
+                                    batch.shape[1],
+                                    batch.shape[2],
+                                    batch.shape[3]],
+                             dtype=batch.dtype)
+
+        j = 0
+        for scale in self.prmstore.parameters[0]:
+            for subtract_mean in self.prmstore.parameters[1]:
+                for use_std in self.prmstore.parameters[2]:
+                    for bias in self.prmstore.parameters[3]:
+                        for i in range(batch.shape[0]):
+                            img = batch[i, :, :, :]
+                            gcnarray = img[:, :, 0:3].swapaxes(0, 2).reshape(
+                                chan_cnt, chan_sz)
+                            gcnarray = global_contrast_normalize(
+                                gcnarray,
+                                scale=scale,
+                                subtract_mean=subtract_mean,
+                                use_std=use_std,
+                                sqrt_bias=bias,
+                                min_divisor=1e-8)
+                            gcnarray = gcnarray.reshape((chan_cnt,
+                                                         batch.shape[1],
+                                                         batch.shape[2]))
+                            result[j, :, :, 0:3] = gcnarray.swapaxes(0, 2)
+        return result
 
 
 def adj_from_string(adj_name):

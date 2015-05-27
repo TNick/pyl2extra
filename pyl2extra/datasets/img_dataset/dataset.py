@@ -18,6 +18,7 @@ import numpy
 import os
 import logging
 from pylearn2.datasets.dataset import Dataset
+from pylearn2.datasets.dense_design_matrix import DenseDesignMatrix
 from pylearn2.datasets.dense_design_matrix import FiniteDatasetIterator
 from pylearn2.utils.rng import make_np_rng
 from pylearn2.utils.iteration import SequentialSubsetIterator
@@ -114,11 +115,13 @@ class ImgDataset(Dataset):
             adj.setup(self, 'rand_one')
         self.generator.setup(self)
 
-        #: total number of unique examples
-        self.totlen = len(self.data_provider)
-        empty = self.totlen == 0
+        #: the number of images that results from a single input image
+        self.transf_count = 1
         for adj in self.adjusters:
-            self.totlen = self.totlen * adj.transf_count()
+            self.transf_count = sself.transf_count * adj.transf_count()
+        #: total number of unique examples
+        self.totlen = len(self.data_provider) * self.transf_count
+        empty = self.totlen == 0
         assert empty or (self.totlen > 0)
 
         # Dataset._init_iterator offers a dataset the oportunity to
@@ -358,7 +361,7 @@ class ImgDataset(Dataset):
         """
         return self._iter_data_specs
 
-    def process(self, batch):
+    def process(self, batch, accumulate=False):
         """
         Runs the batch through all adjusters and returns the result.
 
@@ -367,6 +370,9 @@ class ImgDataset(Dataset):
         batch : numpy.array
             An array to process. The expected shape is ('b', W, H, 'c'),
             with c being 4: red, green, blue and alpha
+        accumulate : bool, optional
+            Wheter to gnerate all possible combinations (True) or to
+            generate a single image.
 
         Returns
         -------
@@ -378,8 +384,12 @@ class ImgDataset(Dataset):
         assert batch.shape[3] == 4
         result = batch
         if len(self.adjusters) > 0:
-            for adj in self.adjusters:
-                result = adj.process(result)
+            if accumulate:
+                for adj in self.adjusters:
+                    result = adj.accumulate(result)
+            else:
+                for adj in self.adjusters:
+                    result = adj.process(result)
         else:
             result = result[:, :, :, :3]
         if result.shape[3] != self.channels_len():
@@ -405,16 +415,65 @@ class ImgDataset(Dataset):
             os.mkdir(path)
         return path
 
-    def to_dense_design_matrix(self):
+    def to_dense_design_matrix(self, num_examples=None, ne_raw=True):
         """
-        Generates all examples and returns them as a DenseDesignMatrix.
+        Generates a DenseDesignMatrix from examples in this dataset.
 
+        Parameters
+        ----------
+        num_examples : int, optional
+            Number of examples to place in the new dataset. The meaning of 
+            this parameter depends on ``ne_raw``. If None all examples are
+            going to be processed and saved. Note that this may be a 
+            large number and that the whole resulted dataset needs 
+            to fit in memory.
+        ne_raw : bool, optional
+            How to interpret ``num_examples``. if True, ``num_examples``
+            represents the number of raw examples to process; final number of
+            examples in the DenseDesignMatrix instance will be 
+            ``num_examples`` times number of processing steps. If False,
+            ``num_examples`` represents the desired number of examples
+            in output dataset.
 
         Returns
         -------
         ddm : DenseDesignMatrix
-            A topology-preserving dense dataset.
+            A topology-preserving dense dataset. The number of channels is
+            always 3.
         """
-        # TODO: implement
-        raise NotImplementedError()
+        
+        if num_examples is None:
+            num_examples = self.totlen
+            ne_raw = False
+        elif ne_raw == True:
+            num_examples = num_examples * self.transf_count
+        # num_examples now represents the number f examples in final dataset
+        
+        shape = (num_examples, self.shape[1], self.shape[0], 3)
+        dtype = 0
+        result_x = numpy.empty(shape=shape, dtype=dtype)
+        result_y = []
+        ofs = 0
+        for fpath in self.data_provider:
+            # generate all combinations from this image
+            batch = self.data_provider.read_image(image=fpath,
+                                                  internal=True)
+            batch = self.process(batch, accumulate=True)
+            clss = self.data_provider.category(fpath)
+            classes = [clss for i in range(batch.shape[0])]
+            
+            # save it into our array
+            to_copy = min(num_examples, batch.shape[0])
+            result_x[ofs:ofs+to_copy, :, :, :] = batch[0:to_copy, :, :, :]
+            result_y += classes[0:to_copy]
+            ofs = ofs + to_copy
+            num_examples = num_examples - to_copy
+        
+        result = DenseDesignMatrix(topo_view=result_x,
+                                   y=result_y,
+                                   axes=('b', 0, 1, 'c'),
+                                   preprocessor=None,
+                                   fit_preprocessor=False,
+                                   X_labels=None, y_labels=None)
+        return result
 

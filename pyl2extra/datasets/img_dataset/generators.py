@@ -15,10 +15,12 @@ import cProfile
 from datetime import datetime
 import dill
 import functools
+import Image
 import logging
 import multiprocessing
 import numpy
 import os
+from pylearn2.utils import as_floatX
 import Queue
 import threading
 import time
@@ -26,6 +28,7 @@ import zmq
 
 #from pyl2extra.datasets.img_dataset.dataset import ImgDataset
 from pyl2extra.utils import slice_count
+from pyl2extra.datasets.img_dataset.data_providers import Provider
 
 class Generator(object):
     """
@@ -92,7 +95,7 @@ class Generator(object):
             dataspecs for the dataset.
         """
         raise NotImplementedError()
-
+        
     def _prep_get(self, source, next_index):
         """
         Common opperations for a get() call.
@@ -203,14 +206,14 @@ class InlineGen(Generator):
             if idx_targets > -1:
                 result[idx_targets][i][0] = categ
 
-
         if self.profile:
             profiler.disable()
-            profiler.dump_stats('%s.%d.profile' % (self.profile_file, self.profile_cnt))
+            profiler.dump_stats('%s.%d.profile' % (self.profile_file, 
+                                                   self.profile_cnt))
             self.profile_cnt = self.profile_cnt + 1
 
         return tuple(result)
-
+    
     def __getstate__(self):
         """
         Help pickle this instance.

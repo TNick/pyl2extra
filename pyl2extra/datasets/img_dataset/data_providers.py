@@ -104,6 +104,9 @@ class Provider(object):
         """
         Read a file and return an image and its category as a tuple.
 
+        This method only reads internal images. For a more general method
+        see `read_image()`.
+        
         The returned array has (0, 1, 'c') shape, with c always 4
         (r, g, b, a) and datatype being floatX.
 
@@ -123,6 +126,50 @@ class Provider(object):
         img = Image.open(f_path)
         return Provider.normalize_image(img), categ
 
+    def read_image(self, image, internal=True):
+        """
+        Read an image and convert it in the format used by Provider.
+
+        Parameters
+        ----------
+        image : str or Image.Image or numpy.ndarray
+            The path for the image or the image itself.
+        internal : bool
+            Interpretation of the ``image`` parameter if it is a string:
+            - If ``internal`` is True the image is read 
+              using `Provider.read()` (it is  assumed it is 
+              one of dataset's own image).
+            - If False it is interpreted as being a 
+              path and is read using Image.
+            
+        The returned array is normalized to (0, 1, 'c') shape, with c always 4
+        (r, g, b, a) and datatype being floatX.
+        
+        Returns
+        -------
+        result : numpy.ndarray
+            The resulted image.
+        """
+        if isinstance(image, basestring):
+            if internal:
+                image, = self.read(image)
+            else:
+                image = Image.open(image)
+                image = Provider.normalize_image(image)
+        elif isinstance(image, numpy.ndarray):
+            assert len(image.shape) == 3
+            image = as_floatX(image)
+        else:
+            assert isinstance(image, Image.Image)
+            image = Image.open(image)
+            image = Provider.normalize_image(image)
+        # image is an array
+        if image.shape[2] == 3:
+            app = numpy.ones(shape=(image.shape[0], image.shape[1], 1),
+                             dtype=image.stype) * 255
+            numpy.append(image, app, axis=2)
+        return image
+ 
     def category(self, f_path):
         """
         Given a file name returned by next finds the category for that file.
@@ -277,6 +324,7 @@ class Provider(object):
             count = count - this_round
 
         return result
+
 
 class DictProvider(Provider):
     """

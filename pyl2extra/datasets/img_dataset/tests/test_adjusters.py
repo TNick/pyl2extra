@@ -106,6 +106,8 @@ class BaseAdjusters(object):
     Mixin to extract common functionality
     """
     def __init__(self):
+        #: the class instance to test
+        self.testee = None
         super(BaseAdjusters, self).init()
 
     def prepare(self):
@@ -190,19 +192,15 @@ class TestBackgroundAdj(unittest.TestCase, BaseAdjusters):
         self.assertEqual(test_list[3], (123, 124, 125))
         self.assertEqual(test_list[4], (255, 255, 255))
 
-    def test_perform_image(self):
+    def scan_result_batch(self, batch):
         """
-        Applies an image as a background.
+        Common method for testing a bunch of images.
         """
-        batch_sz = 5
-        batch = create_batch(batch_sz)
-        batch = self.testee.process(batch)
-
-        for i in range(batch_sz):
+        for i in range(batch.shape[0]):
             im_rgb = batch[i, :, :, :]
             im_rgb = numpy.cast['uint8'](im_rgb)
-            #img = Image.fromarray(im_rgb)
-            #img.show()
+            if show_im: img = Image.fromarray(im_rgb)
+            if show_im: img.show()
 
             # top right corner should have color from the image
             self.assertEqual(0, im_rgb[2, 120, 0])
@@ -227,6 +225,27 @@ class TestBackgroundAdj(unittest.TestCase, BaseAdjusters):
                 self.assertEqual(0, im_rgb[120, 120, 1])
                 self.assertLessEqual(250, im_rgb[120, 120, 2])
 
+    def test_perform_image(self):
+        """
+        Applies an image as a background.
+        """
+        batch_sz = 5
+        batch = create_batch(batch_sz)
+        batch = self.testee.process(batch)
+        self.scan_result_batch(batch)
+
+    def test_accumulate_image(self):
+        """
+        Applies an image as a background.
+        """
+        batch_sz = 5
+        batch = create_batch(batch_sz)
+        batch = self.testee.accumulate(batch)
+        for i in range(batch_sz):
+            per_image = batch[i::batch_sz]
+            self.assertEqual(per_image.shape,
+                             (self.testee.transf_count(), 128, 128, 3))
+            self.scan_result_batch(per_image)
 
     def test_perform_color(self):
         """
@@ -241,8 +260,8 @@ class TestBackgroundAdj(unittest.TestCase, BaseAdjusters):
             im_rgb = batch[i, :, :, :]
             im_rgb = numpy.cast['uint8'](im_rgb)
 
-            #img = Image.fromarray(im_rgb)
-            #img.show()
+            if show_im: img = Image.fromarray(im_rgb)
+            if show_im: img.show()
 
             # top left corner should have same image as the background
             self.assertLessEqual(127, im_rgb[2, 2, 0])
@@ -297,8 +316,8 @@ class TestMakeSquareAdj(unittest.TestCase):
             im_rgb = batch[i, :, :, 0:3]
             im_rgb = numpy.cast['uint8'](im_rgb)
 
-            #img = Image.fromarray(im_rgb)
-            #img.show()
+            img = Image.fromarray(im_rgb)
+            if show_im: img.show()
 
     def test_create_ddm_square(self):
         """
@@ -363,21 +382,33 @@ class TestFlipAdj(unittest.TestCase):
         self.testee.setup(None, 'seq_one')
 
         batch_sz = 5
-        batch = create_mbatch(batch_sz, 128, 128)
+        batchin = create_mbatch(batch_sz, 128, 128)
 
-        im_rgb = batch[0, :, :, 0:3]
+        im_rgb = batchin[0, :, :, 0:3]
         im_rgb = numpy.cast['uint8'](im_rgb)
         img = Image.fromarray(im_rgb)
-        #img.show()
+        if show_im: img.show()
 
-        batch = self.testee.process(batch)
+        batch = self.testee.process(batchin)
+        self.assertEqual(batch.shape, (batch_sz, 128, 128, 4))
 
         for i in range(batch_sz):
             im_rgb = batch[i, :, :, 0:3]
             im_rgb = numpy.cast['uint8'](im_rgb)
             if i == 0:
                 img = Image.fromarray(im_rgb)
-                #img.show(title="TestFlipAdj.test_horizontal %d" % i)
+                if show_im: img.show(
+                    title="TestFlipAdj.test_horizontal %d" % i)
+
+        batch = self.testee.accumulate(batchin)
+        self.assertEqual(batch.shape, (batch_sz*2, 128, 128, 4))
+        self.assertTrue(numpy.any(batch[0] != batch[batch_sz/2+1]))
+        for i in range(batch.shape[0]):
+            im_rgb = batch[i, :, :, 0:3]
+            im_rgb = numpy.cast['uint8'](im_rgb)
+            if i >= 0:
+                img = Image.fromarray(im_rgb)
+                if show_im: img.show(title="TestFlipAdj.test_vertical %d" % i)
 
     def test_vertical(self):
         """
@@ -388,21 +419,32 @@ class TestFlipAdj(unittest.TestCase):
         self.testee.setup(None, 'seq_one')
 
         batch_sz = 5
-        batch = create_mbatch(batch_sz, 128, 128)
+        batchin = create_mbatch(batch_sz, 128, 128)
 
-        im_rgb = batch[0, :, :, 0:3]
+        im_rgb = batchin[0, :, :, 0:3]
         im_rgb = numpy.cast['uint8'](im_rgb)
         img = Image.fromarray(im_rgb)
         #img.show()
 
-        batch = self.testee.process(batch)
+        batch = self.testee.process(batchin)
+        self.assertEqual(batch.shape, (batch_sz, 128, 128, 4))
 
         for i in range(batch_sz):
             im_rgb = batch[i, :, :, 0:3]
             im_rgb = numpy.cast['uint8'](im_rgb)
             if i == 0:
                 img = Image.fromarray(im_rgb)
-                #img.show(title="TestFlipAdj.test_vertical %d" % i)
+                if show_im: img.show(title="TestFlipAdj.test_vertical %d" % i)
+
+        batch = self.testee.accumulate(batchin)
+        self.assertEqual(batch.shape, (batch_sz*2, 128, 128, 4))
+        self.assertTrue(numpy.any(batch[0] != batch[batch_sz/2+1]))
+        for i in range(batch.shape[0]):
+            im_rgb = batch[i, :, :, 0:3]
+            im_rgb = numpy.cast['uint8'](im_rgb)
+            if i >= 0:
+                img = Image.fromarray(im_rgb)
+                if show_im: img.show(title="TestFlipAdj.test_vertical %d" % i)
 
     def test_both(self):
         """
@@ -413,21 +455,32 @@ class TestFlipAdj(unittest.TestCase):
         self.testee.setup(None, 'seq_one')
 
         batch_sz = 5
-        batch = create_mbatch(batch_sz, 128, 128)
+        batchin = create_mbatch(batch_sz, 128, 128)
 
-        im_rgb = batch[0, :, :, 0:3]
+        im_rgb = batchin[0, :, :, 0:3]
         im_rgb = numpy.cast['uint8'](im_rgb)
         img = Image.fromarray(im_rgb)
         #img.show()
 
-        batch = self.testee.process(batch)
+        batch = self.testee.process(batchin)
+        self.assertEqual(batch.shape, (batch_sz, 128, 128, 4))
 
         for i in range(batch_sz):
             im_rgb = batch[i, :, :, 0:3]
             im_rgb = numpy.cast['uint8'](im_rgb)
             if i == 0:
                 img = Image.fromarray(im_rgb)
-                #img.show(title="TestFlipAdj.test_vertical %d" % i)
+                if show_im: img.show(title="TestFlipAdj.test_vertical %d" % i)
+
+        batch = self.testee.accumulate(batchin)
+        self.assertEqual(batch.shape, (batch_sz*4, 128, 128, 4))
+        self.assertTrue(numpy.any(batch[0] != batch[batch_sz/2+1]))
+        for i in range(batch.shape[0]):
+            im_rgb = batch[i, :, :, 0:3]
+            im_rgb = numpy.cast['uint8'](im_rgb)
+            if i >= 0:
+                img = Image.fromarray(im_rgb)
+                if show_im: img.show(title="TestFlipAdj.test_vertical %d" % i)
 
 
 class TestRotationAdj(unittest.TestCase):
@@ -470,17 +523,35 @@ class TestRotationAdj(unittest.TestCase):
         """
         self.testee.setup(None, 'seq_one')
 
-        batch_sz = 5
-        batch = create_mbatch(batch_sz, 128, 128)
+        batch_sz = 1
+        batchin = create_mbatch(batch_sz, 128, 128)
+        img = numpy.cast['uint8'](batchin[0, :, :, 0:3])
+        img = Image.fromarray(img)
+        #img.show(title="TestRotationAdj.original")
 
-        batch = self.testee.process(batch)
+        batch = self.testee.process(batchin)
+        self.assertEqual(batch.shape, (batch_sz, 128, 128, 4))
 
         for i in range(batch_sz):
             im_rgb = batch[i, :, :, 0:3]
             im_rgb = numpy.cast['uint8'](im_rgb)
             if i < 10:
                 img = Image.fromarray(im_rgb)
-                #img.show(title="TestFlipAdj.test_vertical %d" % i)
+                if show_im: img.show(
+                    title="TestRotationAdj.test_vertical %d" % i)
+
+        batchin = create_mbatch(batch_sz, 128, 128)
+        batch = self.testee.accumulate(batchin)
+        self.assertEqual(batch.shape, (batch_sz*self.testee.transf_count(),
+                                       128, 128, 4))
+
+        for i in range(batch.shape[0]):
+            im_rgb = batch[i, :, :, 0:3]
+            im_rgb = numpy.cast['uint8'](im_rgb)
+            if i < 16:
+                img = Image.fromarray(im_rgb)
+                if show_im: img.show(
+                    title="TestRotationAdj.test_vertical %d" % i)
 
 
 class TestScalePatchAdj(unittest.TestCase):
@@ -529,13 +600,28 @@ class TestScalePatchAdj(unittest.TestCase):
         batch = create_mbatch(batch_sz, 128, 128)
 
         batch = self.testee.process(batch)
+        self.assertEqual(batch.shape, (batch_sz, 128, 128, 4))
 
         for i in range(batch_sz):
             im_rgb = batch[i, :, :, 0:3]
             im_rgb = numpy.cast['uint8'](im_rgb)
             if i < 10:
                 img = Image.fromarray(im_rgb)
-                #img.show(title="TestFlipAdj.test_vertical %d" % i)
+                if show_im: img.show(title="TestFlipAdj.test_vertical %d" % i)
+
+        batchin = create_mbatch(batch_sz, 128, 128)
+        batch = self.testee.accumulate(batchin)
+        self.assertEqual(batch.shape, (batch_sz*self.testee.transf_count(),
+                               128, 128, 4))
+
+        for i in range(batch.shape[0]):
+            im_rgb = batch[i, :, :, 0:3]
+            im_rgb = numpy.cast['uint8'](im_rgb)
+            if i < 10:
+                img = Image.fromarray(im_rgb)
+                if show_im: img.show(
+                    title="TestScalePatchAdj.test_vertical %d" % i)
+
 
 class TestGcaAdj(unittest.TestCase):
     """
@@ -599,7 +685,19 @@ class TestGcaAdj(unittest.TestCase):
             im_rgb = numpy.cast['uint8'](im_rgb)
             if i < 1:
                 img = Image.fromarray(im_rgb)
-                #img.show(title="TestGcaAdj.test_vertical %d" % i)
+                if show_im: img.show(title="TestGcaAdj.test_vertical %d" % i)
+
+        batch = create_mbatch(batch_sz, 128, 128)
+        batch = self.testee.accumulate(batch)
+        self.assertEqual(batch.shape, (batch_sz*self.testee.transf_count(),
+                                       128, 128, 4))
+
+        for i in range(batch.shape[0]):
+            im_rgb = batch[i, :, :, 0:3]
+            im_rgb = numpy.cast['uint8'](im_rgb)
+            if i < 10:
+                img = Image.fromarray(im_rgb)
+                if show_im: img.show(title="TestGcaAdj.test_vertical %d" % i)
 
 
 class TestAdjFromString(unittest.TestCase):
@@ -629,7 +727,8 @@ class TestAdjFromString(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    show_im = False
     if True:
         unittest.main()
     else:
-        unittest.main(argv=['--verbose', 'TestMakeSquareAdj'])
+        unittest.main(argv=['--verbose', 'TestGcaAdj'])
