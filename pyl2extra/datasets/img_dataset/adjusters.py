@@ -1,5 +1,5 @@
 """
-Classes that provide adjusting to the ImgDataset.
+Classes that provide adjustings to the ImgDataset.
 
 These preprocess data but the name preprocessor is not used to avoid
 confusion with pylearn2 preprocessors.
@@ -11,17 +11,18 @@ __license__ = "3-clause BSD"
 __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
+from copy import copy
 import functools
 import numpy
 import os
 import Image
 import logging
-#from pyl2extra.datasets.img_dataset.dataset import ImgDataset
 import webcolors
 from scipy.ndimage.interpolation import rotate, zoom
 from pylearn2.datasets.dense_design_matrix import DenseDesignMatrix
 from pylearn2.expr.preprocessing import global_contrast_normalize
 from pylearn2.utils import serial
+import theano
 
 from pyl2extra.utils.paramstore import ParamStore
 from pyl2extra.datasets.img_dataset.data_providers import DeDeMaProvider
@@ -87,14 +88,16 @@ class Adjuster(object):
         ----------
         batch : numpy.array
             An array to process. The expected shape is ('b', W, H, 'c'),
-            with c being 3 or 4: red, green, blue and (optionally) alpha
+            with c being 3 or 4: red, green, blue and (optionally) alpha.
+            All channels are expected to provide input in [0;1] interval.
 
         Returns
         -------
         batch : numpy.array
             The resulted batch, processed. The result's shape is
             ('b', W, H, 'c'), with c being 4: red, green, blue and
-            (optionally) alpha
+            (optionally) alpha. Values for all channels are in the [0;1]
+            interval most of the time.
         """
         raise NotImplementedError()
 
@@ -108,14 +111,25 @@ class Adjuster(object):
         ----------
         batch : numpy.array
             An array to process. The expected shape is ('b', W, H, 'c'),
-            with c being 3 or 4: red, green, blue and (optionally) alpha
+            with c being 3 or 4: red, green, blue and (optionally) alpha.
+            All channels are expected to provide input in [0;1] interval.
 
         Returns
         -------
         batch : numpy.array
             The resulted batch, processed. The result's shape is
             ('b', W, H, 'c'), with c being 4: red, green, blue and
-            (optionally) alpha
+            (optionally) alpha. Values for all channels are in the [0;1]
+            interval most of the time.
+        """
+        raise NotImplementedError()
+
+    def accum_text(self, size):
+        """
+        Does the same job as `accumulate()` but with text.
+        
+        The values for the parameters are added along with parameter name
+        in same way as `accumulate()` accumulates them.
         """
         raise NotImplementedError()
 
@@ -130,7 +144,8 @@ class BackgroundAdj(Adjuster):
         The backgrounds to apply to the image. It can be an image (that
         will be scaled to desired size), a color represented as a RGB tuple,
         a color represented as a string or a list of any combination of
-        the above.
+        the above. The color components must be in the [0;255] interval and
+        will be internally converted to [0;1]
     image_files : list of strings, optional
         Paths towards image files to be used as backgrounds.
         It is recomended to use this member to provide images instead of
@@ -187,18 +202,20 @@ class BackgroundAdj(Adjuster):
                 len(value) == 3 and
                 all([isinstance(i, int) for i in value])):
             # a single color represented as a RBG tuple
-            result.append(tuple(value))
+            result.append(tuple(i/255.0 for i in value))
         elif isinstance(value, basestring):
             # a single color represented as a string
             if value.startswith('#'):
-                result.append(webcolors.hex_to_rgb(value.lower()))
+                value = webcolors.hex_to_rgb(value.lower())
             else:
-                result.append(webcolors.name_to_rgb(value.lower()))
+                value = webcolors.name_to_rgb(value.lower())
+            result.append(tuple(i/255.0 for i in value))
         elif value is None:
             # default background is black
-            result.append((0, 0, 0))
+            result.append((0., 0., 0.))
         elif isinstance(value, Image.Image):
             # an actual image
+            value = numpy.array(value.convert('RGBA')) / 255.0
             result.append(value)
         elif isinstance(value, list) or isinstance(value, tuple):
             # a list of the above
@@ -213,88 +230,99 @@ class BackgroundAdj(Adjuster):
             if isinstance(image_files, basestring):
                 image_files = [image_files]
             for imgf in image_files:
-                result.append(Image.open(imgf))
+                value = Image.open(imgf).convert('RGBA')
+                value = numpy.array(value) / 255.0
+                result.append(value)
 
         return result
 
-    @functools.wraps(Adjuster.process)
-    def process(self, batch):
+    def _proc_init(self, batch, tranc=1):
+        """
+        Common initialization code for process() and accumulate()
+        """
         if batch.shape[3] != 4:
             raise AssertionError("BackgroundAdj expects the input to have "
                                  "four channels (red, green, blue and alpha); "
                                  "the adjuster then replaces the alpha zones "
                                  "with given background; provided shape was "
                                  "%s" % str(batch.shape))
-        # get next argument
-        result = numpy.empty(shape=[batch.shape[0],
-                                    batch.shape[1],
-                                    batch.shape[2],
-                                    3],
-                             dtype=batch.dtype)
-
-        width = batch.shape[2]
-        height = batch.shape[1]
-
-        # apply the background to each image
-        for i in range(batch.shape[0]):
-            img = batch[i, :, :, :]
-
-            # get or create the background
-            bkg = self.prmstore.next()[0]
-            if isinstance(bkg, Image.Image):
-                bkg = bkg.resize((width, height), Image.ANTIALIAS)
-                bkg = numpy.array(bkg)
-                assert bkg.shape[2] == 3
-            else:
-                bkg = numpy.array(bkg*width*height).reshape(height, width, 3)
-
-            # To only use 0 and 255 in alpha band:
-            #mask = img[:,:,3] == 0 # 128, 128
-            #mask = (img[:,:,3] == 0).reshape((128, 128, 1)).repeat(3, axis=-1)
-            #result[i, :, :, :] = numpy.where(mask, bkg, img[:,:,0:3])
-
-            mask = (img[:, :, 3]).reshape((height,
-                                           width,
-                                           1)).repeat(3, axis=-1)
-            bkmask = 256 - mask
-            result[i, :, :, :] = (numpy.multiply(mask, img[:, :, 0:3]) +
-                                  numpy.multiply(bkmask, bkg)) / 256
-        return result
-
-    @functools.wraps(Adjuster.process)
-    def accumulate(self, batch):
-        tranc = self.transf_count()
         result = numpy.empty(shape=[batch.shape[0]*tranc,
                                     batch.shape[1],
                                     batch.shape[2],
                                     3],
                              dtype=batch.dtype)
-
         width = batch.shape[2]
         height = batch.shape[1]
-        bkgs = []
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
+        return result, width, height
+        
+    def _proc_bkg(self, bkg, width, height):
+        """
+        Common code for process() and accumulate()
+        """
+        if isinstance(bkg, numpy.ndarray):
+            if not (height == bkg.shape[0] and width == bkg.shape[1]):
+                bkg = zoom(bkg, zoom=(height/bkg.shape[0],
+                                      width/bkg.shape[1],
+                                      1.),
+                           output=None,
+                           order=3,
+                           mode='constant',
+                           cval=0.0, prefilter=True)
+            assert bkg.shape[2] == 3
+        else:
+            bkg = numpy.array(bkg*width*height).reshape(height, width, 3)
+        return bkg
+        
+    def _proc_img(self, img, bkg, width, height):
+        """
+        Common code transforming the images for process() and accumulate()
+        """
+        mask = (img[:, :, 3]).reshape((height,
+                                       width,
+                                       1)).repeat(3, axis=-1)
+        # make the mask take values >= 0 and <= 1
+        assert mask.min() >= 0.0 and mask.max() <= 1.0
+        bkmask = 1.0 - mask
+        return (numpy.multiply(mask, img[:, :, 0:3]) +
+                numpy.multiply(bkmask, bkg))
+                                      
+    @functools.wraps(Adjuster.process)
+    def process(self, batch):
+        result, width, height = self._proc_init(batch)
+
+        # apply the background to each image
+        for i in range(batch.shape[0]):
+            # get or create the background
+            bkg = self._proc_bkg(self.prmstore.next()[0], width, height)
+            result[i, :, :, :] =self._proc_img(batch[i, :, :, :],
+                                               bkg, width, height)  
+        assert numpy.all(result >= 0.0) and numpy.all(result <= 1.0)      
+        return result
+
+    @functools.wraps(Adjuster.process)
+    def accumulate(self, batch):
+        tranc = self.transf_count()
+        result, width, height = self._proc_init(batch, tranc)
 
         j = 0
         for bkg in self.prmstore.parameters[0]:
-            if isinstance(bkg, Image.Image):
-                bkg = bkg.resize((width, height), Image.ANTIALIAS)
-                bkg = numpy.array(bkg)
-                assert bkg.shape[2] == 3
-            else:
-                bkg = numpy.array(bkg*width*height).reshape(height, width, 3)
-            bkgs.append(bkg)
-
+            bkg = self._proc_bkg(bkg, width, height)
             for i in range(batch.shape[0]):
-                img = batch[i, :, :, :]
-
-                mask = (img[:, :, 3]).reshape((height,
-                                               width,
-                                               1)).repeat(3, axis=-1)
-                bkmask = 256 - mask
-                result[j, :, :, :] = (numpy.multiply(mask, img[:, :, 0:3]) +
-                                      numpy.multiply(bkmask, bkg)) / 256
+                result[j, :, :, :] = self._proc_img(batch[i, :, :, :],
+                                                    bkg, width, height)                      
                 j = j + 1
+        assert numpy.all(result >= 0.0) and numpy.all(result <= 1.0)
+        return result
 
+    @functools.wraps(Adjuster.process)
+    def accum_text(self, batch):
+        result = []
+        for bkg in self.prmstore.parameters[0]:
+            for btc in batch:
+                btc = copy(btc)
+                btc.append({'background': str(bkg)})
+                result.append(btc)
         return result
 
     def __getstate__(self):
@@ -402,13 +430,14 @@ class MakeSquareAdj(Adjuster):
         assert excnt > 0
         # this will hold all examples in topological order
         examples = numpy.empty(shape=(excnt, self.size, self.size, 4),
-                               dtype='uint8')
+                               dtype=theano.config.floatX)
         categs = range(excnt)
         for i, f_path in enumerate(datap):
             # returned image always has 4 channels
             imarray, categs[i] = datap.read(f_path)
             width = imarray.shape[1]
             height = imarray.shape[0]
+            assert numpy.all(imarray >= 0.0) and numpy.all(imarray <= 1.0)
 
             if width == height:
                 square = imarray
@@ -420,7 +449,8 @@ class MakeSquareAdj(Adjuster):
                 # by having zeros the areas not covered by the image
                 # become transparent
                 square = numpy.zeros(shape=(largest, largest,
-                                            imarray.shape[2]), dtype='uint8')
+                                            imarray.shape[2]),
+                                     dtype=theano.config.floatX)
                 square[deltay:deltay+height, deltax:deltax+width, :] = imarray
 
             if self.size == largest:
@@ -432,6 +462,8 @@ class MakeSquareAdj(Adjuster):
                      order=self.order,
                      mode='constant',
                      cval=0.0, prefilter=True)
+        assert numpy.all(examples >= 0.0) and numpy.all(examples <= 1.0)
+
         ddm = DenseDesignMatrix(topo_view=examples, y=numpy.array(categs))
         logging.debug('create_ddm has created the new dataset')
         if cache_loc:
@@ -459,6 +491,9 @@ class MakeSquareAdj(Adjuster):
                                  "three or four channels (red, "
                                  "green, blue and alpha); provided shape was "
                                  "%s" % str(batch.shape))
+
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)        
+        
         # make it square
         width = batch.shape[2]
         height = batch.shape[1]
@@ -476,23 +511,23 @@ class MakeSquareAdj(Adjuster):
             square = zoom(square, zoom=(1., factor, factor, 1.),
                           output=None, order=self.order, mode='constant',
                           cval=0.0, prefilter=True)
-#
-#            new_sq = numpy.empty(shape=(batch.shape[0],
-#                                        self.size, self.size,
-#                                        batch.shape[3]), dtype=batch.dtype)
-#            for i in range(batch.shape[0]):
-#                img = numpy.cast['uint8'](square[i, :, :, :]) # 128, 128, 4
-#                img = Image.fromarray(img)
-#                img = img.resize(size=(self.size, self.size),
-#                                 resample=Image.CUBIC)
-#                new_sq[i, :, :, :] = numpy.array(img, dtype=batch.dtype)
-#            square = new_sq
+            # is it better to re-normalize or to cut values outside [0;1]
+            square = (square - square.min()) / (square.max() - square.min())
+        assert numpy.all(square >= 0.0) and numpy.all(square <= 1.0) 
         return square
 
     @functools.wraps(Adjuster.process)
     def accumulate(self, batch):
         return self.process(batch)
 
+    @functools.wraps(Adjuster.process)
+    def accum_text(self, batch):
+        result = []
+        for btc in batch:
+            btc = copy(btc)
+            btc.append({'squared': str(self.size)})
+            result.append(btc)
+        return result
 
 class FlipAdj(Adjuster):
     """
@@ -563,11 +598,6 @@ class FlipAdj(Adjuster):
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
-        if batch.shape[3] != 3 and batch.shape[3] != 4:
-            raise AssertionError("FlipAdj expects the input to have "
-                                 "three or four channels (red, "
-                                 "green, blue and alpha); provided shape was "
-                                 "%s" % str(batch.shape))
         for i in range(batch.shape[0]):
             img = batch[i, :, :, :]
             # get parameters for this image
@@ -600,6 +630,30 @@ class FlipAdj(Adjuster):
         # flip both original and vflipped image
         if self.horizontal:
             result[off:off+count, :, :, :] = result[0:off, :, ::-1, :]
+        return result
+
+    @functools.wraps(Adjuster.process)
+    def accum_text(self, batch):
+        result = []
+        for btc in batch:
+            btc = copy(btc)
+            btc.append({'flipped': 'not'})
+            result.append(btc)
+        if self.vertical:
+            for btc in batch:
+                btc = copy(btc)
+                btc.append({'flipped': 'vertically'})
+                result.append(btc)
+        if self.horizontal:
+            for btc in batch:
+                btc = copy(btc)
+                btc.append({'flipped': 'horizontally'})
+                result.append(btc)
+        if self.vertical and self.horizontal:
+            for btc in batch:
+                btc = copy(btc)
+                btc.append({'flipped': 'both'})
+                result.append(btc)
         return result
 
 
@@ -690,6 +744,7 @@ class RotationAdj(Adjuster):
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("RotationAdj expects the input to have "
                                  "three or four channels (red, "
@@ -713,11 +768,13 @@ class RotationAdj(Adjuster):
                 rotate(img, angle, axes=(0, 1), reshape=False,
                        output=img, order=self.order,
                        mode='constant', cval=0.0, prefilter=True)
-
+        batch = (batch - batch.min()) / (batch.max() - batch.min())
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         return batch
 
     @functools.wraps(Adjuster.process)
     def accumulate(self, batch):
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         tranc = self.transf_count()
         result = numpy.empty(shape=[batch.shape[0]*tranc,
                                     batch.shape[1],
@@ -744,9 +801,23 @@ class RotationAdj(Adjuster):
                        mode='constant', cval=0.0, prefilter=True)
             off = off + batch.shape[0]
             oend = oend + batch.shape[0]
+            
+        # is it better to re-normalize or to cut values outside [0;1]
+        result = (result - result.min()) / (result.max() - result.min())
+        assert numpy.all(result >= 0.0) and numpy.all(result <= 1.0)
         return result
 
-
+    @functools.wraps(Adjuster.process)
+    def accum_text(self, batch):
+        result = []
+        for angle in self.prmstore.parameters[0]:
+            for btc in batch:
+                btc = copy(btc)
+                btc.append({'angle': str(angle) + ' deg'})
+                result.append(btc)
+        return result
+        
+        
 class ScalePatchAdj(Adjuster):
     """
     Scales the image and places the result in the four corners of the image
@@ -908,14 +979,38 @@ class ScalePatchAdj(Adjuster):
             (hash(self.end_factor) << 1) ^ hash(self.start_factor) ^ \
             (self.order << 3) ^ (hash(self.end_factor) << 4)
 
+    def _process_img(self, img, outsize, scaled_shape,
+                     result, placement, factor, j):
+        """
+        """
+        assert outsize[0] > scaled_shape[1]
+        assert outsize[1] > scaled_shape[0]
+        deltax, deltay = placement(scaled_shape, outsize)
+        assert deltax >= 0 and deltay >= 0
+        endx = deltax + scaled_shape[1]
+        endy = deltay + scaled_shape[0]
+        assert endx <= outsize[0] and endy <= outsize[1]
+        zoom(img, zoom=(factor, factor, 1.),
+             output=result[j, deltay:endy, deltax:endx, :],
+             order=self.order, mode='constant',
+             cval=0.0, prefilter=True)
+        if deltay > 0:
+            result[j, 0:deltay, :, :].fill(0.)
+        if deltax > 0:
+            result[j, :, 0:deltax, :].fill(0.)
+        if endy < outsize[1]:
+            result[j, endy:outsize[1], :, :].fill(0.)
+        if endx < outsize[0]:
+            result[j, :, endx:outsize[0], :].fill(0.)
+
     @functools.wraps(Adjuster.process)
     def process(self, batch):
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("ScalePatchAdj expects the input to have "
                                  "three or four channels (red, "
                                  "green, blue and alpha); provided shape was "
                                  "%s" % str(batch.shape))
-
         if ((self.outsize is None) or
                 ((self.outsize[0] == batch.shape[2]) and
                  (self.outsize[1] == batch.shape[1]))):
@@ -932,34 +1027,20 @@ class ScalePatchAdj(Adjuster):
         for i in range(batch.shape[0]):
             # get parameters for this image
             placement, factor = self.prmstore.next()
-            img = batch[i, :, :, :]
             scaled_shape = tuple(
                 [int(round(ii * jj)) for ii, jj in zip(batch.shape[1:3],
                                                        (factor, factor))])
-            assert outsize[0] > scaled_shape[1]
-            assert outsize[1] > scaled_shape[0]
-            deltax, deltay = placement(scaled_shape, outsize)
-            assert deltax >= 0 and deltay >= 0
-            endx = deltax + scaled_shape[1]
-            endy = deltay + scaled_shape[0]
-            assert endx <= outsize[0] and endy <= outsize[1]
-            zoom(img, zoom=(factor, factor, 1.),
-                 output=result[i, deltay:endy, deltax:endx, :],
-                 order=self.order, mode='constant',
-                 cval=0.0, prefilter=True)
-            #result[i, deltay:endy, deltax:endx, :] = img
-            if deltay > 0:
-                result[i, 0:deltay, :, :].fill(0.)
-            if deltax > 0:
-                result[i, :, 0:deltax, :].fill(0.)
-            if endy < outsize[1]:
-                result[i, endy:outsize[1], :, :].fill(0.)
-            if endx < outsize[0]:
-                result[i, :, endx:outsize[0], :].fill(0.)
+            self._process_img(batch[i, :, :, :],
+                              outsize, scaled_shape,
+                              result, placement, factor, i)
+
+        result = (result - result.min()) / (result.max() - result.min())
+        assert numpy.all(result >= 0.0) and numpy.all(result <= 1.0)
         return result
 
     @functools.wraps(Adjuster.process)
     def accumulate(self, batch):
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         tranc = self.transf_count()
         if self.outsize is None:
             outsize = (batch.shape[2], batch.shape[1])
@@ -978,29 +1059,47 @@ class ScalePatchAdj(Adjuster):
                     [int(round(ii * jj)) for ii, jj in zip(batch.shape[1:3],
                                                            (factor, factor))])
                 for i in range(batch.shape[0]):
-                    img = batch[i, :, :, :]
-
-                    assert outsize[0] > scaled_shape[1]
-                    assert outsize[1] > scaled_shape[0]
-                    deltax, deltay = placement(scaled_shape, outsize)
-                    assert deltax >= 0 and deltay >= 0
-                    endx = deltax + scaled_shape[1]
-                    endy = deltay + scaled_shape[0]
-                    assert endx <= outsize[0] and endy <= outsize[1]
-                    zoom(img, zoom=(factor, factor, 1.),
-                         output=result[j, deltay:endy, deltax:endx, :],
-                         order=self.order, mode='constant',
-                         cval=0.0, prefilter=True)
-                    if deltay > 0:
-                        result[j, 0:deltay, :, :].fill(0.)
-                    if deltax > 0:
-                        result[j, :, 0:deltax, :].fill(0.)
-                    if endy < outsize[1]:
-                        result[j, endy:outsize[1], :, :].fill(0.)
-                    if endx < outsize[0]:
-                        result[j, :, endx:outsize[0], :].fill(0.)
+                    self._process_img(batch[i, :, :, :],
+                                      outsize, scaled_shape,
+                                      result, placement, factor, j)
                     j = j + 1
+                    
+        # is it better to re-normalize or to cut values outside [0;1]
+        result = (result - result.min()) / (result.max() - result.min())
+        assert numpy.all(result >= 0.0) and numpy.all(result <= 1.0)
         return result
+
+    @staticmethod
+    def place_to_str(func):
+        """
+        Convert a placement function to a string.
+        """
+        if func == ScalePatchAdj.top_left:
+            return 'top left'
+        elif func == ScalePatchAdj.top_right:
+            return 'top left'
+        elif func == ScalePatchAdj.btm_left:
+            return 'top left'
+        elif func == ScalePatchAdj.btm_right:
+            return 'top left'
+        elif func == ScalePatchAdj.center:
+            return 'top left'
+        else:
+            return 'custom'
+        
+    @functools.wraps(Adjuster.process)
+    def accum_text(self, batch):
+        result = []
+        for placement in self.prmstore.parameters[0]:
+            for factor in self.prmstore.parameters[1]:
+                for btc in batch:
+                    btc = copy(btc)
+                    plc = ScalePatchAdj.place_to_str(placement)
+                    btc.append({'placement': plc,
+                                'factor': str(factor)})
+                    result.append(btc)
+        return result
+
 
 class GcaAdj(Adjuster):
     """
@@ -1158,9 +1257,7 @@ class GcaAdj(Adjuster):
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
-        # global_contrast_normalize() always makes a copy which is
-        # not desirable in this case.
-
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("GcaAdj expects the input to have "
                                  "three or four channels (red, "
@@ -1171,10 +1268,12 @@ class GcaAdj(Adjuster):
         chan_cnt = min(batch.shape[3], 3)
         chan_sz = batch.shape[1] * batch.shape[2]
         for i in range(batch.shape[0]):
+            
             img = batch[i, :, :, :]
             # get parameters for this image
             scale, subtract_mean, use_std, bias = self.prmstore.next()
-            gcnarray = img[:, :, 0:3].swapaxes(0, 2).reshape(chan_cnt, chan_sz)
+            gcnarray = img[:, :, 0:3].swapaxes(0, 2).reshape(
+                chan_cnt, chan_sz)
             gcnarray = global_contrast_normalize(gcnarray,
                                                  scale=scale,
                                                  subtract_mean=subtract_mean,
@@ -1182,14 +1281,14 @@ class GcaAdj(Adjuster):
                                                  sqrt_bias=bias,
                                                  min_divisor=1e-8)
             gcnarray = gcnarray.reshape((chan_cnt,
-                                         batch.shape[1],
-                                         batch.shape[2]))
+                                         batch.shape[2],
+                                         batch.shape[1]))
             img[:, :, 0:3] = gcnarray.swapaxes(0, 2)
         return batch
 
-
-    @functools.wraps(Adjuster.process)
+    @functools.wraps(Adjuster.accumulate)
     def accumulate(self, batch):
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("GcaAdj expects the input to have "
                                  "three or four channels (red, "
@@ -1197,6 +1296,8 @@ class GcaAdj(Adjuster):
                                  "%s" % str(batch.shape))
         chan_cnt = min(batch.shape[3], 3)
         chan_sz = batch.shape[1] * batch.shape[2]
+        if batch.shape[3] == 4:
+            mask = batch[:, :, :, 3]
 
         tranc = self.transf_count()
         result = numpy.empty(shape=[batch.shape[0]*tranc,
@@ -1210,6 +1311,10 @@ class GcaAdj(Adjuster):
             for subtract_mean in self.prmstore.parameters[1]:
                 for use_std in self.prmstore.parameters[2]:
                     for bias in self.prmstore.parameters[3]:
+                        
+                        if batch.shape[3] == 4:
+                            oend = j + batch.shape[0]
+                            result[j:oend, :, :, 3] = mask
                         for i in range(batch.shape[0]):
                             img = batch[i, :, :, :]
                             gcnarray = img[:, :, 0:3].swapaxes(0, 2).reshape(
@@ -1222,12 +1327,33 @@ class GcaAdj(Adjuster):
                                 sqrt_bias=bias,
                                 min_divisor=1e-8)
                             gcnarray = gcnarray.reshape((chan_cnt,
-                                                         batch.shape[1],
-                                                         batch.shape[2]))
+                                                         batch.shape[2],
+                                                         batch.shape[1]))
                             result[j, :, :, 0:3] = gcnarray.swapaxes(0, 2)
+                            j = j + 1
+
+        # the output is NOT normalized in [0;1]
+        return result
+        
+    @functools.wraps(Adjuster.accum_text)
+    def accum_text(self, batch):
+        result = []
+        for scale in self.prmstore.parameters[0]:
+            for subtract_mean in self.prmstore.parameters[1]:
+                for use_std in self.prmstore.parameters[2]:
+                    for bias in self.prmstore.parameters[3]:
+                        for btc in batch:
+                            btc = copy(btc)
+                            btc.append({'scale': str(scale),
+                                        'subtract_mean': str(subtract_mean),
+                                        'use_std': str(use_std),
+                                        'bias': str(bias)})
+                            result.append(btc)
         return result
 
-
+def tt(xy):
+    print xy.min(), xy.max(), xy.shape, xy.dtype
+    
 def adj_from_string(adj_name):
     """
     Creates an adjuster based on a string key.

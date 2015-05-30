@@ -33,6 +33,7 @@ from pyl2extra.datasets.img_dataset.adjusters import (FlipAdj, RotationAdj,
                                                       adj_from_string)
 from pyl2extra.datasets.img_dataset.dataset import ImgDataset
 
+
 class BaseImgDset(object):
     """
     """
@@ -212,14 +213,40 @@ class TestImgDatasetAll(unittest.TestCase, BaseImgDset):
         Test the background adjuster.
         """
         itr = self.testee.iterator(mode=None,
-                                   batch_size=None,
+                                   batch_size=16,
                                    num_batches=None,
                                    rng=None,
                                    data_specs=None,
                                    return_tuple=False)
         result = itr.next()
-        #print result
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0].shape, (16, 128, 128, 3))
+        self.assertEqual(result[1].shape, (16, 1))        
 
+    def test_to_dense_design_matrix(self):
+        """
+        Test creating a DenseDesignMatrix.
+        """
+        ddm = self.testee.to_dense_design_matrix(num_examples=1, ne_raw=True)
+        self.assertEqual(ddm.get_num_examples(), self.testee.transf_count)
+        res_x = ddm.get_design_matrix()
+        res_y = ddm.y
+        self.assertEqual(res_x.shape, (self.testee.transf_count, 128*128*3))
+        self.assertEqual(res_y.shape, (self.testee.transf_count, 1))
+        res_x = ddm.get_topological_view()
+        self.assertEqual(res_x.shape, (self.testee.transf_count, 128, 128, 3))
+
+        from pylearn2.gui import patch_viewer
+        pv = patch_viewer.PatchViewer((32, 32), (128, 128),
+                                      is_color=True, pad=(3, 3))
+    
+        for i in xrange(self.testee.transf_count):
+            pv.add_patch(res_x[i, :, :, :], activation=0.0,
+                         rescale=True)
+    
+        pv.show()
+
+        
 class TestImgDatasetPickle(unittest.TestCase):
     """
     Tests for ImgDataset
@@ -468,8 +495,8 @@ if __name__ == '__main__':
     #explore_pick()
     if False:
         unittest.main(argv=['--verbose'])
-    elif False:
-        unittest.main(argv=['--verbose', 'TestImgDatasetYamlTrain'])
+    elif True:
+        unittest.main(argv=['--verbose', 'TestImgDatasetAll'])
     else:
         ttt = TestImgDatasetYamlTrain()
         ttt.setUp()

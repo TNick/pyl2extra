@@ -101,6 +101,7 @@ def create_mbatch(batch_sz, width=128, height=128):
         batch[i, :, :, :] = img_array[i % len(img_array)]
     return batch
 
+
 class BaseAdjusters(object):
     """
     Mixin to extract common functionality
@@ -121,6 +122,7 @@ class BaseAdjusters(object):
         shutil.rmtree(self.tmp_dir)
         del self.tmp_dir
         del self.testee
+
 
 class TestBackgroundAdj(unittest.TestCase, BaseAdjusters):
     """
@@ -344,6 +346,7 @@ class TestMakeSquareAdj(unittest.TestCase):
         self.assertTrue(os.path.isfile(cache_loc))
         self.assertTrue(os.path.isfile(cache_npy))
         self.assertEqual(ddm.get_num_examples(), 50)
+
 
 class TestFlipAdj(unittest.TestCase):
     """

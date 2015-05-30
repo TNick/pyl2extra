@@ -19,10 +19,6 @@ __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
 import sys
-import json
-import os
-import tempfile
-import argparse
 import logging
 
 from pyl2extra.utils.script import setup_logging, make_argument_parser
@@ -31,7 +27,6 @@ def cmd_gui(args):
     """
     Shows the main GUI interface
     """
-    global logger
     from pyl2extra.gui.viewprep.main_window import MainWindow
 
     from PyQt4 import QtGui
@@ -40,14 +35,13 @@ def cmd_gui(args):
     ex = MainWindow()
     ex.show()
 
-    logger.debug("Application started")
+    logging.debug("Application started")
     sys.exit(app.exec_())
 
 def main():
     """
     Module entry point.
     """
-    global logger
 
     # look at the arguments
     parser = make_argument_parser("Debugger for pylearn2 models.")
@@ -55,11 +49,11 @@ def main():
 
     # prepare logging
     setup_logging(args)
-    logger.debug("Application starting...")
+    logging.debug("Application starting...")
 
     # run based on request
     cmd_gui(args)
-    logger.debug("Application ended")
+    logging.debug("Application ended")
 
 
 if __name__ == '__main__':

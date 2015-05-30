@@ -95,7 +95,8 @@ class Provider(object):
         if img.mode == 'LAB' or img.mode == 'HSV':
             raise ValueError('%s image mode is not supported' % img.mode)
         img = img.convert('RGBA')
-        imarray = as_floatX(numpy.array(img))
+        imarray = as_floatX(numpy.array(img)) / 255.0
+        assert numpy.all(imarray >= 0.0) and numpy.all(imarray <= 1.0)
         assert len(imarray.shape) == 3
         assert imarray.shape[2] == 4
         return imarray
@@ -106,7 +107,7 @@ class Provider(object):
 
         This method only reads internal images. For a more general method
         see `read_image()`.
-        
+
         The returned array has (0, 1, 'c') shape, with c always 4
         (r, g, b, a) and datatype being floatX.
 
@@ -136,15 +137,15 @@ class Provider(object):
             The path for the image or the image itself.
         internal : bool
             Interpretation of the ``image`` parameter if it is a string:
-            - If ``internal`` is True the image is read 
-              using `Provider.read()` (it is  assumed it is 
+            - If ``internal`` is True the image is read
+              using `Provider.read()` (it is  assumed it is
               one of dataset's own image).
-            - If False it is interpreted as being a 
+            - If False it is interpreted as being a
               path and is read using Image.
-            
+
         The returned array is normalized to (0, 1, 'c') shape, with c always 4
         (r, g, b, a) and datatype being floatX.
-        
+
         Returns
         -------
         result : numpy.ndarray
@@ -152,7 +153,7 @@ class Provider(object):
         """
         if isinstance(image, basestring):
             if internal:
-                image, = self.read(image)
+                image, categ = self.read(image)
             else:
                 image = Image.open(image)
                 image = Provider.normalize_image(image)
@@ -161,15 +162,15 @@ class Provider(object):
             image = as_floatX(image)
         else:
             assert isinstance(image, Image.Image)
-            image = Image.open(image)
             image = Provider.normalize_image(image)
         # image is an array
         if image.shape[2] == 3:
             app = numpy.ones(shape=(image.shape[0], image.shape[1], 1),
                              dtype=image.stype) * 255
             numpy.append(image, app, axis=2)
+        assert numpy.all(image >= 0.0) and numpy.all(image <= 1.0)
         return image
- 
+
     def category(self, f_path):
         """
         Given a file name returned by next finds the category for that file.
@@ -352,7 +353,7 @@ class DictProvider(Provider):
     @functools.wraps(Provider.__iter__)
     def __len__(self):
         return len(self.data)
-        
+
     @functools.wraps(Provider.next)
     def next(self):
         return self.keys_iter.next()
@@ -543,7 +544,7 @@ class RandomProvider(DictProvider):
     @functools.wraps(Provider.__iter__)
     def __len__(self):
         return self.count
-        
+
     @functools.wraps(Provider.read)
     def read(self, f_path):
         logging.debug('generator reading file %s', f_path)
@@ -612,7 +613,7 @@ class DeDeMaProvider(Provider):
     @functools.wraps(Provider.__iter__)
     def __len__(self):
         return self.dedema.get_num_examples()
-        
+
     @functools.wraps(Provider.next)
     def next(self):
         return self.dataset_iter.next()
@@ -661,4 +662,3 @@ class DeDeMaProvider(Provider):
         view_conv = self.dedema.view_converter.design_mat_to_topo_view
         exm = view_conv(ddm[f_path].reshape(1, ddm.shape[1]))
         return exm[0], categ
-        

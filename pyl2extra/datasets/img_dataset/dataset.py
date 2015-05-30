@@ -16,10 +16,10 @@ __email__ = "nicu.tofan@gmail.com"
 import functools
 import numpy
 import os
-import logging
 from pylearn2.datasets.dataset import Dataset
 from pylearn2.datasets.dense_design_matrix import DenseDesignMatrix
 from pylearn2.datasets.dense_design_matrix import FiniteDatasetIterator
+from pylearn2.utils import as_floatX
 from pylearn2.utils.rng import make_np_rng
 from pylearn2.utils.iteration import SequentialSubsetIterator
 
@@ -33,7 +33,6 @@ from pyl2extra.datasets.img_dataset.adjusters import (Adjuster,
 from pyl2extra.datasets.img_dataset.generators import (Generator,
                                                        InlineGen,
                                                        gen_from_string)
-
 
 class ImgDataset(Dataset):
     """
@@ -118,7 +117,9 @@ class ImgDataset(Dataset):
         #: the number of images that results from a single input image
         self.transf_count = 1
         for adj in self.adjusters:
-            self.transf_count = sself.transf_count * adj.transf_count()
+            self.transf_count = self.transf_count * adj.transf_count()
+        self.transf_count = int(self.transf_count)
+        
         #: total number of unique examples
         self.totlen = len(self.data_provider) * self.transf_count
         empty = self.totlen == 0
@@ -382,7 +383,7 @@ class ImgDataset(Dataset):
         """
         assert len(batch.shape) == 4
         assert batch.shape[3] == 4
-        result = batch
+        result = as_floatX(batch)
         if len(self.adjusters) > 0:
             if accumulate:
                 for adj in self.adjusters:
@@ -392,12 +393,38 @@ class ImgDataset(Dataset):
                     result = adj.process(result)
         else:
             result = result[:, :, :, :3]
-        if result.shape[3] != self.channels_len():
-            raise AssertionError("Adjusters must be organized in such a way "
-                                 "that at the end of the processing cycle "
-                                 "the result is in RGB form (as opposed to "
-                                 "original RGBA form). One common way for "
-                                 "doing that is to use BackgroundAdj.")
+        #if result.shape[3] != self.channels_len():
+        #    raise AssertionError("Adjusters must be organized in such a way "
+        #                         "that at the end of the processing cycle "
+        #                         "the result is in RGB form (as opposed to "
+        #                         "original RGBA form). One common way for "
+        #                         "doing that is to use BackgroundAdj.")
+        return result
+
+    def process_labels(self, size):
+        """
+        Gets the textual description for the transformations.
+        
+        This method can be used to describe what transformations a 
+        particular image suffered when subjected to Adjuster.accumulate() 
+        chain (calling `process(batch, accumulate=True)`).
+        
+        Parameters
+        ----------
+        size : int
+            The length of the batch that was passed to `process()`.
+            
+        Returns
+        -------
+        result : list
+            A list of items, each one representing an image. An imtem is
+            represented as a list of dictionaries, one for easch adjuster.
+            Inside each dictionary a key-value pair is present for each 
+            parameter.
+        """
+        result = [[] * size]
+        for adj in self.adjusters:
+            result = adj.accum_text(result)
         return result
 
     def get_cache_loc(self):
@@ -449,26 +476,35 @@ class ImgDataset(Dataset):
             num_examples = num_examples * self.transf_count
         # num_examples now represents the number f examples in final dataset
         
-        shape = (num_examples, self.shape[1], self.shape[0], 3)
-        dtype = 0
-        result_x = numpy.empty(shape=shape, dtype=dtype)
-        result_y = []
+        result_x = None
+        result_y = None
         ofs = 0
         for fpath in self.data_provider:
             # generate all combinations from this image
             batch = self.data_provider.read_image(image=fpath,
                                                   internal=True)
+            batch = batch.reshape(1, batch.shape[0], 
+                                  batch.shape[1], batch.shape[2])
             batch = self.process(batch, accumulate=True)
             clss = self.data_provider.category(fpath)
             classes = [clss for i in range(batch.shape[0])]
             
             # save it into our array
+            if result_x is None:
+                shape = (num_examples, self.shape[1], self.shape[0], 3)
+                result_x = numpy.empty(shape=shape, dtype=batch.dtype)
+                result_y = []
             to_copy = min(num_examples, batch.shape[0])
             result_x[ofs:ofs+to_copy, :, :, :] = batch[0:to_copy, :, :, :]
             result_y += classes[0:to_copy]
+            
+            # update counters
             ofs = ofs + to_copy
             num_examples = num_examples - to_copy
+            if num_examples <= 0:
+                break
         
+        result_y = numpy.array(result_y).reshape(len(result_y), 1)
         result = DenseDesignMatrix(topo_view=result_x,
                                    y=result_y,
                                    axes=('b', 0, 1, 'c'),
