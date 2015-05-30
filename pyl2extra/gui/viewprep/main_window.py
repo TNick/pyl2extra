@@ -162,6 +162,11 @@ class MainWindow(QtGui.QMainWindow):
                                      'Ctrl+O',
                                      'Load file and preprocess',
                                      self.browse_img)
+        self.act_load_npy = make_act('Open &numpy ...', self,
+                                     'ftp.png',
+                                     'Ctrl+U',
+                                     'Load a numpy array consisting of images',
+                                     self.browse_npy)
         self.act_load_dir = make_act('Open &directory ...', self,
                                      'folders_explorer.png',
                                      'Ctrl+D',
@@ -171,11 +176,13 @@ class MainWindow(QtGui.QMainWindow):
 
         menu_file = menubar.addMenu('&File')
         menu_file.addAction(self.act_load_img)
+        menu_file.addAction(self.act_load_npy)
         menu_file.addAction(self.act_load_dir)
         menu_file.addAction(self.act_exit)
 
         self.toolbar = self.addToolBar('General')
         self.toolbar.addAction(self.act_load_img)
+        self.toolbar.addAction(self.act_load_npy)
         self.toolbar.addAction(self.act_load_dir)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_exit)
@@ -205,6 +212,50 @@ class MainWindow(QtGui.QMainWindow):
             for key in ditem:
                 result.append('%s: %s' % (key, ditem[key]))
         return result
+        
+    def load_npy(self, fname):
+        """
+        Slot that loads images from a numpy array.
+        """
+        if not fname:
+            return
+
+        try:
+            self.lst.clear()
+            
+            self.lbl_p.setText(fname)
+            batch = numpy.load(fname)
+            
+            if len(batch.shape) != 4:
+                logger.error('Shape %s is unexpected for numpy array '
+                             'in file %s',
+                             str(batch.shape), fname)
+                QtGui.QMessageBox.warning(self, 'Error',
+                                          'Unexpected shape found inside '
+                                          '%s file.' % (fname))
+                return
+            if not batch.shape[3] in (1, 2, 3, 4):
+                logger.error('Expected layout is b01c with 4 channels '
+                             'at most; file %s has %d channels.',
+                             fname, batch.shape[3])
+                QtGui.QMessageBox.warning(self, 'Error',
+                                          'Unexpected shape found inside '
+                                          '%s file (%d channels)' % 
+                                          (fname, batch.shape[3]))
+                return
+            
+            self.lbl_w.setText('width: %d' % batch.shape[2])
+            self.lbl_h.setText('height: %d' % batch.shape[1])
+            self.lbl_ch.setText('channels: %d' % batch.shape[3])
+            self.lbl_m.setText('mode: numpy')
+            self.lbl_info.setText(os.path.split(fname)[1])
+            self.lblimg.setPixmap(QtGui.QPixmap())
+            
+            self._add_batch(batch)
+            
+        except Exception, exc:
+            logger.error('Loading image file failed', exc_info=True)
+            QtGui.QMessageBox.warning(self, 'Exception', str(exc))
         
     def load_dir(self, dname):
         """
@@ -286,18 +337,24 @@ class MainWindow(QtGui.QMainWindow):
             batch = self.dataset.process(batchin, accumulate=True)
             
             description = self.dataset.process_labels(1)
-            
-            for i in range(batch.shape[0]):
-                ibatch = batch[i, :, :, 0:3]
-                ibatch = numpy.cast['uint8'](255.0 * (ibatch - ibatch.min()) / 
-                                             (ibatch.max() - ibatch.min()))                
-                self.img_item(ibatch, 
-                              tooltip=self.flatten_descr(description[i]))
-                
-                
+            self._add_batch(batch, description)
         except Exception, exc:
             logger.error('Loading image file failed', exc_info=True)
             QtGui.QMessageBox.warning(self, 'Exception', str(exc))
+
+    def _add_batch(self, batch, description=None):
+        """
+        Expects a batch in b01c format. Creates images for items in batch.
+        """
+        for i in range(batch.shape[0]):
+            ibatch = batch[i, :, :, 0:3]
+            ibatch = numpy.cast['uint8'](255.0 * (ibatch - ibatch.min()) / 
+                                         (ibatch.max() - ibatch.min()))      
+            tooltip = None
+            if not description is None:
+                tooltip = self.flatten_descr(description[i])
+            self.img_item(ibatch, tooltip=tooltip)        
+
 
     def img_item(self, img, label=None, tooltip=None):
         """
@@ -377,3 +434,13 @@ class MainWindow(QtGui.QMainWindow):
         if not fname:
             return
         self.load_dir(fname)
+        
+    def browse_npy(self):
+        """
+        Slot that browse for and loads an numpy file.
+        """
+        fname = QtGui.QFileDialog.getOpenFileName(self,
+                                                  'Open numpy (.npy) file')
+        if not fname:
+            return
+        self.load_npy(fname)
