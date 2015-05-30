@@ -50,9 +50,8 @@ import types
 
 # theano.config.device is read-only so we change the value in environment
 # before importing theano
-thflags = os.environ['THEANO_FLAGS']
-if thflags:
-    thflags = thflags + ",device=cpu"
+if os.environ.has_key('THEANO_FLAGS'):
+    thflags = os.environ['THEANO_FLAGS'] + ",device=cpu"
 else:
     thflags = "device=cpu"
 os.environ['THEANO_FLAGS'] = thflags
