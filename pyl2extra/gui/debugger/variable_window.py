@@ -5,20 +5,18 @@
 """
 
 import numpy
-
 import PyQt4
 from PyQt4 import QtGui, QtCore
-
 import pyqtgraph as pg
-
 #from theano.tensor.sharedvar import TensorSharedVariable
 from theano.gof import Variable
 
-from .gui import center
-from .image import nparrayToQPixmap, gray2qimage
+from pyl2extra.gui.guihelpers import center
+from pyl2extra.gui.debugger.image import nparrayToQPixmap, gray2qimage
 
 import logging
 logger = logging.getLogger(__name__)
+
 
 class VariableWindow(QtGui.QWidget):
     """
@@ -267,11 +265,7 @@ class VariableWindow(QtGui.QWidget):
             else:
                 self.show_list_like(variable)
 
-
     def add_image_gui(self, variable):
-
-
-
 
         b_label = False
         if len(variable.shape) == 3:

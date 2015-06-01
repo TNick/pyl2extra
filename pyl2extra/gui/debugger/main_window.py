@@ -14,18 +14,19 @@ import logging
 from pylearn2.config import yaml_parse
 from pylearn2.utils import serial
 from PyQt4 import QtGui, QtCore
+import theano
 
 from pyl2extra.gui.guihelpers import center
 from pyl2extra.gui.guihelpers import make_act
 
-from pyl2extra.gui.dataset_window import DatasetWindow
-from pyl2extra.gui.variable_window import VariableWindow
-from pyl2extra.gui.object_tree_window import ObjectTreeWindow
-from pyl2extra.gui.remote_window import RemoteDialog
-from pyl2extra.gui.debugger_proxy import DebuggerProxy
+from pyl2extra.gui.debugger.dataset_window import DatasetWindow
+from pyl2extra.gui.debugger.variable_window import VariableWindow
+from pyl2extra.gui.debugger.object_tree_window import ObjectTreeWindow
+from pyl2extra.gui.debugger.remote_window import RemoteDialog
+from pyl2extra.gui.debugger.debugger_proxy import DebuggerProxy
+from pyl2extra.gui.debugger.signal_handler import OnlineDebugger
 
 from pyl2extra.gui import debugger
-from pyl2extra.gui.signal_handler import OnlineDebugger
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,7 @@ class MainWindow(QtGui.QMainWindow):
         self.init_ui()
 
         self.connect_debugger(OnlineDebugger())
+        theano.config.experimental.unpickle_gpu_on_cpu = True
 
     def init_ui(self):
         """
@@ -695,3 +697,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.debugger = None
         self.remote_debugger_is_alive = False
+
+if __name__ == '__main__':
+    ex = MainWindow()
+    ex.show()

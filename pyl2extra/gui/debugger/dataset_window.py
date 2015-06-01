@@ -7,8 +7,8 @@
 import numpy
 from PyQt4 import QtGui
 
-from .gui import center
-from .image import nparrayToQPixmap
+from pyl2extra.gui.guihelpers import center
+from pyl2extra.gui.debugger.image import nparrayToQPixmap
 
 class DatasetWindow(QtGui.QWidget):
     """

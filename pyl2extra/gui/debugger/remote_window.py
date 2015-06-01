@@ -6,7 +6,7 @@
 
 from PyQt4 import QtGui, QtCore
 
-from .gui import center
+from pyl2extra.gui.guihelpers import center
 
 class RemoteDialog(QtGui.QDialog):
     """

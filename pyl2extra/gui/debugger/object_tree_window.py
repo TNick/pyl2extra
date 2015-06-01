@@ -19,8 +19,7 @@ from theano.tensor import Tensor
 from theano.gof import Variable
 from theano.gof.fg import MissingInputError
 
-from .gui import center
-
+from pyl2extra.gui.guihelpers import center
 from learn_spot.gui.utils import get_icon
 
 import logging
@@ -241,15 +240,19 @@ class ObjectTreeWindow(QtGui.QWidget):
                         pass
 
                 if isinstance(oitr, Tensor):
-                    recurse_object(parent, dir(oitr), self.yaml_max_depth-1, False, oitr)
+                    recurse_object(parent, dir(oitr), 
+                                   self.yaml_max_depth-1, False, oitr)
                 elif isinstance(oitr, Variable):
-                    recurse_object(parent, dir(oitr), self.yaml_max_depth-1, False, oitr)
+                    recurse_object(parent, dir(oitr),
+                                   self.yaml_max_depth-1, False, oitr)
                 elif isinstance(oitr, PYL2_TYPED):
                     recurse_object(parent, dir(oitr), depth+1, True, oitr)
                 elif isinstance(oitr, DictType):
                     recurse_object(parent, oitr, depth+1, False, oitr)
                 elif hasattr(oitr, '__iter__'):
                     recurse_object(parent, oitr, depth+1, False, oitr)
+                elif isinstance(oitr, Model):
+                    recurse_object(parent, dir(oitr), depth+1, True, oitr)
                 else:
                     recurse_object(parent, dir(oitr), depth+1, True, oitr)
                     
@@ -322,12 +325,14 @@ class ObjectTreeWindow(QtGui.QWidget):
                             value = value[:20] + '...'
 
                     #print '-'*depth, label, kind, value
-                    tree_it = QtGui.QTreeWidgetItem(parent, [label, kind, value])
+                    tree_it = QtGui.QTreeWidgetItem(parent, 
+                                                    [label, kind, value])
                     tree_it.tag = tag
 
                     if b_recurse:
                         divein_object(tree_it, oitr, depth)
-            except (MissingInputError, RuntimeError, AttributeError, TypeError):
+            except (MissingInputError, RuntimeError, 
+                    AttributeError, TypeError):
                 pass
 
         self.flat_object_list = []
@@ -335,7 +340,6 @@ class ObjectTreeWindow(QtGui.QWidget):
         root = QtGui.QTreeWidgetItem(self.tree_widget,
                                      ['root', type(self.obj_tree).__name__])
         divein_object(root, self.obj_tree, 0)
-
 
         # expand first layer
         root.setExpanded(True)
