@@ -8,7 +8,7 @@ Examples:
     python show_weights.py
 
     # run the app in debug mode
-    python viewprep.py --debug
+    python show_weights.py --debug
 
 """
 __authors__ = "Nicu Tofan"
@@ -35,6 +35,9 @@ def cmd_gui(args):
     ex = MainWindow()
     ex.show()
 
+    if len(args.model) > 0:
+        ex.load_model_file(args.model)
+
     logging.debug("Application started")
     sys.exit(app.exec_())
 
@@ -45,6 +48,7 @@ def main():
 
     # look at the arguments
     parser = make_argument_parser("Debugger for pylearn2 models.")
+    parser.add_argument('model', default='')
     args = parser.parse_args()
 
     # prepare logging

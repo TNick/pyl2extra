@@ -16,6 +16,7 @@ __email__ = "nicu.tofan@gmail.com"
 
 import logging
 import numpy
+import os
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QSettings
 from pylearn2.utils import serial, safe_zip
@@ -263,7 +264,7 @@ about it and a graphical representation.
                                      'folder_database.png',
                                      'Ctrl+O',
                                      'Load file and preprocess',
-                                     self.browse_img)
+                                     self.browse_model)
         self.act_export_img = make_act('&Export value as image...', self,
                                        'folder_database.png',
                                        'Ctrl+I',
@@ -360,7 +361,8 @@ about it and a graphical representation.
         """
         Presents the value in the image or in the plot.
         """
-        if isinstance(value, theano.sandbox.cuda.CudaNdarray):
+        #if isinstance(value, theano.sandbox.cuda.CudaNdarray):
+        if isinstance(value.__class__, theano.sandbox.cuda.CudaNdarrayType):
             value = numpy.asarray(value)
             self.lbl_type.setText('Type: CudaNdarray')
             self.lbl_shape.setText('Shape: %s' % str(value.shape))
@@ -422,21 +424,41 @@ about it and a graphical representation.
             logger.error('Loading image file failed', exc_info=True)
             QtGui.QMessageBox.warning(self, 'Exception', str(exc))
 
-    def browse_img(self):
+    def load_model_file(self, fname):
         """
-        Slot that browse for and loads an image file.
+        Read a model file and use `load_model()` to show it.
+
+        Parameters
+        ----------
+        fname : str
+            Path to model file.
         """
-        fname = QtGui.QFileDialog.getOpenFileName(self,
-                                                  'Open pickled model file')
-        if not fname:
-            return
         model = serial.load(fname)
         if not isinstance(model, Model):
             QtGui.QMessageBox.warning(self, 'Error',
                                       'Expecting a model object; got a %s' %
                                       str(model.__class__))
         else:
+            path, name = os.path.split(fname)
+            self.settings.setValue('mw/model_path', path)
+            self.setWindowTitle('[%s] - Visualize model' % name)
             self.load_model(model)
+
+    def browse_model(self):
+        """
+        Slot that browse for and loads a model file.
+        """
+        path = self.settings.value('mw/model_path')
+        if path is None:
+            path = os.getcwd()
+
+        fname = QtGui.QFileDialog.getOpenFileName(self,
+                                                  'Open pickled model file',
+                                                  path,
+                                                  '*.pkl')
+        if not fname:
+            return
+        self.load_model_file(fname)
 
     def export_img(self):
         """

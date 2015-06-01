@@ -33,9 +33,11 @@ Highlights
 This section gives some hints about the content. It will probably
 get out of sync pretty fast, so please check the content of the package.
 
-- yaml_parser: some goodies were added to allow extracting
+- [yaml_parser][9]: some goodies were added to allow extracting
 values from classes and ranges of values that generate a new value
 at each instantiation.
+- [show_weights][10]: a GUI module that allows you to explore the weights of
+a model by using [pyqtgraph][5]
 
 Upcoming Features
 -----------------
@@ -59,3 +61,5 @@ and [ZMQ][6] for networking.
   [6]: https://github.com/zeromq/pyzmq "GitHub repository for pyzmq"
   [7]: http://sphinx-doc.org/ "Sphinx - Python Documentation Generator"
   [8]: http://tnick.github.io/pyl2extra/ "Pyl2Extra Documentation"
+  [9]: https://github.com/TNick/pyl2extra/blob/master/pyl2extra/config/yaml_parse.py
+  [10]: https://github.com/TNick/pyl2extra/blob/master/pyl2extra/scripts/show_weights.py
