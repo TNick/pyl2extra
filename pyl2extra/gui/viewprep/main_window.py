@@ -16,6 +16,11 @@ import logging
 import numpy
 import os
 from PyQt4 import QtGui, QtCore
+from pylearn2.utils import serial, safe_zip
+from pylearn2.datasets.dataset import Dataset
+from pylearn2.models.model import Model
+import theano
+
 
 from pyl2extra.gui.guihelpers import center
 from pyl2extra.gui.guihelpers import make_act
@@ -25,10 +30,10 @@ from pyl2extra.datasets.img_dataset.data_providers import RandomProvider
 from pyl2extra.datasets.img_dataset.data_providers import DictProvider
 from pyl2extra.datasets.img_dataset.generators import InlineGen
 from pyl2extra.datasets.img_dataset import adjusters
-from pylearn2.utils.image import ndarray_from_pil
 
 logger = logging.getLogger(__name__)
 Q = QtGui.QMessageBox.question
+
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -42,6 +47,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.init_actions()
         self.init_ui()
+        theano.config.experimental.unpickle_gpu_on_cpu = True
 
     def init_ui(self):
         """
@@ -165,8 +171,15 @@ class MainWindow(QtGui.QMainWindow):
         self.act_load_npy = make_act('Open &numpy ...', self,
                                      'ftp.png',
                                      'Ctrl+U',
-                                     'Load a numpy array consisting of images',
+                                     'Load a numpy array consisting of '
+                                     'b01c ordered images.',
                                      self.browse_npy)
+        self.act_load_pkl = make_act('Open &pickled file ...', self,
+                                     'folder_database.png',
+                                     'Ctrl+K',
+                                     'Load a pickled file. It may be '
+                                     'a dataset or a model',
+                                     self.browse_pkl)
         self.act_load_dir = make_act('Open &directory ...', self,
                                      'folders_explorer.png',
                                      'Ctrl+D',
@@ -177,12 +190,14 @@ class MainWindow(QtGui.QMainWindow):
         menu_file = menubar.addMenu('&File')
         menu_file.addAction(self.act_load_img)
         menu_file.addAction(self.act_load_npy)
+        menu_file.addAction(self.act_load_pkl)
         menu_file.addAction(self.act_load_dir)
         menu_file.addAction(self.act_exit)
 
         self.toolbar = self.addToolBar('General')
         self.toolbar.addAction(self.act_load_img)
         self.toolbar.addAction(self.act_load_npy)
+        self.toolbar.addAction(self.act_load_pkl)
         self.toolbar.addAction(self.act_load_dir)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_exit)
@@ -305,7 +320,70 @@ class MainWindow(QtGui.QMainWindow):
         except Exception, exc:
             logger.error('Loading image file failed', exc_info=True)
             QtGui.QMessageBox.warning(self, 'Exception', str(exc))
-        
+            
+    def load_dataset(self, dataset):
+        """
+        Slot that loads a dataset object (not file).
+        """
+        try:
+            self.lst.clear()
+            self.lbl_w.setText('width: -')
+            self.lbl_h.setText('height: -')
+            self.lbl_ch.setText('channels: -')
+            self.lbl_m.setText('mode: ')
+            self.lblimg.setPixmap(QtGui.QPixmap())
+            
+            # TODO: implement
+            raise NotImplementedError()
+            
+        except Exception, exc:
+            logger.error('Loading image file failed', exc_info=True)
+            QtGui.QMessageBox.warning(self, 'Exception', str(exc))
+ 
+ 
+    def load_model(self, model):
+        """
+        Slot that loads a model object (not file).
+        """
+        try:
+            self.lst.clear()
+            self.lbl_w.setText('width: -')
+            self.lbl_h.setText('height: -')
+            self.lbl_ch.setText('channels: -')
+            self.lbl_m.setText('mode: ')
+            self.lblimg.setPixmap(QtGui.QPixmap())
+            
+            for par, parv in safe_zip(model.get_params(),
+                                      model.get_param_values()):
+                if isinstance(parv, numpy.ndarray):
+                    if len(parv.shape) <= 1:
+                        pass
+                    elif len(parv.shape) >= 5:
+                        pass
+                    elif len(parv.shape) == 4:
+                        for i in range(parv.shape[0]):    
+                            for j in range(parv.shape[2]):    
+                                self.img_item(parv[i, :, :, j], 
+                                              label='%s(%dx%d)' % (par, i, j))
+                        continue
+                    elif len(parv.shape) == 3 and parv.shape[2] != 3:
+                        for i in range(parv.shape[2]):    
+                            self.img_item(parv[:, :, i], 
+                                          label='%s(%d)' % (par, i))
+                        continue
+                    else:
+                        self.img_item(parv, label=str(par))
+                        continue
+
+                # default handling
+                lsit = QtGui.QListWidgetItem()
+                lsit.setText('%s = %s' % (par.name, str(parv)))
+                self.lst.addItem(lsit)
+        except Exception, exc:
+            logger.error('Loading image file failed', exc_info=True)
+            QtGui.QMessageBox.warning(self, 'Exception', str(exc))
+ 
+ 
     def load_img(self, fname):
         """
         Slot that loads an image file.
@@ -355,7 +433,6 @@ class MainWindow(QtGui.QMainWindow):
                 tooltip = self.flatten_descr(description[i])
             self.img_item(ibatch, tooltip=tooltip)        
 
-
     def img_item(self, img, label=None, tooltip=None):
         """
         Create an list item from an Image.
@@ -366,33 +443,43 @@ class MainWindow(QtGui.QMainWindow):
             lsit.setText(label)
         lsit.setBackgroundColor(QtGui.QColor('grey'))
         if isinstance(img, Image.Image):
+            logging.debug('Image shape: %s', str(img.size))
             qtimg = pil2qt(img)
         elif isinstance(img, numpy.ndarray):
             mnm = img.min()
             mx = img.max()
+            logging.debug('ndarray shape: %s, min: %s, max: %s', 
+                          str(img.shape), str(mnm), str(mx))
+            if tooltip is None:
+                tooltip = ['shape: %s' % str(img.shape),
+                           'min: %s' % str(mnm),
+                           'max: %s' % str(mx)]
+                if not label is None:
+                    tooltip.insert(0, 'name: %s' % label)
             if len(img.shape) == 1:
                 raise NotImplementedError()
             elif len(img.shape) == 2:
-                raise NotImplementedError()
+                img = ((img - mnm) / (mx - mnm)) * 255.0
+                img = numpy.cast['uint8'](img)
             elif len(img.shape) == 3:
                 if img.dtype == 'uint8':
                     pass
                 elif mnm >= -5 and mx < 260 and mx > 10:
                     img = img * (img > 0)
                     lg = (img > 255)
-                    img = img * lg * (-1) + img + (lg * 255)
+                    img = img * lg * (-1) + img + (lg * 255.0)
                     img = numpy.cast['uint8'](img)
                 elif img.shape[2] == 1:
-                    img = ((img - mnm) / (mx - mnm)) * 255
+                    img = ((img - mnm) / (mx - mnm)) * 255.0
                     img = numpy.cast['uint8'](img)
                 elif img.shape[2] == 3:
-                    img = ((img - mnm) / (mx - mnm)) * 255
+                    img = ((img - mnm) / (mx - mnm)) * 255.0
                     img = numpy.cast['uint8'](img)
                 else:
                     img = img[:, :, 0:3]
                     mnm = img.min()
                     mx = img.max()
-                    img = ((img - mnm) / (mx - mnm)) * 255
+                    img = ((img - mnm) / (mx - mnm)) * 255.0
                     img = numpy.cast['uint8'](img)
                     
                     #raise NotImplementedError()
@@ -401,11 +488,25 @@ class MainWindow(QtGui.QMainWindow):
                                  str(img.shape))
             # print mnm, mx, img.shape, img.dtype
             img = Image.fromarray(img)
+            logging.debug(' source image mode: %s, size: %s', 
+                          img.mode, str(img.size))
+            for i, val in enumerate(img.histogram()):
+                if val != 0:
+                    logging.debug(' histogram %d: %s', 
+                                  i, str(val))
+                    
             qtimg = pil2qt(img)
         else:
             raise ValueError('%s not dupported by img_item()' %
                              str(img.__class__))
+        
         qtpix = QtGui.QPixmap(qtimg.image)
+        w = self.lblimg.maximumWidth()
+        h = self.lblimg.maximumHeight()
+        logging.debug('scalling to %dx%d', w, h)
+        qtpix = qtpix.scaled(w, h, 
+                             QtCore.Qt.KeepAspectRatio,
+                             QtCore.Qt.SmoothTransformation)
         qticn = QtGui.QIcon(qtpix)
         lsit.setIcon(qticn)
         if tooltip:
@@ -444,3 +545,26 @@ class MainWindow(QtGui.QMainWindow):
         if not fname:
             return
         self.load_npy(fname)
+        
+    def browse_pkl(self):
+        """
+        Slot that browse for and loads a pickled file.
+        """
+        fname = QtGui.QFileDialog.getOpenFileName(self,
+                                                  'Open pickled (.pkl) file')
+        if not fname:
+            return
+            
+        obj = serial.load(fname)
+        
+        if isinstance(obj, Dataset):
+            self.load_dataset(obj)
+        elif isinstance(obj, Model):
+            self.load_model(obj)
+        else:
+            QtGui.QMessageBox.warning(self, 'Error', 
+                                      '%s objects are not supported' %
+                                      str(obj.__class__))
+
+        self.lbl_p.setText(fname)
+        self.lbl_info.setText(os.path.split(fname)[1])
