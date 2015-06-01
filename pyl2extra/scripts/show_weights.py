@@ -1,6 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+The application allows you to show the weights of a class
+that inherits from pylearn2's Model.
+
+To start, goto File > Open pickled model... and select the
+file that has your saved mode. Loading might take a while
+and the window will look frozen while loading.
+
+Once the model was loaded the parameters are presented in the
+list on the left side. Select an entry to view the content for
+that parameter.
+
+For uni-dimensional values the program shows a simple,
+histogram-like graph. For values with two dimensions and
+more an image is presented.
+
+If the value has more than two dimensions you can choose which
+dimensions are shown using the combo-boxed that are shown in the
+second vertical area next to list ov parameters.
+
+The values shown in the image can be customized by adjusting
+the treshold and chenging the way values are mapped to colors.
 
 Examples:
 
