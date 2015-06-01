@@ -21,7 +21,6 @@ def center(widget):
     frame_geom.moveCenter(center_point)
     widget.move(frame_geom.topLeft())
 
-
 def get_icon(icon_name):
     """
     Create a QIcon from an image in local resource directory
