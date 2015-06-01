@@ -10,6 +10,9 @@ Examples:
     # run the app in debug mode
     python show_weights.py --debug
 
+    # Load a file at start-up
+    python show_weights.py file.pkl
+
 """
 __authors__ = "Nicu Tofan"
 __copyright__ = "Copyright 2015, Nicu Tofan"
