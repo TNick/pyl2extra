@@ -699,5 +699,7 @@ class MainWindow(QtGui.QMainWindow):
         self.remote_debugger_is_alive = False
 
 if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
     ex = MainWindow()
     ex.show()
+    sys.exit(app.exec_())

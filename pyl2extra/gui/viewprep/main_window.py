@@ -19,8 +19,8 @@ from PyQt4 import QtGui, QtCore
 from pylearn2.utils import serial, safe_zip
 from pylearn2.datasets.dataset import Dataset
 from pylearn2.models.model import Model
+import sys
 import theano
-
 
 from pyl2extra.gui.guihelpers import center
 from pyl2extra.gui.guihelpers import make_act
@@ -531,7 +531,7 @@ class MainWindow(QtGui.QMainWindow):
         Slot that browse for and loads an image directory.
         """
         fname = QtGui.QFileDialog.getExistingDirectory(self,
-                                                  'Open image file')
+                                                  'Open directory')
         if not fname:
             return
         self.load_dir(fname)
@@ -568,3 +568,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self.lbl_p.setText(fname)
         self.lbl_info.setText(os.path.split(fname)[1])
+
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    ex = MainWindow()
+    ex.show()
+    sys.exit(app.exec_())
