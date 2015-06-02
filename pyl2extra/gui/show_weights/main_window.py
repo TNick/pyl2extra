@@ -27,9 +27,11 @@ import sys
 
 from pyl2extra.gui.guihelpers import center
 from pyl2extra.gui.guihelpers import make_act
+from pyl2extra.gui.show_weights.all_weights_widget import AllWeightsWidget
 
 logger = logging.getLogger(__name__)
 Q = QtGui.QMessageBox.question
+
 
 class MainWindow(QtGui.QMainWindow):
     """
@@ -41,6 +43,9 @@ class MainWindow(QtGui.QMainWindow):
         self.init_actions()
         self.init_ui()
         theano.config.experimental.unpickle_gpu_on_cpu = True
+        self.variable = None
+        self.all_wwidget = []
+        self.setWindowTitle('Model Browser')
 
     def init_ui(self):
         """
@@ -63,7 +68,7 @@ class MainWindow(QtGui.QMainWindow):
 
         gridw = QtGui.QWidget()
         grid = QtGui.QHBoxLayout()
-        grid.setSpacing(5)
+        grid.setSpacing(15)
 
         self.lv_top = QtGui.QTreeWidget(self)
         self.lv_top.setMaximumWidth(150)
@@ -77,6 +82,7 @@ about it and a graphical representation.
         sgn = 'currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)'
         self.connect(self.lv_top, QtCore.SIGNAL(sgn),
                      self.current_item_changed)
+        self.lv_top.itemDoubleClicked.connect(self.double_click_param)
         grid.addWidget(self.lv_top)
 
         self.info_grid = QtGui.QVBoxLayout()
@@ -123,7 +129,21 @@ about it and a graphical representation.
 
         gridw.setLayout(grid)
         self.setCentralWidget(gridw)
-        self.variable = None
+
+    def double_click_param(self, item, column):
+        """
+        An item in the main list has been double-clicked.
+        """
+        ex = AllWeightsWidget(item.parv)
+        ex.show()
+        self.all_wwidget.append(ex)
+        ex.destroyed.connect(self._aww_closed)
+
+    def _aww_closed(self):
+        """
+        An item in the main list has been double-clicked.
+        """
+        self.all_wwidget.remove(self.sender())
 
     def plot_mouse_moved(self, evt):
         """
@@ -456,7 +476,7 @@ about it and a graphical representation.
                                                   'Open pickled model file',
                                                   path,
                                                   '*.pkl')
-        if not fname:
+        if fname is None or len(fname) == 0:
             return
         self.load_model_file(fname)
 
@@ -464,7 +484,30 @@ about it and a graphical representation.
         """
         Create an image for values in an ndarray.
         """
-        pass
+        if self.value is None:
+            QtGui.QMessageBox.warning(self, "Error", "No variable selected")
+            return
+        elif isinstance(self.value.__class__,
+                        theano.sandbox.cuda.CudaNdarrayType):
+            value = numpy.asarray(self.value)
+        elif isinstance(self.value, numpy.ndarray):
+            value = self.value
+        else:
+            QtGui.QMessageBox.warning(self, "Error",
+                                    "Can't generate weights report from "
+                                    "a %s instance" %
+                                    str(self.value.__class__))
+            return
+
+        if len(value.shape) < 3:
+            QtGui.QMessageBox.warning(self, "Error",
+                                    "The variable must have at least three "
+                                    "axes; current one has %d" %
+                                    len(value.shape))
+            return
+
+        aww = AllWeightsWidget(value)
+        aww.show()
 
     def show_help(self):
         """
