@@ -46,6 +46,11 @@ import sys
 import logging
 
 from pyl2extra.utils.script import setup_logging, make_argument_parser
+from pyl2extra.gui.image_viewer import SettingsMixin
+
+COMPANY = "pyl2extra"
+DOMAIN = "pyl2extra.org"
+APPNAME = "PYL2 Model Browser"
 
 def cmd_gui(args):
     """
@@ -55,6 +60,7 @@ def cmd_gui(args):
 
     from PyQt4 import QtGui
     app = QtGui.QApplication(sys.argv)
+    SettingsMixin.appSettings(DOMAIN, COMPANY, APPNAME)
 
     ex = MainWindow()
     ex.show()
@@ -72,7 +78,7 @@ def main():
 
     # look at the arguments
     parser = make_argument_parser("Debugger for pylearn2 models.")
-    parser.add_argument('model', default='')
+    parser.add_argument('--model', default='')
     args = parser.parse_args()
 
     # prepare logging

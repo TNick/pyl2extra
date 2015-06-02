@@ -134,6 +134,14 @@ about it and a graphical representation.
         """
         An item in the main list has been double-clicked.
         """
+        try:
+            if len(item.parv.shape) <= 2:
+                QtGui.QMessageBox.warning(self, 'Error',
+                                          "Parameter must have at "
+                                          "least three axes")
+                return
+        except AttributeError:
+            return
         ex = AllWeightsWidget(item.parv)
         ex.show()
         self.all_wwidget.append(ex)
@@ -399,16 +407,16 @@ about it and a graphical representation.
         """
         The top level list's current item changed.
         """
-        self.variable = current.parv
         self.clear_image_widget()
         if current is None:
+            self.variable = None
             self.lbl_info.setText('Information')
             self.lbl_type.setText('Type: ')
             self.lbl_shape.setText('Shape: ')
             self.lbl_value.setText('')
         else:
+            self.variable = current.parv
             self.lbl_info.setText(current.text(0))
-            # current.par = par
             self.show_value(current.parv)
 
     def unload_model(self):
