@@ -15,12 +15,10 @@ import cProfile
 from datetime import datetime
 import dill
 import functools
-import Image
 import logging
 import multiprocessing
 import numpy
 import os
-from pylearn2.utils import as_floatX
 import Queue
 import threading
 import time
@@ -28,7 +26,6 @@ import zmq
 
 #from pyl2extra.datasets.img_dataset.dataset import ImgDataset
 from pyl2extra.utils import slice_count
-from pyl2extra.datasets.img_dataset.data_providers import Provider
 
 class Generator(object):
     """
@@ -807,7 +804,7 @@ class ProcessGen(Generator, AsyncMixin):
     @functools.wraps(Generator.tear_down)
     def tear_down(self):
         """
-        Terminates all threads.
+        Terminates all components.
         """
         logging.debug('ProcessGen is being terminated; ')
         self._should_terminate = True
