@@ -664,7 +664,7 @@ def segregate_files(path, recursive=False):
                 duplicates.append(file_path)
         else:
             duplicates.append(file_path)
-            fprev = duplicates_hash[hval]
+            fprev = duplicates_hash[hval][1]
             if not fprev in duplicates:
                 duplicates.append(fprev)
         return 1
