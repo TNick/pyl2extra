@@ -101,12 +101,15 @@ class Downloader(object):
             cobj.setopt(pycurl.CONNECTTIMEOUT, 30)
             cobj.setopt(pycurl.TIMEOUT, self.wait_timeout)
             cobj.setopt(pycurl.NOSIGNAL, 1)
-            if self.keep_alive:
-                cobj.setopt(pycurl.TCP_KEEPALIVE, 1)
-                cobj.setopt(pycurl.TCP_KEEPIDLE, 120)
-                cobj.setopt(pycurl.TCP_KEEPINTVL, 60)
-            else:
-                cobj.setopt(pycurl.TCP_KEEPALIVE, 0)
+            try:
+                if self.keep_alive:
+                    cobj.setopt(pycurl.TCP_KEEPALIVE, 1)
+                    cobj.setopt(pycurl.TCP_KEEPIDLE, 120)
+                    cobj.setopt(pycurl.TCP_KEEPINTVL, 60)
+                else:
+                    cobj.setopt(pycurl.TCP_KEEPALIVE, 0)
+            except AttributeError:
+                pass
             cobj.setopt(pycurl.SSL_VERIFYPEER, 0)
             cobj.setopt(pycurl.SSL_VERIFYHOST, 0)
             cobj.setopt(pycurl.SSL_VERIFYRESULT, 0)
