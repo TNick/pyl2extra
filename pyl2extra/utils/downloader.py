@@ -101,6 +101,7 @@ class Downloader(object):
             cobj.setopt(pycurl.CONNECTTIMEOUT, 30)
             cobj.setopt(pycurl.TIMEOUT, self.wait_timeout)
             cobj.setopt(pycurl.NOSIGNAL, 1)
+            cobj.setopt(pycurl.AUTOREFERER, 1)
             try:
                 if self.keep_alive:
                     cobj.setopt(pycurl.TCP_KEEPALIVE, 1)
@@ -307,6 +308,8 @@ def ext_decorator(magicf, fname):
             ext = '.txt'
         elif mmstr == 'inode/x-empty':
             ext = ''
+        elif mmstr == 'image/x-ms-bmp':
+            ext = 'bmp'
         else:
             mmstr = mmstr.split('/')
             ext = '.' + mmstr[1].lower()

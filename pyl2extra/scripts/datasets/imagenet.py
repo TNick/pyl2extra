@@ -11,9 +11,12 @@ __license__ = "3-clause BSD"
 __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
+import csv
 import hashlib
+import Image
 import logging
 import os
+import re
 import urllib2
 from xml.dom import minidom
 
@@ -31,8 +34,12 @@ URL_REL_STATUS = 'http://www.image-net.org/api/xml/ReleaseStatus.xml'
 URL_GET_IMG = 'http://www.image-net.org/api/text/imagenet.synset.geturls?wnid=%s'
 URL_IMG_MAPPING = 'http://www.image-net.org/api/text/imagenet.synset.geturls.getmapping?wnid=%s'
 
-
 CACHE_FILE_REL_STS = 'ImageNetReleaseStatus.xml'
+
+# a file has a name following this pattern (n04368840_5243.jpg)
+# ``n`` indicates that it is a noun, ``04368840`` is an unique identifier
+# and ``5243`` is the name for this particualr file.
+IMG_FILE_REGEX = re.compile(r'([a-z][0-9]+)_([0-9]+)(\..+)*')
 
 # ----------------------------------------------------------------------------
 
@@ -171,15 +178,31 @@ def get_words(url, synset):
         The path towards the resource to retreive. It must contain a ``%s``
         that gets replaced by ``synset``.
     synset : str
-        The name of the sysnset.
+        The name of the sysnset or a list of sysnset names.
 
     Returns
     -------
-    words : list of str
-        A list of strings, each one being a word or a word sequence.
+    words : list of str or dict
+        If ``synset`` is a string result is a list of strings,
+        each one being a word or a word sequence. If ``synset`` is a list,
+        then a dictionary is constructed, with keys being the synsets that
+        were provided at input and values the words describing that syset.
+        While a single synset may have multiple sentences describing it, only
+        first one is returned in latter form.
     """
-    logging.debug('%s from %s', synset, url)
-    return dense_list_from_url(url % synset)
+    if isinstance(synset, (list, tuple)):
+        result = {}
+        for sset in synset:
+            logging.debug('%s from %s', sset, url)
+            lst = dense_list_from_url(url % sset)
+            if len(lst) > 0:
+                result[sset] = lst[0]
+            else:
+                result[sset] = ''
+        return result
+    else:
+        logging.debug('%s from %s', synset, url)
+        return dense_list_from_url(url % synset)
 
 def cmd_words(args):
     """
@@ -459,6 +482,7 @@ def cmd_download_images(args):
         #downloader = ImageDownloader(args.path)
         #downloader.run(args.url_rs, args.url_im)
 
+
 def cmd_rem_img(args):
     """
     Remove images from synsets.
@@ -542,7 +566,6 @@ class TrackDuplicates(object):
         """
         return len(self.duplicates)
 
-
 def cmd_download_synset(args):
     """
     Download all images in a synset.
@@ -599,6 +622,121 @@ def cmd_download_synset(args):
                  '(%d duplicates), %d failed.',
                  tot_files, len(args.sset), downloaded_ok,
                  len(trdpl), downloaded_err)
+
+def segregate_files(path, recursive=False):
+    """
+    Divides the files in two lists: good and bad.
+    
+    Parameters
+    ----------
+    path : str
+        The path to scan.
+    recursive : bool
+        Scan the subdirectories.
+    
+    Returns
+    -------
+    duplicates : list
+    good_files : list
+        List of file paths that 
+    synsets : list
+        List of synsets that were identified
+    """
+    tot_files = 0
+    synsets = []
+    duplicates = []
+    duplicates_hash = {}
+
+    def inspect_file(fname, file_path):
+        """Process a single file"""
+        match = IMG_FILE_REGEX.match(fname)
+        if match is None:
+            return 0
+        if not match.group(1) in synsets:
+            synsets.append(match.group(1))
+        hval = hashfile(file_path)
+        if not duplicates_hash.has_key(hval):
+            duplicates_hash[hval] = (fname, file_path)
+            try:
+                image = Image.open(file_path)
+                del image
+            except IOError:
+                duplicates.append(file_path)
+        else:
+            duplicates.append(file_path)
+            fprev = duplicates_hash[hval]
+            if not fprev in duplicates:
+                duplicates.append(fprev)
+        return 1
+
+    if recursive:
+        for root, subdirs, files in os.walk(path):
+            for fname in files:
+                file_path = os.path.join(root, fname)
+                tot_files = tot_files + inspect_file(fname, file_path)
+    else:
+        for fname in os.listdir(path):
+            file_path = os.path.join(path, fname)
+            if os.path.isfile(file_path):
+                tot_files = tot_files + inspect_file(fname, file_path)
+
+    # find good files
+    good_files = []
+    for hval in duplicates_hash:
+        fname, file_path = duplicates_hash[hval]
+        if not file_path in duplicates:
+            good_files.append(file_path)
+
+    return duplicates, good_files, synsets
+
+def cmd_outliers(args):
+    """
+    Print images that don't seem to be valid.
+
+    This includes files that can't be loaded as an image and those that
+    are images but their hash was found multiple times.
+    """
+    logging.debug('path: %s', args.path)
+    logging.debug('recursive: %s', 'True' if args.recursive else 'False')
+
+    duplicates, good_files, synsets = segregate_files(args.path,
+                                                      args.recursive)
+    tot_files = len(duplicates) + len(good_files)
+
+    for dupl in duplicates:
+        logging.info(dupl)
+
+    logging.info('%d files inspected in %d synsets, '
+                 '%d duplicates.',
+                 tot_files, len(synsets), len(duplicates))
+
+def cmd_good_files(args):
+    """
+    Print images that seem to be valid.
+
+    The images may also be saved in a file.
+    """
+    logging.debug('path: %s', args.path)
+    logging.debug('recursive: %s', 'True' if args.recursive else 'False')
+    logging.debug('output: %s', args.output)
+
+    duplicates, good_files, synsets = segregate_files(args.path,
+                                                      args.recursive)
+
+    for goodf in good_files:
+        logging.info(goodf)
+    if args.output:
+        cached_descr = get_words(URL_SYNSET_WORDS, synsets)
+        with open(args.output, 'wt') as fhand:
+            spamwriter = csv.writer(fhand, delimiter=',', quotechar='"',
+                                    quoting=csv.QUOTE_MINIMAL)
+            spamwriter.writerow(["File path", "Category", "Description"])
+            for goodf in good_files:
+                file_name =os.path.split(goodf)[1]
+                match = IMG_FILE_REGEX.match(file_name)
+                sset = match.group(1)
+                description = cached_descr[sset]
+                spamwriter.writerow([goodf, sset, description])
 
 # ----------------------------------------------------------------------------
 
@@ -702,6 +840,32 @@ def make_arg_parser():
                           help='path where cache files are saved',
                           default='.')
     parser_a.set_defaults(func=cmd_rem_img)
+
+
+    parser_a = subparsers.add_parser('outliers',
+                                     help='detect weird downloaded files')
+    parser_a.add_argument('--path', type=str,
+                          help='path where cache files are saved',
+                          default='.')
+    parser_a.add_argument('--recursive', '-R', type=bool,
+                          help='For directories - scan subfolders',
+                          default=False)
+    parser_a.set_defaults(func=cmd_outliers)
+
+
+    parser_a = subparsers.add_parser('valid',
+                                     help='exclude weird downloaded files')
+    parser_a.add_argument('--path', type=str,
+                          help='path where cache files are saved',
+                          default='.')
+    parser.add_argument('--recursive', '-R', type=bool,
+                        help='For directories - scan subfolders',
+                        default=False)
+    parser_a.add_argument('--output', '-O', type=str,
+                          help='Generate a csv file for the files',
+                          default=None)
+    parser_a.set_defaults(func=cmd_good_files)
+
 
     return parser
 

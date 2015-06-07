@@ -154,7 +154,8 @@ def cmd_resize(args):
     logging.debug('output: %s', args.output)
     logging.debug('size: %d', args.size)
     logging.debug('recursive: %s', 'True' if args.recursive else 'False')
-    
+    logging.debug('overwrite: %s', 'True' if args.overwrite else 'False')
+
     if args.output is None or len(args.output) == 0:
         args.output = args.input
     
