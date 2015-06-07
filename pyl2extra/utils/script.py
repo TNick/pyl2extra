@@ -61,7 +61,10 @@ def setup_logging(args, default_level=logging.DEBUG):
             log_path = tempfile.mktemp(prefix='pylearn2-debugger-',
                                        suffix='.json')
         file_handler = logging.FileHandler(log_path)
-        file_handler.setLevel(logging.INFO)
+        if args.debug:
+            file_handler.setLevel(logging.DEBUG)
+        else:
+            file_handler.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - '
                                       '%(name)s - '
                                       '%(levelname)s - '
