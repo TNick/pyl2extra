@@ -410,7 +410,7 @@ def hashfile(path, blocksize=65536):
 # ----------------------------------------------------------------------------
 def get_images(url_rel, url_mapping):
     """
-    Downlaod images
+    Download images
     """
     downloader = Downloader(urls=[],
                             outfiles=[],
@@ -556,25 +556,25 @@ def cmd_download_synset(args):
                             auto_extension=True,
                             wait_timeout=-1)
     downloader.setup(post_request=False)
-    
+    tot_files = 0
     for sset in args.sset:
         if not sset in synsets:
-            logging.error('The %s synset was not found among known synsets',
-                          sset)
-        else:
-            urls_cached_file = '%s_urls.txt' % sset
-            links = get_image_urls_cached(args.url_im, sset,
-                                          urls_cached_file)
-    
-            # have the links in two separate lists as required by Downloader
-            out_files = []
-            in_links = []
-            for itm in links:
-                out_files.append(itm)
-                in_links.append(links[itm])
-            downloader.append(urls=in_links,
-                              outfiles=out_files,
-                              post_request=True)
+            logging.warn('The %s synset was not found among known synsets',
+                         sset)
+        urls_cached_file = '%s_urls.txt' % sset
+        links = get_image_urls_cached(args.url_im, sset,
+                                      urls_cached_file)
+
+        # have the links in two separate lists as required by Downloader
+        out_files = []
+        in_links = []
+        for itm in links:
+            out_files.append(os.path.join(args.path, itm))
+            in_links.append(links[itm])
+        downloader.append(urls=in_links,
+                          outfiles=out_files,
+                          post_request=True)
+        tot_files = tot_files + len(in_links)
 
     downloader.wait_for_data()
     results = downloader.results
@@ -595,9 +595,9 @@ def cmd_download_synset(args):
 
     trdpl.print_duplicates()
 
-    logging.info('%d files in synset, %d downloaded '
+    logging.info('%d files in %d synsets, %d downloaded '
                  '(%d duplicates), %d failed.',
-                 len(in_links), downloaded_ok,
+                 tot_files, len(args.sset), downloaded_ok,
                  len(trdpl), downloaded_err)
 
 # ----------------------------------------------------------------------------

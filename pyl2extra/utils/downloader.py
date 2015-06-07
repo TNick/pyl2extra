@@ -17,68 +17,30 @@ __license__ = "3-clause BSD"
 __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
-import dill
 import hashlib
 import logging
 import magic
 import multiprocessing
 import os
+import pycurl
 import sys
-import threading
-import time
-import urllib2
-import zmq
 
+# We should ignore SIGPIPE when using pycurl.NOSIGNAL - see
+# the libcurl tutorial for more info.
+try:
+    import signal
+    from signal import SIGPIPE, SIG_IGN
+    signal.signal(SIGPIPE, SIG_IGN)
+except ImportError:
+    pass
 
 class Downloader(object):
     """
     Generates the content using separate processes.
-
-    Parameters
-    ----------
-    urls : list of str
-        The urls for the images to download.
-    outlist : list of str
-        The files where output is to be stored; its length should
-        match the length of `flist`
-    count : int, optional
-        The number of worker processes to use. If None, same number of
-        processes as the number of cores minus one are used.
-    compute_hash : bool, optional
-        Wether a hash for the output file is to be computed and stored
-        in the results.
-    auto_extension : bool, optional
-        Wether the extension should be determined from input file. If ``True``
-        the elements in ``outlist`` must not contain extensions.
-    wait_timeout : int, optional
-        Number of seconds to wait before declaring timeout. ``-1`` means wait
-        indefenetly. This only refers to waiting the processes to provide
-        the data, not to file download.
-
-    Notes
-    -----
-    The 0MQ part of the class was heavily inspired by
-    ``Python Multiprocessing with ZeroMQ`` TAO_ post.
-    Some parts wre copied straight from provided code_.
-
-    _code: https://github.com/taotetek/blog_examples/blob/master/python_multiprocessing_with_zeromq/workqueue_example.py
-    _TAO: http://taotetek.net/2011/02/02/python-multiprocessing-with-zeromq/
     """
-    if 0:
-        RESULTS_ADDRESS = 'tcp://127.0.0.1:12470'
-        CONTROL_ADDRESS = 'tcp://127.0.0.1:12471'
-        VENTILATOR_ADDRESS = 'tcp://127.0.0.1:12472'
-    else:
-        RESULTS_ADDRESS = 'ipc:///tmp/pyl2x-downloader-results.ipc'
-        CONTROL_ADDRESS = 'ipc:///tmp/pyl2x-downloader-control.ipc'
-        VENTILATOR_ADDRESS = 'ipc:///tmp/pyl2x-downloader-ventilator.ipc'
-
-    CTRL_FINISH = 'FINISHED'
-
     def __init__(self, urls, outfiles, count=None,
                  compute_hash=True, auto_extension=False,
-                 wait_timeout=660):
-
+                 wait_timeout=1000, empty_error=True):
         assert len(urls) == len(outfiles)
 
         if count is None:
@@ -91,42 +53,29 @@ class Downloader(object):
         self.compute_hash = compute_hash
         #: create extension for output file from the url
         self.auto_extension = auto_extension
-
         #: number of worker processes to use
         self.workers_count = count
-        #: number of requests send that were not fulfilled, yet
-        self.outstanding_requests = 0
-        #: keep various processes from working on same files
-        self.provider_offset = 0
-        #: maximum number of outstanding requests
-        self.max_outstanding = 64
-        #: number of seconds to wait before declaring timeout
-        self.wait_timeout = wait_timeout
-        #: used by receiver
-        self.gen_semaphore = threading.BoundedSemaphore(2)
-        #: on termination counts the workers that exited
-        self.finish = 0
-        #: one time trigger for the threads to exit
-        self._should_terminate = False
         #: list of files to retreive
         self.urls = urls
         #: list of files to generate
         self.outfiles = outfiles
-        #: the thread used for receiving data
-        self.receiverth = None
+        #: number of seconds to wait before declaring timeout
+        self.wait_timeout = wait_timeout
+        #: a file of size 0 is considered to be an error
+        self.empty_error = empty_error
 
-        #: a zeromq context
-        self.context = None
-        #: a channel to receive results
-        self.results_rcv = None
-        #: a channel to send control commands
-        self.control_sender = None
-        #: a channel to send work
-        self.ventilator_send = None
+        #: position in the list
+        self.provider_offset = 0
+
+        self.freelist = None
+        self.magicf = magic.Magic(mime=True)
+        self.multi = None
 
         #: the results accumulate here
         self.results = []
 
+        logging.debug("PycURL %s (compiled against 0x%x)",
+                      pycurl.version, pycurl.COMPILE_LIBCURL_VERSION_NUM)
         super(Downloader, self).__init__()
 
     def setup(self, post_request=False):
@@ -141,79 +90,107 @@ class Downloader(object):
             request the data using `self.push_request()` after
             the call to ``setup()``
         """
-        self.outstanding_requests = 0
-        self.receiverth = threading.Thread(target=Downloader.receiver_worker,
-                                           args=(self,),
-                                           name='DownloaderReceiver')
-        #thr.daemon = True
-        self.receiverth.start()
-
-        # Create a pool of workers to distribute work to
-        assert self.workers_count > 0
-        for wrk_num in range(self.workers_count):
-            wrk_num = wrk_num + 1
-            logging.debug('worker %d requested', wrk_num)
-            multiprocessing.Process(target=_worker, args=(wrk_num,)).start()
-
-        # Initialize a zeromq context
-        self.context = zmq.Context()
-
-        # Set up a channel to receive results
-        self.results_rcv = self.context.socket(zmq.PULL)
-        self.results_rcv.bind(Downloader.RESULTS_ADDRESS)
-
-        # Set up a channel to send control commands
-        self.control_sender = self.context.socket(zmq.PUB)
-        self.control_sender.bind(Downloader.CONTROL_ADDRESS)
-
-        # Set up a channel to send work
-        self.ventilator_send = self.context.socket(zmq.PUSH)
-        self.ventilator_send.bind(Downloader.VENTILATOR_ADDRESS)
-
-        # Give everything a second to spin up and connect
-        time.sleep(0.5)
-
-        if post_request:
-            self.push_request()
+        self.multi = pycurl.CurlMulti()
+        self.multi.handles = []
+        for i in range(self.workers_count):
+            cobj = pycurl.Curl()
+            cobj.fp = None
+            cobj.setopt(pycurl.FOLLOWLOCATION, 1)
+            cobj.setopt(pycurl.MAXREDIRS, 5)
+            cobj.setopt(pycurl.CONNECTTIMEOUT, 30)
+            cobj.setopt(pycurl.TIMEOUT, self.wait_timeout)
+            cobj.setopt(pycurl.NOSIGNAL, 1)
+            self.multi.handles.append(cobj)
+        self.freelist = self.multi.handles[:]
 
     def tear_down(self):
         """
         Terminates all components.
         """
-        logging.debug('Downloader is being terminated; ')
-        self._should_terminate = True
-        # Signal to all workers that we are finsihed
-        if not self.control_sender is None:
-            self.control_sender.send(dill.dumps(Downloader.CTRL_FINISH))
-        logging.debug('Downloader was being terminated')
-
-        # Give everything a second to spin down
-        time.sleep(1.0)
+        for cobj in self.multi.handles:
+            if cobj.fp is not None:
+                cobj.fp.close()
+                cobj.fp = None
+            cobj.close()
+        self.multi.close()
 
     def append(self, urls, outfiles, post_request=True):
         """
         Appends to the list of things to download.
         """
         assert len(urls) == len(outfiles)
+        self._receive_one()
         self.urls += urls
         self.outfiles += outfiles
         if post_request:
             self.push_request(len(urls))
 
-    def starving(self):
-        """
-        Tell if the queue is empty.
-        """
-        return self.outstanding_requests == 0
-
     def get_all(self):
         """
         Wait until all the files were downloaded.
         """
-        count = len(self.urls)
-        self.push_request(count)
-        self.wait_for_data(count)
+        self.wait_for_data()
         return self.results
+
+    def _file_downloaded(self, work_message, url, status='ok'):
+        """
+        A file was succesfully downloaded.
+        """
+        work_message['url'] = url
+        if work_message['autoext']:
+            ext, fname = ext_decorator(self.magicf, work_message['output'])
+            work_message['output'] = fname
+        if work_message['hash']:
+            work_message['hash'] = hashfile(work_message['output'])
+        work_message['size'] = os.path.getsize(work_message['output'])
+        if work_message['size'] == 0:
+            if self.empty_error:
+                work_message['status'] = 'error'
+                work_message['error'] = 'Empty file'
+                os.remove(work_message['output'])
+            else:
+                work_message['status'] = status
+                logging.debug('Empty file: %s', work_message['output'])
+        else:
+            work_message['status'] = status
+        self.results.append(work_message)
+        logging.info("[%s] downloaded from %s to %s",
+                     work_message['status'],
+                     work_message['url'],
+                     work_message['output'])
+
+    def _file_failed(self, work_message, errno, errmsg):
+        """
+        A file could not be downloaded.
+        """
+        work_message['status'] = 'error'
+        work_message['error'] = 'Error %d: %s' % (errno, errmsg)
+        self.results.append(work_message)
+        logging.error("failed to download from %s to %s (%d): %s",
+                      work_message['url'],
+                      work_message['output'],
+                      errno, errmsg)
+
+    def _cobj_done(self, cobj):
+        """Release a connection object."""
+        cobj.fp.close()
+        cobj.fp = None
+        self.multi.remove_handle(cobj)
+        # this assumes a single thread
+        self.freelist.append(cobj)
+
+    def _receive_one(self):
+        """
+        See if there's anything in the queue and process.
+        """
+        num_q, ok_list, err_list = self.multi.info_read()
+        for cobj in ok_list:
+            self._cobj_done(cobj)
+            self._file_downloaded(cobj.work_message,
+                                  cobj.getinfo(pycurl.EFFECTIVE_URL))
+        for cobj, errno, errmsg in err_list:
+            self._cobj_done(cobj)
+            self._file_failed(cobj.work_message, errno, errmsg)
 
     def wait_for_data(self, count=None):
         """
@@ -221,17 +198,28 @@ class Downloader(object):
         """
         if count is None:
             count = len(self.urls)
-        timeout_count = self.wait_timeout * 10
         while count > len(self.results):
-            if self.starving():
-                self.push_request(count)
-            time.sleep(0.1)
-            if self.wait_timeout < 0:
-                continue
-            timeout_count = timeout_count - 1
-            if timeout_count <= 0:
-                raise RuntimeError('Timeout waiting for a process to provide '
-                                   'processed images in Downloader.')
+            while 1:
+                ret, num_handles = self.multi.perform()
+                if ret != pycurl.E_CALL_MULTI_PERFORM:
+                    break
+            while num_handles:
+                num_q, ok_list, err_list = self.multi.info_read()
+                for cobj in ok_list:
+                    self._cobj_done(cobj)
+                    self._file_downloaded(cobj.work_message,
+                                          cobj.getinfo(pycurl.EFFECTIVE_URL))
+                for cobj, errno, errmsg in err_list:
+                    self._cobj_done(cobj)
+                    self._file_failed(cobj.work_message, errno, errmsg)
+                self.push_request()
+                ret = self.multi.select(1.0)
+                if ret == -1:
+                    continue
+                while 1:
+                    ret, num_handles = self.multi.perform()
+                    if ret != pycurl.E_CALL_MULTI_PERFORM:
+                        break
 
     def push_request(self, count=None):
         """
@@ -247,72 +235,39 @@ class Downloader(object):
             Number of images to retreive. Default is to request all images
             in the list.
         """
-        if count is None:
-            count = len(self.urls)
-        for i in range(count):
-            #if self.outstanding_requests >= self.max_outstanding:
-            #    return
-            if self.provider_offset + 1 > len(self.urls):
-                return
-
-            self.gen_semaphore.acquire()
-            self.outstanding_requests = self.outstanding_requests + 1
-            logging.debug('push request; outstanding: %d',
-                          self.outstanding_requests)
-            work_message = {'url': self.urls[self.provider_offset],
-                            'output': self.outfiles[self.provider_offset],
+        while self.provider_offset < len(self.urls) and len(self.freelist) > 0:
+            url = self.urls[self.provider_offset]
+            filename = self.outfiles[self.provider_offset]
+            work_message = {'url': url,
+                            'output': filename,
                             'hash': self.compute_hash,
-                            'autoext': self.auto_extension}
+                            'autoext': self.auto_extension,
+                            'index': self.provider_offset}
+            while True:
+                if self.auto_extension:
+                    filename, ext = put_ext_from_url(url, filename)
+                    if os.path.isfile(filename):
+                        work_message['output'] = filename
+                        self._file_downloaded(work_message, url, 'existing')
+                        break
+                elif os.path.isfile(filename):
+                    self._file_downloaded(work_message, url, 'existing')
+                    break
+                # download the file
+                cobj = self.freelist.pop()
+                cobj.fp = open(work_message['output'], "wb")
+                cobj.setopt(pycurl.URL, url)
+                cobj.setopt(pycurl.WRITEDATA, cobj.fp)
+                cobj.work_message = work_message
+                self.multi.add_handle(cobj)
+                break
             self.provider_offset = self.provider_offset + 1
-            self.gen_semaphore.release()
 
-            self.ventilator_send.send_json(work_message)
-
-    def receive_all_messages(self, no_block=True):
-        """
-        The "results_manager" function receives each result
-        from multiple workers.
-        """
-        b_done = False
-        while not b_done:
-            try:
-                if no_block:
-                    flags = zmq.NOBLOCK
-                else:
-                    self.results_rcv.pool(timeout=1*1000)
-                    flags = 0
-                result = self.results_rcv.recv_json(flags=flags)
-                logging.info(result)
-
-                self.gen_semaphore.acquire()
-                self.outstanding_requests = self.outstanding_requests - 1
-                self.results.append(result)
-                if self.outstanding_requests == 0:
-                    b_done = True
-                    logging.debug("no more outstanding requets")
-                else:
-                    logging.debug("%d outstanding requets",
-                                  self.outstanding_requests)
-                self.gen_semaphore.release()
-                assert self.outstanding_requests >= 0
-
-            except zmq.ZMQError as exc:
-                if exc.errno == zmq.EAGAIN:
-                    b_done = True
-                else:
-                    raise
-
-    @staticmethod
-    def receiver_worker(myself):
-        """
-        Thread entry point.
-        """
-        logging.debug("worker thread starts")
-        time.sleep(0.5)
-        while not myself._should_terminate:
-            myself.receive_all_messages(no_block=True)
-            time.sleep(0.01)
-
+        # Run the internal curl state machine for the multi stack
+        while 1:
+            ret, num_handles = self.multi.perform()
+            if ret != pycurl.E_CALL_MULTI_PERFORM:
+                break
 
 def hashfile(path, blocksize=65536):
     """
@@ -334,9 +289,14 @@ def ext_decorator(magicf, fname):
     ext = ''
     try:
         mmstr = magicf.from_file(filename=fname)
-        mmstr = mmstr.split('/')
-        ext = '.' + mmstr[1].lower()
-        new_file = '%s.%s' % (fname, ext)
+        if mmstr == 'text/plain':
+            ext = '.txt'
+        elif mmstr == 'inode/x-empty':
+            ext = ''
+        else:
+            mmstr = mmstr.split('/')
+            ext = '.' + mmstr[1].lower()
+        new_file = '%s%s' % (fname, ext)
         os.rename(fname, new_file)
         fname = new_file
     except (magic.MagicException, IndexError):
@@ -362,104 +322,6 @@ def put_ext_from_url(furl, fname):
         else:
             fname = '%s%s' % (fname, ext)
     return fname, ext
-
-def _handle_file_request(work_message, magicf):
-    """
-    handles a download file request.
-    """
-    try:
-
-        furl = work_message['url']
-        fname = work_message['output']
-        compute_hash = work_message['hash']
-        autoext = work_message['autoext']
-
-        ext = ''
-        if autoext:
-            fname, ext = put_ext_from_url(furl, fname)
-
-        logging.info("download from %s to %s", furl, fname)
-
-        if os.path.isfile(fname):
-            logging.debug('the file already exists')
-            work_message['status'] = 'existing'
-        else:
-            urlf = urllib2.urlopen(furl)
-            with open(fname, "wb") as local_file:
-                local_file.write(urlf.read())
-
-            if len(ext) == 0 and autoext:
-                ext, fname = ext_decorator(magicf, fname)
-            work_message['status'] = 'ok'
-
-        if compute_hash:
-            work_message['hash'] = hashfile(fname)
-        work_message['output'] = fname
-        work_message['size'] = os.path.getsize(fname)
-    except Exception, exc:
-        work_message['status'] = 'error'
-        msg = exc.message if len(exc.message) > 0 else str(exc)
-        work_message['error'] = '%s: %s' % (str(exc.__class__),
-                                            msg)
-        if os.path.isfile(fname):
-            os.remove(fname)
-
-    return work_message
-
-# The "worker" functions listen on a zeromq PULL connection for "work"
-# (numbers to be processed) from the ventilator, square those numbers,
-# and send the results down another zeromq PUSH connection to the
-# results manager.
-
-def _worker(wrk_num):
-    """
-    Worker process for `Downloader`.
-    """
-    logging.debug("worker process %d starts", wrk_num)
-
-    # Initialize a zeromq context
-    context = zmq.Context()
-
-    # Set up a channel to receive work from the ventilator
-    work_rcv = context.socket(zmq.PULL)
-    work_rcv.connect(Downloader.VENTILATOR_ADDRESS)
-
-    # Set up a channel to send result of work to the results reporter
-    results_sender = context.socket(zmq.PUSH)
-    results_sender.connect(Downloader.RESULTS_ADDRESS)
-
-    # Set up a channel to receive control messages over
-    control_rcv = context.socket(zmq.SUB)
-    control_rcv.connect(Downloader.CONTROL_ADDRESS)
-    control_rcv.setsockopt(zmq.SUBSCRIBE, "")
-
-    # Set up a poller to multiplex the work receiver and control receiver channels
-    poller = zmq.Poller()
-    poller.register(work_rcv, zmq.POLLIN)
-    poller.register(control_rcv, zmq.POLLIN)
-
-    magicf = magic.Magic(mime=True)
-
-    # Loop and accept messages from both channels, acting accordingly
-    while True:
-        logging.debug("worker process %d waiting", wrk_num)
-        socks = dict(poller.poll())
-        logging.debug("worker process %d working", wrk_num)
-
-        # If the message came from work_rcv channel, square the number
-        # and send the answer to the results reporter
-        if socks.get(work_rcv) == zmq.POLLIN:
-            work_message = _handle_file_request(work_rcv.recv_json(), magicf)
-            results_sender.send_json(work_message)
-
-        # If the message came over the control channel, shut down the worker.
-        if socks.get(control_rcv) == zmq.POLLIN:
-            control_message = dill.loads(control_rcv.recv())
-            if isinstance(control_message, basestring):
-                if control_message == Downloader.CTRL_FINISH:
-                    logging.info("Worker %i received FINSHED, quitting!",
-                                 wrk_num)
-                    break
 
 def download_files(urls, outfiles=None, compute_hash=True,
                    auto_extension=False):
