@@ -11,19 +11,14 @@ __license__ = "3-clause BSD"
 __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
-import argparse
 import hashlib
-import json
 import logging
-import magic
 import os
-import Queue
-import threading
-import time
 import urllib2
 from xml.dom import minidom
 
-logger = None
+from pyl2extra.utils.script import setup_logging, make_argument_parser
+from pyl2extra.utils.downloader import Downloader
 
 # some predefined urls
 URL_SYNSET_LIST = 'http://www.image-net.org/api/text/imagenet.synset.obtain_synset_list'
@@ -36,146 +31,70 @@ URL_REL_STATUS = 'http://www.image-net.org/api/xml/ReleaseStatus.xml'
 URL_GET_IMG = 'http://www.image-net.org/api/text/imagenet.synset.geturls?wnid=%s'
 URL_IMG_MAPPING = 'http://www.image-net.org/api/text/imagenet.synset.geturls.getmapping?wnid=%s'
 
-# ----------------------------------------------------------------------------
 
-def setup_logging(args):
-    """
-    Setup logging configuration
-    """
-    global logger
-
-    # get a path for logging config
-    if not args.log_cfg is None:
-        log_cfg_file = args.log_cfg
-    else:
-        log_cfg_file = 'logging.json'
-
-    # read logging options
-    custom_settings = os.path.exists(log_cfg_file)
-    if custom_settings:
-        with open(log_cfg_file, 'rt') as cfgf:
-            config = json.load(cfgf)
-        logging.config.dictConfig(config,
-                                  disable_existing_loggers=False)
-    else:
-        logging.basicConfig(level=logging.INFO)
-
-    # retreive the logger
-    logger = logging.getLogger()
-
-    # Set the root logger level.
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-
-    # if the user requested a log file give her one
-    if args.log:
-        file_handler = logging.FileHandler(args.log)
-        file_handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-
-# ----------------------------------------------------------------------------
-
-def make_argument_parser():
-    """
-    Creates an ArgumentParser to read the options for this script from
-    sys.argv
-    """
-    parser = argparse.ArgumentParser(
-        description="Main entry point for spotally module.",
-        epilog='\n'.join(__doc__.strip().split('\n')[1:]).strip(),
-        formatter_class=argparse.RawTextHelpFormatter
-    )
-    parser.add_argument('--debug', '-D',
-                        action='store_true',
-                        help='Display any DEBUG-level log messages, '
-                             'suppressed by default.')
-    parser.add_argument('--log',
-                        type=str,
-                        help='The log file.',
-                        default=None)
-    parser.add_argument('--log-cfg',
-                        type=str,
-                        help='The log config file in json format.',
-                        default=None)
-
-    subparsers = parser.add_subparsers(help='Available sub-commands')
-
-    parser_a = subparsers.add_parser('synsets', help='get the list of synsets available')
-    parser_a.add_argument('--url', type=str,
-                          help='the address used to retreive data',
-                          default=URL_SYNSET_LIST)
-    parser_a.set_defaults(func=cmd_synsets)
-
-    parser_a = subparsers.add_parser('words', help='get the list of words given a synset')
-    parser_a.add_argument('synset', type=str,
-                          help='the synset to retreive words for')
-    parser_a.add_argument('--url', type=str,
-                          help='the address used to retreive data',
-                          default=URL_SYNSET_WORDS)
-    parser_a.set_defaults(func=cmd_words)
-
-    parser_a = subparsers.add_parser('hypo', help='get the list of hyponym synsets given a synset')
-    parser_a.add_argument('synset', type=str,
-                          help='the synset to retreive hyponyms for')
-    parser_a.add_argument('--full', type=bool,
-                          help='get the full tree',
-                          default=False)
-    parser_a.add_argument('--url', type=str,
-                          help='the address used to retreive data',
-                          default=URL_HYPONIMS)
-    parser_a.set_defaults(func=cmd_hypos)
-
-    parser_a = subparsers.add_parser('urls', help='get the list of image urls given a synset')
-    parser_a.add_argument('synset', type=str,
-                          help='the synset to retreive image urls for')
-    parser_a.add_argument('--url', type=str,
-                          help='the address used to retreive data',
-                          default=URL_IMG_MAPPING)
-    parser_a.set_defaults(func=cmd_image_urls)
-
-
-    parser_a = subparsers.add_parser('downl', help='download the images from their respective urls')
-    parser_a.add_argument('--path', type=str,
-                          help='output directory',
-                          default='.')
-    parser_a.add_argument('--dry_run', type=bool,
-                          help='only count the files to download',
-                          default=False)
-    parser_a.add_argument('--url_rs', type=str,
-                          help='the address used to retreive data for relative status',
-                          default=URL_REL_STATUS)
-    parser_a.add_argument('--url_im', type=str,
-                          help='the address used to retreive data for image mapping',
-                          default=URL_IMG_MAPPING)
-    parser_a.set_defaults(func=cmd_download_images)
-
-
-    return parser
+CACHE_FILE_REL_STS = 'ImageNetReleaseStatus.xml'
 
 # ----------------------------------------------------------------------------
 
 def list_from_url(url):
     """
     Downloads a page, assumes it is text; splits it into lines.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive
+
+    Returns
+    -------
+    list : list of str
+        A list of lines.
     """
-    logger.debug('retreiving data from %s', url)
+    logging.debug('retreiving data from %s', url)
     response = urllib2.urlopen(url)
     html = response.read()
     return html.split('\n')
+
+def dense_list(listin):
+    """
+    Remove empty entries and strip non-empty ones.
+    """
+    return [h.strip() for h in listin if len(h.strip()) > 0]
 
 def dense_list_from_url(url):
     """
     Downloads a page, assumes it is text; splits it into lines.
 
     Trims out white space at beginning and end; removes empty lines.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive
+
+    Returns
+    -------
+    list : list of str
+        A list of trimmed, non-empty string or an empty list.
     """
-    return [h.strip() for h in list_from_url(url) if len(h.strip()) > 0]
+    return dense_list(list_from_url(url))
 
 def xml_elem_by_path(document, path):
     """
     Gets the xml element at a given path.
+
+    Parameters
+    ----------
+    document : minidom.Document
+        Target document where the path is to be searched.
+    path : list of str
+        The tag name for each level forming a list of strings. If
+        multiple elements with same tag exist first one is retreived.
+
+    Returns
+    -------
+    elem : minidom.Element
+        The element that was found.
     """
     elem = document.documentElement
     for pelem in path:
@@ -185,24 +104,56 @@ def xml_elem_by_path(document, path):
 def xml_from_url(url):
     """
     Downloads a page, assumes it is xml; creates a dom document.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive
+
+    Returns
+    -------
+    elem : minidom.Document
+        The document that was generated from remote string.
     """
-    logger.debug('retreiving data from %s', url)
+    logging.debug('retreiving data from %s', url)
     response = urllib2.urlopen(url)
     html = response.read()
     return minidom.parseString(html)
 
 # ----------------------------------------------------------------------------
 
-def get_synsets(url):
+def get_synsets(url=URL_SYNSET_LIST):
     """
     Downloads the list of synsets.
+
+    This is just a simple wrapper around `dense_list_from_url()`.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive. With no argument
+        uses the default defined at module level.
+
+    Returns
+    -------
+    elem : list of str
+        A list of strings.
     """
-    logger.debug('synsets from %s', url)
+    logging.debug('synsets from %s', url)
     return dense_list_from_url(url)
 
 def cmd_synsets(args):
     """
     Prints the list of synsets.
+
+    Simple wrapper around `get_synsets()` that prints retreived synsets,
+    one on each line.
+    To be used as a script command.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive.
     """
     response = get_synsets(args.url)
     for sset in response:
@@ -213,8 +164,21 @@ def cmd_synsets(args):
 def get_words(url, synset):
     """
     Downloads the list of words for a synset.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive. It must contain a ``%s``
+        that gets replaced by ``synset``.
+    synset : str
+        The name of the sysnset.
+
+    Returns
+    -------
+    words : list of str
+        A list of strings, each one being a word or a word sequence.
     """
-    logger.debug('%s from %s', synset, url)
+    logging.debug('%s from %s', synset, url)
     return dense_list_from_url(url % synset)
 
 def cmd_words(args):
@@ -230,8 +194,24 @@ def cmd_words(args):
 def get_hypos(url, synset, full_tree):
     """
     Retreives hypos :)
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive. It must contain a ``%s``
+        that gets replaced by ``synset`` and another ``%s`` that will
+        be ``0`` or ``1`` depending on ``full_tree``.
+    synset : str
+        The name of the sysnset.
+    full_tree : bool
+        Retreive the full hierarchy or just first level.
+
+    Returns
+    -------
+    words : list of str
+        A list of strings, each one being a synset identifier.
     """
-    logger.debug('%s from %s', synset, url)
+    logging.debug('%s from %s', synset, url)
     full_tree = '1' if full_tree else '0'
     return dense_list_from_url(url % (synset, full_tree))
 
@@ -254,8 +234,22 @@ def get_image_count(url, is_url=True):
     - numImages
     - released
     - version
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive
+    is_url : bool
+        If True retreive the resource from an url using `xml_from_url()`,
+        otherwise ``url`` is a path towards a file.
+
+    Returns
+    -------
+    dir_entries : dict
+        A dictionary with keys being synset identifiers and values the number
+        of images for that identifier.
     """
-    logger.debug('from %s', url)
+    logging.debug('from %s', url)
 
     if is_url:
         blob = xml_from_url(url)
@@ -267,7 +261,7 @@ def get_image_count(url, is_url=True):
     blob = xml_elem_by_path(blob, ('images', 'synsetInfos'))
     blob = blob.getElementsByTagName('synset')
     for k in blob:
-        dir_entries[k.getAttribute('wnid')] = k.getAttribute('numImages')
+        dir_entries[k.getAttribute('wnid')] = int(k.getAttribute('numImages'))
     return dir_entries
 
 # ----------------------------------------------------------------------------
@@ -275,8 +269,21 @@ def get_image_count(url, is_url=True):
 def get_image_synsets(url, is_url=True):
     """
     Retreives a list of synsets that have images associated with them.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive
+    is_url : bool
+        If True retreive the resource from an url using `xml_from_url()`,
+        otherwise ``url`` is a path towards a file.
+
+    Returns
+    -------
+    blob_list : list
+        A list of synset identifiers.
     """
-    logger.debug('from %s', url)
+    logging.debug('from %s', url)
 
     if is_url:
         blob = xml_from_url(url)
@@ -290,6 +297,19 @@ def get_image_synsets(url, is_url=True):
     for k in blob:
         blob_list.append(k.getAttribute('wnid'))
     return blob_list
+
+def get_image_synsets_cached(url):
+    """
+    Retreives a list of synsets that have images associated with them.
+
+    If the cached file does not exist in the current directory
+    it is downloaded.
+    """
+    if not os.path.exists(CACHE_FILE_REL_STS):
+        response = urllib2.urlopen(url)
+        with open(CACHE_FILE_REL_STS, 'wt') as fhand:
+            fhand.write(response.read())
+    return get_image_synsets(CACHE_FILE_REL_STS, False)
 
 # ----------------------------------------------------------------------------
 
@@ -306,11 +326,60 @@ def cmd_image_count(args):
 def get_image_urls(url, synset):
     """
     Retreives a list of image names and urls for the synset.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive
+    synset : str
+        The sysnset id.
+
+    Returns
+    -------
+    result : dict
+        A dictionary mapping image name to image url.
     """
-    logger.debug('%s from %s', synset, url)
+    logging.debug('%s from %s', synset, url)
     list_to_parse = dense_list_from_url(url % synset)
     result = {}
     for line in list_to_parse:
+        i = line.index(' ')
+        result[line[:i]] = line[i+1:]
+    return result
+
+def get_image_urls_cached(url, synset, cache_file):
+    """
+    Retreives a list of image names and urls for the synset.
+
+    Parameters
+    ----------
+    url : str
+        The path towards the resource to retreive
+    synset : str
+        The sysnset id.
+    cache_file : str
+        Path to cache file.
+
+    Returns
+    -------
+    result : dict
+        A dictionary mapping image name to image url.
+    """
+    if not os.path.isfile(cache_file):
+        response = urllib2.urlopen(url % synset)
+        with open(cache_file, 'wt') as fhand:
+            file_cont = response.read()
+            fhand.write(file_cont)
+    else:
+        with open(cache_file, 'rt') as fhand:
+            file_cont = fhand.read()
+    list_to_parse = dense_list(file_cont.split('\n'))
+
+    result = {}
+    for line in list_to_parse:
+        # ignore excluded entries
+        if line.startswith('#'):
+            continue
         i = line.index(' ')
         result[line[:i]] = line[i+1:]
     return result
@@ -339,209 +408,29 @@ def hashfile(path, blocksize=65536):
     return hasher.hexdigest()
 
 # ----------------------------------------------------------------------------
-
-class ImageDownloader(object):
+def get_images(url_rel, url_mapping):
     """
-    Class to help in downloading images.
+    Downlaod images
     """
-    def __init__(self, down_loc):
-        """
-        Constructor.
-        """
-        super(ImageDownloader, self).__init__()
-        self.down_loc = down_loc
-        self.threads_count = 10
-        self.threads = []
-        self.queue = Queue.Queue()
-        self.finish = 0
-        self.downloaded_ok = 0
-        self.downloaded_fail = 0
-        self.tot_img_count = 0
-        self.synsets = []
-        self.gen_semaphore = threading.BoundedSemaphore(self.threads_count)
-        self.file_hashes = {}
-
-    def push_synset(self, sset_name, sset_data):
-        """
-        Adds a synset to queue.
-        """
-        self.queue.put((sset_name, sset_data))
-
-    def pop_synset(self):
-        """
-        Gets a synset from queue.
-        """
-        return self.queue.get()
-
-    def done_synset(self, thid, sset_name, im_ok, im_fail):
-        """
-        A thread reports that it is done with a synset.
-        """
-        self.gen_semaphore.acquire()
-        self.downloaded_ok = self.downloaded_ok + im_ok
-        self.downloaded_fail = self.downloaded_fail + im_fail
-        logging.debug('thread %d done with sset %s (%d ok, %d fail)',
-                      thid, sset_name, im_ok, im_fail)
-        self.gen_semaphore.release()
-        self.queue.task_done()
-
-    def thread_ended(self, thid):
-        """
-        Show yourself out.
-        """
-        logger.debug("thread %d is done", thid)
-        self.gen_semaphore.acquire()
-        self.finish = self.finish + 1
-        self.gen_semaphore.release()
-
-    def image_downloaded(self, full_path):
-        """
-        We're informed that an image was downloaded.
-
-        Compute the hash of the file; if we saw this hash before, add it there.
-        self.file_hashes will be used in purge_duplicates().
-        """
-        hashval = hashfile(full_path)
-        self.gen_semaphore.acquire()
-        try:
-            self.file_hashes[hashval].append(full_path)
-        except KeyError:
-            self.file_hashes[hashval] = [full_path]
-        self.gen_semaphore.release()
-
-    def purge_duplicates(self):
-        """
-        Removes duplicates from download directory.
-        """
-        for fhash in self.file_hashes:
-            flist = self.file_hashes[fhash]
-            if len(flist) > 0:
-                for fpath in flist:
-                    os.remove(fpath)
-                    logger.info("removed duplicate %s (%s)", fhash, fpath)
-                self.downloaded_ok = self.downloaded_ok - len(flist)
-                self.downloaded_fail = self.downloaded_fail + len(flist)
-
-
-    def get_image(self, imname, imurl, magicf):
-        """
-        A thread downloads one image.
-        """
-        ext = os.path.splitext(imurl)[1].lower()
-        err_msg = ''
-        if len(ext) > 5:
-            # filter out thinks like .php?a=b
-            # .tiff is the longest that I can think of
-            ext = ''
-        out_file = os.path.join(self.down_loc, imname + ext)
-        logger.info("download %s from %s to %s", imname, imurl, out_file)
-
-        if os.path.isfile(out_file):
-            logger.debug('the file already exists')
-            return True
-
-        try:
-            urlf = urllib2.urlopen(imurl)
-            with open(out_file, "wb") as local_file:
-                local_file.write(urlf.read())
-            b_ok = False
-            if not os.path.isfile(out_file):
-                err_msg = 'missing'
-            elif os.path.getsize(out_file) == 0:
-                err_msg = 'size 0'
-            else:
-                if len(ext) == 0:
-                    try:
-                        mmstr = magicf.from_file(mime=True)
-                        mmstr = mmstr.split('/')
-                        if mmstr[0] == 'image':
-                            ext = '.' + mmstr[1].lower()
-                            new_file = os.path.join(self.down_loc, imname + ext)
-                            os.rename(out_file, new_file)
-                            out_file = new_file
-                    except (magic.MagicException, IndexError):
-                        pass
-                    if len(ext) == 0:
-                        logger.debug('can not find a better extension')
-                    self.image_downloaded(out_file)
-                b_ok = True
-            if not b_ok:
-                logger.debug('failed to download %s from %s (%s)',
-                             imname, imurl, err_msg)
-        except Exception:
-            b_ok = False
-            logger.debug('failed to download %s from %s',
-                         imname, imurl, exc_info=True)
-        return b_ok
-
-    @staticmethod
-    def worker(myself, thid):
-        """
-        The thread.
-        """
-        magicf = magic.Magic(mime=True)
-        logger.debug("thread %d starts", thid)
-        while True:
-            # get a synset
-            sset = myself.pop_synset()
-            if sset is None:
-                time.sleep(1)
-                sset = myself.pop_synset()
-                if sset is None:
-                    break
-            logger.debug("thread %d downloads %s synset", thid, sset[0])
-            image_dict = sset[1]
-            im_ok = 0
-            im_fail = 0
-            for k in image_dict:
-                if myself.get_image(k, image_dict[k], magicf):
-                    im_ok = im_ok + 1
-                else:
-                    im_fail = im_fail + 1
-            myself.done_synset(thid, sset[0], im_ok, im_fail)
-        myself.thread_ended(thid)
-
-    def run(self, url_rel, url_mapping):
-        """
-        Downloads everything.
-        """
-        # get the list of synsets
-        self.synsets = get_image_synsets(url_rel)
-        if self.threads_count > len(self.synsets):
-            self.threads_count = len(self.synsets)
-        if self.threads_count == 0:
-            logging.error("No synsets")
-            return
-
-        # get a synset and start a thread
-        for i in range(self.threads_count):
-            sset = get_image_urls(url_mapping, self.synsets[i])
-            self.push_synset(self.synsets[i], sset)
-            thr = threading.Thread(target=ImageDownloader.worker, args=(self, i))
-            thr.daemon = True
-            self.threads.append(thr)
-            thr.start()
-
-        # get the rest of the synsets
-        for i in range(self.threads_count, len(self.synsets)):
-            sset = get_image_urls(URL_IMG_MAPPING, self.synsets[i])
-            self.push_synset(self.synsets[i], sset)
-
-        # make yourself useful
-        ImageDownloader.worker(self, self.threads_count)
-
-        # wait for all the threads to exit
-        #while self.finish < self.threads_count:
-        #    time.sleep(1)
-        self.queue.join()
-        self.purge_duplicates()
-
-        assert self.downloaded_ok + self.downloaded_fail == self.tot_img_count
-        logging.info('%d synsets were downloaded (%d images, %d ok, %d failed)',
-                     len(self.synsets),
-                     self.tot_img_count,
-                     self.downloaded_ok,
-                     self.downloaded_fail)
+    downloader = Downloader(urls=[],
+                            outfiles=[],
+                            count=None,
+                            compute_hash=True,
+                            auto_extension=True,
+                            wait_timeout=-1)
+    downloader.setup()
+    synsets = get_image_synsets(url_rel)
+    image_count = 0
+    for i in synsets:
+        sset = get_image_urls(url_mapping, i)
+        raise NotImplementedError()
+        # TODO: Implement
+        # downloader.append()
+        for k in sset:
+            logging.debug(k)
+        image_count = image_count + len(sset)
+    downloader.tear_down()
+    logging.info('Total images in dataset: %d', image_count)
 
 def count_images(url_rel, url_mapping):
     """
@@ -560,13 +449,261 @@ def cmd_download_images(args):
     """
     Number of images.
     """
+    raise NotImplementedError()
+    # TODO: Implement
     if args.dry_run:
         count_images(args.url_rs, args.url_im)
     else:
         if not os.path.isdir(args.path):
             os.mkdir(args.path)
-        downloader = ImageDownloader(args.path)
-        downloader.run(args.url_rs, args.url_im)
+        #downloader = ImageDownloader(args.path)
+        #downloader.run(args.url_rs, args.url_im)
+
+def cmd_rem_img(args):
+    """
+    Remove images from synsets.
+    """
+    if args.path != '.':
+        os.chdir(args.path)
+
+    while True:
+        try:
+            lnr = raw_input('Enter file path and name: ')
+            lnr = lnr.lower().strip()
+            if lnr == 'quit' or lnr == 'q' or lnr == 'exit':
+                break
+            lnr = os.path.split(lnr)[1]
+            try:
+                sset = lnr[:lnr.index('_')]
+            except ValueError:
+                print 'Files must have synset_number.ext format'
+                continue
+            try:
+                ftag = lnr[:lnr.index('.')]
+            except ValueError:
+                ftag = lnr
+            sset_cache = '%s_urls.txt' % sset
+            if not os.path.isfile(sset_cache):
+                print sset_cache, ' does not exist'
+                continue
+            with open(sset_cache, 'rt') as fhand:
+                file_cont = fhand.read()
+            list_to_parse = dense_list(file_cont.split('\n'))
+            comment_ftag = '#' + ftag
+            for i, fline in enumerate(list_to_parse):
+                if fline.startswith(ftag):
+                    list_to_parse[i] = '#' + fline
+                    with open(sset_cache, 'wt') as fhand:
+                        fhand.write('\n'.join(list_to_parse))
+                    continue
+                elif fline.startswith(comment_ftag):
+                    continue
+        except EOFError:
+            break
+
+
+class TrackDuplicates(object):
+    """
+    Maintains a list of duplicates and the dictionary of hashes it
+    has seen so far.
+    """
+    def __init__(self):
+        #: the list of duplicate objects
+        self.duplicates = []
+        self.duplicates_hash = {}
+
+    def inspect(self, rslt):
+        """
+        Checks to see if the result is a duplicate and maintains
+        internal states.
+        """
+        if rslt['hash'] in self.duplicates_hash:
+            dupl = self.duplicates_hash[rslt['hash']]
+            if not rslt['output'] in self.duplicates:
+                self.duplicates.append(rslt)
+            if not dupl['output'] in self.duplicates:
+                self.duplicates.append(dupl)
+        elif rslt['size'] < 1024:
+            if not rslt['output'] in self.duplicates:
+                self.duplicates.append(rslt)
+        else:
+            self.duplicates_hash[rslt['hash']] = rslt
+
+    def print_duplicates(self):
+        """
+        Print using standard ``logging.info()`` mechanism.
+        """
+        for dupl in self.duplicates:
+            logging.warning('Duplicate hash: %s', dupl['output'])
+
+    def __len__(self):
+        """
+        Number of duplicates found.
+        """
+        return len(self.duplicates)
+
+
+def cmd_download_synset(args):
+    """
+    Download all images in a synset.
+    """
+    synsets = get_image_synsets_cached(args.url_rs)
+
+    downloader = Downloader(urls=[],
+                            outfiles=[],
+                            count=10,
+                            compute_hash=True,
+                            auto_extension=True,
+                            wait_timeout=-1)
+    downloader.setup(post_request=False)
+    
+    for sset in args.sset:
+        if not sset in synsets:
+            logging.error('The %s synset was not found among known synsets',
+                          sset)
+        else:
+            urls_cached_file = '%s_urls.txt' % sset
+            links = get_image_urls_cached(args.url_im, sset,
+                                          urls_cached_file)
+    
+            # have the links in two separate lists as required by Downloader
+            out_files = []
+            in_links = []
+            for itm in links:
+                out_files.append(itm)
+                in_links.append(links[itm])
+            downloader.append(urls=in_links,
+                              outfiles=out_files,
+                              post_request=True)
+
+    downloader.wait_for_data()
+    results = downloader.results
+    downloader.tear_down()
+    del downloader
+
+    downloaded_ok = 0
+    downloaded_err = 0
+    trdpl = TrackDuplicates()
+    for rslt in results:
+        if rslt['status'] == 'error':
+            logging.error('Failed to download %s from %s',
+                          rslt['output'], rslt['url'])
+            downloaded_err = downloaded_err + 1
+        else:
+            downloaded_ok = downloaded_ok + 1
+            trdpl.inspect(rslt)
+
+    trdpl.print_duplicates()
+
+    logging.info('%d files in synset, %d downloaded '
+                 '(%d duplicates), %d failed.',
+                 len(in_links), downloaded_ok,
+                 len(trdpl), downloaded_err)
+
+# ----------------------------------------------------------------------------
+
+def make_arg_parser():
+    """
+    Creates an ArgumentParser to read the options for this script from
+    sys.argv
+    """
+    parser = make_argument_parser("A script to interact with ImageNet APIs")
+
+    subparsers = parser.add_subparsers(help='Available sub-commands')
+
+    parser_a = subparsers.add_parser('synsets',
+                                     help='get the list of synsets available')
+    parser_a.add_argument('--url', type=str,
+                          help='the address used to retreive data',
+                          default=URL_SYNSET_LIST)
+    parser_a.set_defaults(func=cmd_synsets)
+
+    parser_a = subparsers.add_parser('words',
+                                     help='get the list of words '
+                                     'given a synset')
+    parser_a.add_argument('synset', type=str,
+                          help='the synset to retreive words for')
+    parser_a.add_argument('--url', type=str,
+                          help='the address used to retreive data',
+                          default=URL_SYNSET_WORDS)
+    parser_a.set_defaults(func=cmd_words)
+
+    parser_a = subparsers.add_parser('hypo',
+                                     help='get the list of hyponym '
+                                     'synsets given a synset')
+    parser_a.add_argument('synset', type=str,
+                          help='the synset to retreive hyponyms for')
+    parser_a.add_argument('--full', type=bool,
+                          help='get the full tree',
+                          default=False)
+    parser_a.add_argument('--url', type=str,
+                          help='the address used to retreive data',
+                          default=URL_HYPONIMS)
+    parser_a.set_defaults(func=cmd_hypos)
+
+    parser_a = subparsers.add_parser('urls',
+                                     help='get the list of image '
+                                     'urls given a synset')
+    parser_a.add_argument('synset', type=str,
+                          help='the synset to retreive image urls for')
+    parser_a.add_argument('--url', type=str,
+                          help='the address used to retreive data',
+                          default=URL_IMG_MAPPING)
+    parser_a.set_defaults(func=cmd_image_urls)
+
+
+    parser_a = subparsers.add_parser('downl',
+                                     help='download the images from their '
+                                     'respective urls')
+    parser_a.add_argument('--path', type=str,
+                          help='output directory',
+                          default='.')
+    parser_a.add_argument('--dry_run', type=bool,
+                          help='only count the files to download',
+                          default=False)
+    parser_a.add_argument('--url_rs', type=str,
+                          help='the address used to retreive '
+                          'data for relative status',
+                          default=URL_REL_STATUS)
+    parser_a.add_argument('--url_im', type=str,
+                          help='the address used to retreive '
+                          'data for image mapping',
+                          default=URL_IMG_MAPPING)
+    parser_a.set_defaults(func=cmd_download_images)
+
+
+    parser_a = subparsers.add_parser('dsset',
+                                     help='download the images for a synset '
+                                     'from their respective urls')
+    parser_a.add_argument('--path', type=str,
+                          help='output directory',
+                          default='.')
+    parser_a.add_argument('sset', type=str, nargs='*',
+                          help='The synset to download')
+    parser_a.add_argument('--dry_run', type=bool,
+                          help='only count the files to download',
+                          default=False)
+    parser_a.add_argument('--url_rs', type=str,
+                          help='the address used to retreive '
+                          'data for relative status',
+                          default=URL_REL_STATUS)
+    parser_a.add_argument('--url_im', type=str,
+                          help='the address used to retreive '
+                          'data for image mapping',
+                          default=URL_IMG_MAPPING)
+    parser_a.set_defaults(func=cmd_download_synset)
+
+
+    parser_a = subparsers.add_parser('bad',
+                                     help='(interactive) remove images from '
+                                     'the list of cached locations for '
+                                     'a synset')
+    parser_a.add_argument('--path', type=str,
+                          help='path where cache files are saved',
+                          default='.')
+    parser_a.set_defaults(func=cmd_rem_img)
+
+    return parser
 
 # ----------------------------------------------------------------------------
 
@@ -576,17 +713,17 @@ def main():
     """
 
     # look at the arguments
-    parser = make_argument_parser()
+    parser = make_arg_parser()
     args = parser.parse_args()
 
     # prepare logging
     setup_logging(args)
-    logger.debug("logging set-up")
+    logging.debug("logging set-up")
 
     # run based on request
     args.func(args)
 
-    logger.debug("script ended")
+    logging.debug("script ended")
 
 if __name__ == '__main__':
     main()
