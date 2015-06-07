@@ -70,6 +70,7 @@ class Downloader(object):
         self.freelist = None
         self.magicf = magic.Magic(mime=True)
         self.multi = None
+        self.keep_alive = True
 
         #: the results accumulate here
         self.results = []
@@ -100,6 +101,16 @@ class Downloader(object):
             cobj.setopt(pycurl.CONNECTTIMEOUT, 30)
             cobj.setopt(pycurl.TIMEOUT, self.wait_timeout)
             cobj.setopt(pycurl.NOSIGNAL, 1)
+            if self.keep_alive:
+                cobj.setopt(pycurl.TCP_KEEPALIVE, 1)
+                cobj.setopt(pycurl.TCP_KEEPIDLE, 120)
+                cobj.setopt(pycurl.TCP_KEEPINTVL, 60)
+            else:
+                cobj.setopt(pycurl.TCP_KEEPALIVE, 0)
+            cobj.setopt(pycurl.SSL_VERIFYPEER, 0)
+            cobj.setopt(pycurl.SSL_VERIFYHOST, 0)
+            cobj.setopt(pycurl.SSL_VERIFYRESULT, 0)
+
             self.multi.handles.append(cobj)
         self.freelist = self.multi.handles[:]
 
