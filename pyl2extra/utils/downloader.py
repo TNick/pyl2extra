@@ -112,7 +112,7 @@ class Downloader(object):
                 pass
             cobj.setopt(pycurl.SSL_VERIFYPEER, 0)
             cobj.setopt(pycurl.SSL_VERIFYHOST, 0)
-            cobj.setopt(pycurl.SSL_VERIFYRESULT, 0)
+            #cobj.setopt(pycurl.SSL_VERIFYRESULT, 0)
 
             self.multi.handles.append(cobj)
         self.freelist = self.multi.handles[:]
