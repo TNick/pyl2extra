@@ -185,6 +185,12 @@ class MainWindow(QtGui.QMainWindow):
                                      'Ctrl+D',
                                      'Load directory and preprocess',
                                      self.browse_dir)
+        self.act_load_npd = make_act('Open direc&tory (no preprocessing)...',
+                                     self,
+                                     'folders_explorer.png',
+                                     'Ctrl+T',
+                                     "Load directory but don't preprocess",
+                                     self.browse_npp_dir)
         menubar = self.menuBar()
 
         menu_file = menubar.addMenu('&File')
@@ -192,6 +198,7 @@ class MainWindow(QtGui.QMainWindow):
         menu_file.addAction(self.act_load_npy)
         menu_file.addAction(self.act_load_pkl)
         menu_file.addAction(self.act_load_dir)
+        menu_file.addAction(self.act_load_npd)
         menu_file.addAction(self.act_exit)
 
         self.toolbar = self.addToolBar('General')
@@ -199,6 +206,7 @@ class MainWindow(QtGui.QMainWindow):
         self.toolbar.addAction(self.act_load_npy)
         self.toolbar.addAction(self.act_load_pkl)
         self.toolbar.addAction(self.act_load_dir)
+        self.toolbar.addAction(self.act_load_npd)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.act_exit)
 
@@ -272,54 +280,61 @@ class MainWindow(QtGui.QMainWindow):
             logger.error('Loading image file failed', exc_info=True)
             QtGui.QMessageBox.warning(self, 'Exception', str(exc))
         
-    def load_dir(self, dname):
+    def load_dir(self, dname, preprocess=True):
         """
         Slot that loads an image directory.
         """
         if not dname:
             return
-        try:
-            self.lst.clear()
-            self.lbl_p.setText(dname)
-            self.lbl_w.setText('width: -')
-            self.lbl_h.setText('height: -')
-            self.lbl_ch.setText('channels: -')
-            self.lbl_m.setText('mode: ')
-            self.lbl_info.setText(dname)
-            self.lblimg.setPixmap(QtGui.QPixmap())
+
+        self.lst.clear()
+        self.lbl_p.setText(dname)
+        self.lbl_w.setText('width: -')
+        self.lbl_h.setText('height: -')
+        self.lbl_ch.setText('channels: -')
+        self.lbl_m.setText('mode: ')
+        self.lbl_info.setText(dname)
+        self.lblimg.setPixmap(QtGui.QPixmap())
+        
+        data = {}
+        allowed_extensions = ('jpg', 'jpeg', 'png', 'bmp', 'tif', 'tiff')
+        for fname in os.listdir(dname):
+            fn, ext = os.path.splitext(fname)
+            if len(ext) == 0:
+                continue
+            ext = ext[1:].lower()
+            if not ext in allowed_extensions:
+                continue
+            fname = os.path.join(dname, fname)
+            data[fname] = ''
             
-            data = {}
-            allowed_extensions = ('jpg', 'jpeg', 'png', 'bmp', 'tif', 'tiff')
-            for fname in os.listdir(dname):
-                fn, ext = os.path.splitext(fname)
-                if len(ext) == 0:
-                    continue
-                ext = ext[1:].lower()
-                if not ext in allowed_extensions:
-                    continue
-                fname = os.path.join(dname, fname)
-                data[fname] = ''
-            provider = DictProvider(data=data)
+        provider = DictProvider(data=data)
             
-            for fname in data:
-                
-                fname = os.path.join(dname, fname)
+        failed_files = []
+        for fname in data:
+            try:                
                 batch = provider.read_image(fname)
-                batch = batch.reshape(1, batch.shape[0], 
-                                      batch.shape[1],
-                                      batch.shape[2])
-                batch = self.dataset.process(batch, accumulate=False)
-                ibatch = batch[:, :, :, 0:3]
-                ibatch = numpy.cast['uint8'](255.0 * (ibatch - ibatch.min()) / 
-                                             (ibatch.max() - ibatch.min()))
-                ibatch = ibatch.reshape(batch.shape[1], 
-                                        batch.shape[2],
-                                        batch.shape[3])
-                self.img_item(ibatch)
+                if preprocess:
+                    batch = batch.reshape(1, batch.shape[0], 
+                                          batch.shape[1],
+                                          batch.shape[2])
+                    batch = self.dataset.process(batch, accumulate=False)
+                    ibatch = batch[:, :, :, 0:3]
+                    ibatch = numpy.cast['uint8'](255.0 * 
+                                                 (ibatch - ibatch.min()) / 
+                                                 (ibatch.max() - ibatch.min()))
+                    batch = ibatch.reshape(batch.shape[1], 
+                                           batch.shape[2],
+                                           batch.shape[3])
+                self.img_item(batch)
             
-        except Exception, exc:
-            logger.error('Loading image file failed', exc_info=True)
-            QtGui.QMessageBox.warning(self, 'Exception', str(exc))
+            except Exception:
+                logger.error('Loading image file failed', exc_info=True)
+                failed_files.append(fname)
+        if len(failed_files) > 0:
+            QtGui.QMessageBox.warning(self, 'Error', 
+                                      'Failed to load %d files' % 
+                                      len(failed_files))
             
     def load_dataset(self, dataset):
         """
@@ -490,10 +505,10 @@ class MainWindow(QtGui.QMainWindow):
             img = Image.fromarray(img)
             logging.debug(' source image mode: %s, size: %s', 
                           img.mode, str(img.size))
-            for i, val in enumerate(img.histogram()):
-                if val != 0:
-                    logging.debug(' histogram %d: %s', 
-                                  i, str(val))
+            #for i, val in enumerate(img.histogram()):
+            #    if val != 0:
+            #        logging.debug(' histogram %d: %s', 
+            #                      i, str(val))
                     
             qtimg = pil2qt(img)
         else:
@@ -534,7 +549,17 @@ class MainWindow(QtGui.QMainWindow):
                                                   'Open directory')
         if not fname:
             return
-        self.load_dir(fname)
+        self.load_dir(fname, True)
+        
+    def browse_npp_dir(self):
+        """
+        Slot that browse for and loads an image directory.
+        """
+        fname = QtGui.QFileDialog.getExistingDirectory(self,
+                                                  'Open directory')
+        if not fname:
+            return
+        self.load_dir(fname, False)
         
     def browse_npy(self):
         """

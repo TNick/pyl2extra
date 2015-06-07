@@ -44,7 +44,7 @@ def main():
     """
 
     # look at the arguments
-    parser = make_argument_parser("Debugger for pylearn2 models.")
+    parser = make_argument_parser("Observe preprocessing and other images.")
     args = parser.parse_args()
 
     # prepare logging
