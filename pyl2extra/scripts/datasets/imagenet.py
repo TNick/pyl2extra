@@ -23,6 +23,8 @@ from xml.dom import minidom
 from pyl2extra.utils.script import setup_logging, make_argument_parser
 from pyl2extra.utils.downloader import Downloader
 
+_LOGGER = logging.getLogger(__name__)
+
 # some predefined urls
 URL_SYNSET_LIST = 'http://www.image-net.org/api/text/imagenet.synset.obtain_synset_list'
 URL_SYNSET_WORDS = 'http://www.image-net.org/api/text/wordnet.synset.getwords?wnid=%s'
@@ -57,7 +59,7 @@ def list_from_url(url):
     list : list of str
         A list of lines.
     """
-    logging.debug('retreiving data from %s', url)
+    _LOGGER.debug('retreiving data from %s', url)
     response = urllib2.urlopen(url)
     html = response.read()
     return html.split('\n')
@@ -122,7 +124,7 @@ def xml_from_url(url):
     elem : minidom.Document
         The document that was generated from remote string.
     """
-    logging.debug('retreiving data from %s', url)
+    _LOGGER.debug('retreiving data from %s', url)
     response = urllib2.urlopen(url)
     html = response.read()
     return minidom.parseString(html)
@@ -146,7 +148,7 @@ def get_synsets(url=URL_SYNSET_LIST):
     elem : list of str
         A list of strings.
     """
-    logging.debug('synsets from %s', url)
+    _LOGGER.debug('synsets from %s', url)
     return dense_list_from_url(url)
 
 def cmd_synsets(args):
@@ -193,7 +195,7 @@ def get_words(url, synset):
     if isinstance(synset, (list, tuple)):
         result = {}
         for sset in synset:
-            logging.debug('%s from %s', sset, url)
+            _LOGGER.debug('%s from %s', sset, url)
             lst = dense_list_from_url(url % sset)
             if len(lst) > 0:
                 result[sset] = lst[0]
@@ -201,7 +203,7 @@ def get_words(url, synset):
                 result[sset] = ''
         return result
     else:
-        logging.debug('%s from %s', synset, url)
+        _LOGGER.debug('%s from %s', synset, url)
         return dense_list_from_url(url % synset)
 
 def cmd_words(args):
@@ -234,7 +236,7 @@ def get_hypos(url, synset, full_tree):
     words : list of str
         A list of strings, each one being a synset identifier.
     """
-    logging.debug('%s from %s', synset, url)
+    _LOGGER.debug('%s from %s', synset, url)
     full_tree = '1' if full_tree else '0'
     return dense_list_from_url(url % (synset, full_tree))
 
@@ -272,7 +274,7 @@ def get_image_count(url, is_url=True):
         A dictionary with keys being synset identifiers and values the number
         of images for that identifier.
     """
-    logging.debug('from %s', url)
+    _LOGGER.debug('from %s', url)
 
     if is_url:
         blob = xml_from_url(url)
@@ -306,7 +308,7 @@ def get_image_synsets(url, is_url=True):
     blob_list : list
         A list of synset identifiers.
     """
-    logging.debug('from %s', url)
+    _LOGGER.debug('from %s', url)
 
     if is_url:
         blob = xml_from_url(url)
@@ -362,7 +364,7 @@ def get_image_urls(url, synset):
     result : dict
         A dictionary mapping image name to image url.
     """
-    logging.debug('%s from %s', synset, url)
+    _LOGGER.debug('%s from %s', synset, url)
     list_to_parse = dense_list_from_url(url % synset)
     result = {}
     for line in list_to_parse:
@@ -450,10 +452,10 @@ def get_images(url_rel, url_mapping):
         # TODO: Implement
         # downloader.append()
         for k in sset:
-            logging.debug(k)
+            _LOGGER.debug(k)
         image_count = image_count + len(sset)
     downloader.tear_down()
-    logging.info('Total images in dataset: %d', image_count)
+    _LOGGER.info('Total images in dataset: %d', image_count)
 
 def count_images(url_rel, url_mapping):
     """
@@ -464,9 +466,9 @@ def count_images(url_rel, url_mapping):
     for i in synsets:
         sset = get_image_urls(url_mapping, i)
         for k in sset:
-            logging.debug(k)
+            _LOGGER.debug(k)
         image_count = image_count + len(sset)
-    logging.info('Total images in dataset: %d', image_count)
+    _LOGGER.info('Total images in dataset: %d', image_count)
 
 def cmd_download_images(args):
     """
@@ -555,10 +557,10 @@ class TrackDuplicates(object):
 
     def print_duplicates(self):
         """
-        Print using standard ``logging.info()`` mechanism.
+        Print using standard ``_LOGGER.info()`` mechanism.
         """
         for dupl in self.duplicates:
-            logging.warning('Duplicate hash: %s', dupl['output'])
+            _LOGGER.warning('Duplicate hash: %s', dupl['output'])
 
     def __len__(self):
         """
@@ -582,7 +584,7 @@ def cmd_download_synset(args):
     tot_files = 0
     for sset in args.sset:
         if not sset in synsets:
-            logging.warn('The %s synset was not found among known synsets',
+            _LOGGER.warn('The %s synset was not found among known synsets',
                          sset)
         urls_cached_file = '%s_urls.txt' % sset
         links = get_image_urls_cached(args.url_im, sset,
@@ -609,7 +611,7 @@ def cmd_download_synset(args):
     trdpl = TrackDuplicates()
     for rslt in results:
         if rslt['status'] == 'error':
-            logging.error('Failed to download %s from %s',
+            _LOGGER.error('Failed to download %s from %s',
                           rslt['output'], rslt['url'])
             downloaded_err = downloaded_err + 1
         else:
@@ -618,7 +620,7 @@ def cmd_download_synset(args):
 
     trdpl.print_duplicates()
 
-    logging.info('%d files in %d synsets, %d downloaded '
+    _LOGGER.info('%d files in %d synsets, %d downloaded '
                  '(%d duplicates), %d failed.',
                  tot_files, len(args.sset), downloaded_ok,
                  len(trdpl), downloaded_err)
@@ -626,19 +628,19 @@ def cmd_download_synset(args):
 def segregate_files(path, recursive=False):
     """
     Divides the files in two lists: good and bad.
-    
+
     Parameters
     ----------
     path : str
         The path to scan.
     recursive : bool
         Scan the subdirectories.
-    
+
     Returns
     -------
     duplicates : list
     good_files : list
-        List of file paths that 
+        List of file paths that
     synsets : list
         List of synsets that were identified
     """
@@ -696,17 +698,17 @@ def cmd_outliers(args):
     This includes files that can't be loaded as an image and those that
     are images but their hash was found multiple times.
     """
-    logging.debug('path: %s', args.path)
-    logging.debug('recursive: %s', 'True' if args.recursive else 'False')
+    _LOGGER.debug('path: %s', args.path)
+    _LOGGER.debug('recursive: %s', 'True' if args.recursive else 'False')
 
     duplicates, good_files, synsets = segregate_files(args.path,
                                                       args.recursive)
     tot_files = len(duplicates) + len(good_files)
 
     for dupl in duplicates:
-        logging.info(dupl)
+        _LOGGER.info(dupl)
 
-    logging.info('%d files inspected in %d synsets, '
+    _LOGGER.info('%d files inspected in %d synsets, '
                  '%d duplicates.',
                  tot_files, len(synsets), len(duplicates))
 
@@ -716,15 +718,15 @@ def cmd_good_files(args):
 
     The images may also be saved in a file.
     """
-    logging.debug('path: %s', args.path)
-    logging.debug('recursive: %s', 'True' if args.recursive else 'False')
-    logging.debug('output: %s', args.output)
+    _LOGGER.debug('path: %s', args.path)
+    _LOGGER.debug('recursive: %s', 'True' if args.recursive else 'False')
+    _LOGGER.debug('output: %s', args.output)
 
     duplicates, good_files, synsets = segregate_files(args.path,
                                                       args.recursive)
 
     for goodf in good_files:
-        logging.info(goodf)
+        _LOGGER.info(goodf)
     if args.output:
         cached_descr = get_words(URL_SYNSET_WORDS, synsets)
         with open(args.output, 'wt') as fhand:
@@ -732,7 +734,7 @@ def cmd_good_files(args):
                                     quoting=csv.QUOTE_MINIMAL)
             spamwriter.writerow(["File path", "Category", "Description"])
             for goodf in good_files:
-                file_name =os.path.split(goodf)[1]
+                file_name = os.path.split(goodf)[1]
                 match = IMG_FILE_REGEX.match(file_name)
                 sset = match.group(1)
                 description = cached_descr[sset]
@@ -880,14 +882,14 @@ def main():
     parser = make_arg_parser()
     args = parser.parse_args()
 
-    # prepare logging
+    # prepare _LOGGER
     setup_logging(args)
-    logging.debug("logging set-up")
+    _LOGGER.debug("_LOGGER set-up")
 
     # run based on request
     args.func(args)
 
-    logging.debug("script ended")
+    _LOGGER.debug("script ended")
 
 if __name__ == '__main__':
     main()
