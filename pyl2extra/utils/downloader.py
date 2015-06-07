@@ -50,6 +50,10 @@ class Downloader(object):
     auto_extension : bool, optional
         Wether the extension should be determined from input file. If ``True``
         the elements in ``outlist`` must not contain extensions.
+    wait_timeout : int, optional
+        Number of seconds to wait before declaring timeout. ``-1`` means wait
+        indefenetly. This only refers to waiting the processes to provide
+        the data, not to file download.
 
     Notes
     -----
@@ -72,7 +76,8 @@ class Downloader(object):
     CTRL_FINISH = 'FINISHED'
 
     def __init__(self, urls, outfiles, count=None,
-                 compute_hash=True, auto_extension=False):
+                 compute_hash=True, auto_extension=False,
+                 wait_timeout=660):
 
         assert len(urls) == len(outfiles)
 
@@ -96,9 +101,9 @@ class Downloader(object):
         #: maximum number of outstanding requests
         self.max_outstanding = 64
         #: number of seconds to wait before declaring timeout
-        self.wait_timeout = 660
+        self.wait_timeout = wait_timeout
         #: used by receiver
-        self.gen_semaphore = threading.BoundedSemaphore(count)
+        self.gen_semaphore = threading.BoundedSemaphore(2)
         #: on termination counts the workers that exited
         self.finish = 0
         #: one time trigger for the threads to exit
@@ -146,6 +151,8 @@ class Downloader(object):
         # Create a pool of workers to distribute work to
         assert self.workers_count > 0
         for wrk_num in range(self.workers_count):
+            wrk_num = wrk_num + 1
+            logging.debug('worker %d requested', wrk_num)
             multiprocessing.Process(target=_worker, args=(wrk_num,)).start()
 
         # Initialize a zeromq context
@@ -181,15 +188,15 @@ class Downloader(object):
         logging.debug('Downloader was being terminated')
 
         # Give everything a second to spin down
-        time.sleep(0.5)
+        time.sleep(1.0)
 
     def append(self, urls, outfiles, post_request=True):
         """
         Appends to the list of things to download.
         """
         assert len(urls) == len(outfiles)
-        self.urls.append(urls)
-        self.outfiles.append(outfiles)
+        self.urls += urls
+        self.outfiles += outfiles
         if post_request:
             self.push_request(len(urls))
 
@@ -205,18 +212,22 @@ class Downloader(object):
         """
         count = len(self.urls)
         self.push_request(count)
-        self._wait_for_data(count)
+        self.wait_for_data(count)
         return self.results
 
-    def _wait_for_data(self, count):
+    def wait_for_data(self, count=None):
         """
         Waits for some provider to deliver its data.
         """
+        if count is None:
+            count = len(self.urls)
         timeout_count = self.wait_timeout * 10
         while count > len(self.results):
             if self.starving():
                 self.push_request(count)
             time.sleep(0.1)
+            if self.wait_timeout < 0:
+                continue
             timeout_count = timeout_count - 1
             if timeout_count <= 0:
                 raise RuntimeError('Timeout waiting for a process to provide '
@@ -243,12 +254,18 @@ class Downloader(object):
             #    return
             if self.provider_offset + 1 > len(self.urls):
                 return
+
+            self.gen_semaphore.acquire()
             self.outstanding_requests = self.outstanding_requests + 1
+            logging.debug('push request; outstanding: %d',
+                          self.outstanding_requests)
             work_message = {'url': self.urls[self.provider_offset],
                             'output': self.outfiles[self.provider_offset],
                             'hash': self.compute_hash,
                             'autoext': self.auto_extension}
             self.provider_offset = self.provider_offset + 1
+            self.gen_semaphore.release()
+
             self.ventilator_send.send_json(work_message)
 
     def receive_all_messages(self, no_block=True):
@@ -266,9 +283,19 @@ class Downloader(object):
                     flags = 0
                 result = self.results_rcv.recv_json(flags=flags)
                 logging.info(result)
+
+                self.gen_semaphore.acquire()
                 self.outstanding_requests = self.outstanding_requests - 1
                 self.results.append(result)
+                if self.outstanding_requests == 0:
+                    b_done = True
+                    logging.debug("no more outstanding requets")
+                else:
+                    logging.debug("%d outstanding requets",
+                                  self.outstanding_requests)
+                self.gen_semaphore.release()
                 assert self.outstanding_requests >= 0
+
             except zmq.ZMQError as exc:
                 if exc.errno == zmq.EAGAIN:
                     b_done = True
@@ -300,6 +327,84 @@ def hashfile(path, blocksize=65536):
     afile.close()
     return hasher.hexdigest()
 
+def ext_decorator(magicf, fname):
+    """
+    Appends an extension based on mime type. Renames the file.
+    """
+    ext = ''
+    try:
+        mmstr = magicf.from_file(filename=fname)
+        mmstr = mmstr.split('/')
+        ext = '.' + mmstr[1].lower()
+        new_file = '%s.%s' % (fname, ext)
+        os.rename(fname, new_file)
+        fname = new_file
+    except (magic.MagicException, IndexError):
+        pass
+    if len(ext) == 0:
+        logging.debug('can not find a better extension')
+    return ext, fname
+
+def put_ext_from_url(furl, fname):
+    """
+    Append extension after cleaning it up.
+    """
+    ext = os.path.splitext(furl)[1].lower()
+    if len(ext) > 0:
+        for cchr in ('#', '?', '&'):
+            try:
+                i_cut = ext.index(cchr)
+                ext = ext[:i_cut]
+            except ValueError:
+                pass
+        if ext == 'php':
+            ext = ''
+        else:
+            fname = '%s%s' % (fname, ext)
+    return fname, ext
+
+def _handle_file_request(work_message, magicf):
+    """
+    handles a download file request.
+    """
+    try:
+
+        furl = work_message['url']
+        fname = work_message['output']
+        compute_hash = work_message['hash']
+        autoext = work_message['autoext']
+
+        ext = ''
+        if autoext:
+            fname, ext = put_ext_from_url(furl, fname)
+
+        logging.info("download from %s to %s", furl, fname)
+
+        if os.path.isfile(fname):
+            logging.debug('the file already exists')
+            work_message['status'] = 'existing'
+        else:
+            urlf = urllib2.urlopen(furl)
+            with open(fname, "wb") as local_file:
+                local_file.write(urlf.read())
+
+            if len(ext) == 0 and autoext:
+                ext, fname = ext_decorator(magicf, fname)
+            work_message['status'] = 'ok'
+
+        if compute_hash:
+            work_message['hash'] = hashfile(fname)
+        work_message['output'] = fname
+        work_message['size'] = os.path.getsize(fname)
+    except Exception, exc:
+        work_message['status'] = 'error'
+        msg = exc.message if len(exc.message) > 0 else str(exc)
+        work_message['error'] = '%s: %s' % (str(exc.__class__),
+                                            msg)
+        if os.path.isfile(fname):
+            os.remove(fname)
+
+    return work_message
 
 # The "worker" functions listen on a zeromq PULL connection for "work"
 # (numbers to be processed) from the ventilator, square those numbers,
@@ -337,67 +442,14 @@ def _worker(wrk_num):
 
     # Loop and accept messages from both channels, acting accordingly
     while True:
+        logging.debug("worker process %d waiting", wrk_num)
         socks = dict(poller.poll())
+        logging.debug("worker process %d working", wrk_num)
 
         # If the message came from work_rcv channel, square the number
         # and send the answer to the results reporter
         if socks.get(work_rcv) == zmq.POLLIN:
-            work_message = work_rcv.recv_json()
-            try:
-
-                furl = work_message['url']
-                fname = work_message['output']
-                compute_hash = work_message['hash']
-                autoext = work_message['autoext']
-
-                exc = ''
-                if autoext:
-                    exc = os.path.splitext(furl)[1].lower()
-                    if len(exc) > 0:
-                        try:
-                            i_cut = exc.index('#')
-                            exc = exc[:i_cut]
-                        except ValueError:
-                            pass
-                        try:
-                            i_cut = exc.index('?')
-                            exc = exc[:i_cut]
-                        except ValueError:
-                            pass
-                        fname = '%s%s' % (fname, exc)
-
-                logging.info("download from %s to %s", furl, fname)
-
-                if os.path.isfile(fname):
-                    logging.debug('the file already exists')
-                    work_message['status'] = 'existing'
-                else:
-                    urlf = urllib2.urlopen(furl)
-                    with open(fname, "wb") as local_file:
-                        local_file.write(urlf.read())
-                    if compute_hash:
-                        work_message['hash'] = hashfile(fname)
-                    if len(exc) == 0 and autoext:
-                        try:
-                            mmstr = magicf.from_file(filename=local_file,
-                                                     mime=True)
-                            mmstr = mmstr.split('/')
-                            ext = '.' + mmstr[1].lower()
-                            new_file = '%s.%s' % (fname, exc)
-                            os.rename(fname, new_file)
-                            fname = new_file
-                        except (magic.MagicException, IndexError):
-                            pass
-                        if len(ext) == 0:
-                            logging.debug('can not find a better extension')
-
-                work_message['output'] = fname
-                work_message['size'] = os.path.getsize(fname)
-                work_message['status'] = 'ok'
-            except Exception, exc:
-                work_message['status'] = 'error'
-                work_message['error'] = '%s: %s' % (str(exc.__class__),
-                                                    exc.message)
+            work_message = _handle_file_request(work_rcv.recv_json(), magicf)
             results_sender.send_json(work_message)
 
         # If the message came over the control channel, shut down the worker.
