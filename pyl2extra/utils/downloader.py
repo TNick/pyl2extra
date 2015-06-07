@@ -225,6 +225,7 @@ class Downloader(object):
         """
         if count is None:
             count = len(self.urls)
+        _LOGGER.debug('waiting for %d items', count)
         while count > len(self.results):
             while 1:
                 ret, num_handles = self.multi.perform()
@@ -266,8 +267,8 @@ class Downloader(object):
             Number of images to retreive. Default is to request all images
             in the list.
         """
-        _LOGGER.debug('push_request count %d, offset %d, urls %d, free %d',
-                      count, self.provider_offset,
+        _LOGGER.debug('push_request count %s, offset %d, urls %d, free %d',
+                      str(count), self.provider_offset,
                       len(self.urls), len(self.freelist))
         while self.provider_offset < len(self.urls) and len(self.freelist) > 0:
             url = self.urls[self.provider_offset]
