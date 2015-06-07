@@ -16,11 +16,12 @@ import os
 import tempfile
 
 
-def setup_logging(args, default_level=logging.DEBUG):
+def setup_logging(args, logger=None, default_level=logging.DEBUG):
     """
     Setup logging configuration
     """
-    global logger
+    if logger is None:
+        logger = logging.getLogger()
 
     # get a path for logging config
     if not args.log_cfg is None:
@@ -42,7 +43,6 @@ def setup_logging(args, default_level=logging.DEBUG):
     else:
         logging.basicConfig(level=default_level)
 
-    logger = logging.getLogger()
     if args.verbose_logging:
         raise NotImplementedError('verbose_logging not implemented, yet')
     if args.timestamp:

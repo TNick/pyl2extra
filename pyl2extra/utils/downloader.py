@@ -25,6 +25,8 @@ import os
 import pycurl
 import sys
 
+from pyl2extra.utils.script import setup_logging, make_argument_parser
+
 # We should ignore SIGPIPE when using pycurl.NOSIGNAL - see
 # the libcurl tutorial for more info.
 try:
@@ -33,6 +35,8 @@ try:
     signal.signal(SIGPIPE, SIG_IGN)
 except ImportError:
     pass
+
+_LOGGER = logging.getLogger(__name__)
 
 class Downloader(object):
     """
@@ -75,7 +79,7 @@ class Downloader(object):
         #: the results accumulate here
         self.results = []
 
-        logging.debug("PycURL %s (compiled against 0x%x)",
+        _LOGGER.debug("PycURL %s (compiled against 0x%x)",
                       pycurl.version, pycurl.COMPILE_LIBCURL_VERSION_NUM)
         super(Downloader, self).__init__()
 
@@ -117,11 +121,14 @@ class Downloader(object):
 
             self.multi.handles.append(cobj)
         self.freelist = self.multi.handles[:]
+        _LOGGER.debug('downloader has been set up (%d workers)',
+                      self.workers_count)
 
     def tear_down(self):
         """
         Terminates all components.
         """
+        _LOGGER.debug('tearing down the downloader')
         for cobj in self.multi.handles:
             if cobj.fp is not None:
                 cobj.fp.close()
@@ -137,6 +144,8 @@ class Downloader(object):
         self._receive_one()
         self.urls += urls
         self.outfiles += outfiles
+        _LOGGER.debug('append %d => %d',
+                      len(urls), len(self.urls))
         if post_request:
             self.push_request(len(urls))
 
@@ -153,7 +162,7 @@ class Downloader(object):
         """
         work_message['url'] = url
         if work_message['autoext']:
-            ext, fname = ext_decorator(self.magicf, work_message['output'])
+            fname = ext_decorator(self.magicf, work_message['output'])[1]
             work_message['output'] = fname
         if work_message['hash']:
             work_message['hash'] = hashfile(work_message['output'])
@@ -163,13 +172,14 @@ class Downloader(object):
                 work_message['status'] = 'error'
                 work_message['error'] = 'Empty file'
                 os.remove(work_message['output'])
+                _LOGGER.debug("%s empty file removed", work_message['output'])
             else:
                 work_message['status'] = status
-                logging.debug('Empty file: %s', work_message['output'])
+                _LOGGER.debug('Empty file: %s', work_message['output'])
         else:
             work_message['status'] = status
         self.results.append(work_message)
-        logging.info("[%s] downloaded from %s to %s",
+        _LOGGER.info("[%s] downloaded from %s to %s",
                      work_message['status'],
                      work_message['url'],
                      work_message['output'])
@@ -181,7 +191,7 @@ class Downloader(object):
         work_message['status'] = 'error'
         work_message['error'] = 'Error %d: %s' % (errno, errmsg)
         self.results.append(work_message)
-        logging.error("failed to download from %s to %s (%d): %s",
+        _LOGGER.error("failed to download from %s to %s (%d): %s",
                       work_message['url'],
                       work_message['output'],
                       errno, errmsg)
@@ -199,6 +209,8 @@ class Downloader(object):
         See if there's anything in the queue and process.
         """
         num_q, ok_list, err_list = self.multi.info_read()
+        _LOGGER.debug('read: num_q %d, ok %d, err %d',
+                      num_q, len(ok_list), len(err_list))
         for cobj in ok_list:
             self._cobj_done(cobj)
             self._file_downloaded(cobj.work_message,
@@ -216,10 +228,13 @@ class Downloader(object):
         while count > len(self.results):
             while 1:
                 ret, num_handles = self.multi.perform()
+                _LOGGER.debug('perform: %d, %d', ret, num_handles)
                 if ret != pycurl.E_CALL_MULTI_PERFORM:
                     break
             while num_handles:
                 num_q, ok_list, err_list = self.multi.info_read()
+                _LOGGER.debug('read: num_q %d, ok %d, err %d',
+                              num_q, len(ok_list), len(err_list))
                 for cobj in ok_list:
                     self._cobj_done(cobj)
                     self._file_downloaded(cobj.work_message,
@@ -233,6 +248,7 @@ class Downloader(object):
                     continue
                 while 1:
                     ret, num_handles = self.multi.perform()
+                    _LOGGER.debug('perform: %d, %d', ret, num_handles)
                     if ret != pycurl.E_CALL_MULTI_PERFORM:
                         break
 
@@ -250,6 +266,9 @@ class Downloader(object):
             Number of images to retreive. Default is to request all images
             in the list.
         """
+        _LOGGER.debug('push_request count %d, offset %d, urls %d, free %d',
+                      count, self.provider_offset,
+                      len(self.urls), len(self.freelist))
         while self.provider_offset < len(self.urls) and len(self.freelist) > 0:
             url = self.urls[self.provider_offset]
             filename = self.outfiles[self.provider_offset]
@@ -260,7 +279,7 @@ class Downloader(object):
                             'index': self.provider_offset}
             while True:
                 if self.auto_extension:
-                    filename, ext = put_ext_from_url(url, filename)
+                    filename = put_ext_from_url(url, filename)[0]
                     if os.path.isfile(filename):
                         work_message['output'] = filename
                         self._file_downloaded(work_message, url, 'existing')
@@ -269,6 +288,8 @@ class Downloader(object):
                     self._file_downloaded(work_message, url, 'existing')
                     break
                 # download the file
+                _LOGGER.debug('%s is enqueued for %s',
+                              url, work_message['output'])
                 cobj = self.freelist.pop()
                 cobj.fp = open(work_message['output'], "wb")
                 cobj.setopt(pycurl.URL, url)
@@ -278,9 +299,14 @@ class Downloader(object):
                 break
             self.provider_offset = self.provider_offset + 1
 
+        _LOGGER.debug('%d files in queue (%d total, %d downloaded',
+                      len(self.urls) - self.provider_offset,
+                      len(self.urls), self.provider_offset)
+
         # Run the internal curl state machine for the multi stack
         while 1:
             ret, num_handles = self.multi.perform()
+            _LOGGER.debug('perform: %d, %d', ret, num_handles)
             if ret != pycurl.E_CALL_MULTI_PERFORM:
                 break
 
@@ -319,7 +345,7 @@ def ext_decorator(magicf, fname):
     except (magic.MagicException, IndexError):
         pass
     if len(ext) == 0:
-        logging.debug('can not find a better extension')
+        _LOGGER.debug('can not find a better extension')
     return ext, fname
 
 def put_ext_from_url(furl, fname):
@@ -338,6 +364,8 @@ def put_ext_from_url(furl, fname):
             ext = ''
         else:
             fname = '%s%s' % (fname, ext)
+
+    _LOGGER.debug('guessed path is %s', fname)
     return fname, ext
 
 def download_files(urls, outfiles=None, compute_hash=True,
@@ -410,14 +438,22 @@ def download_files(urls, outfiles=None, compute_hash=True,
     return result
 
 if __name__ == '__main__':
+    parser = make_argument_parser()
+    parser.add_argument('input', type=str,
+                        help='The file to download')
+    parser.add_argument('output', type=str,
+                        help='The location')
+    args = parser.parse_args()
+
+    setup_logging(args, logger=_LOGGER)
     if len(sys.argv) < 2:
-        logging.error('Nothing to download')
+        _LOGGER.error('Nothing to download')
     else:
-        toprint = download_files(sys.argv[1:])
+        toprint = download_files(urls=args.input, outfiles=args.output)
         for rslt in toprint:
             if rslt['status'] == 'error':
-                logging.error('[%s] %s: %s',
+                _LOGGER.error('[%s] %s: %s',
                               rslt['status'], rslt['url'],
                               rslt['error'])
             else:
-                logging.info('[%s] %s', rslt['status'], rslt['url'])
+                _LOGGER.info('[%s] %s', rslt['status'], rslt['url'])

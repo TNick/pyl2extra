@@ -883,7 +883,7 @@ def main():
     args = parser.parse_args()
 
     # prepare _LOGGER
-    setup_logging(args)
+    setup_logging(args, logger=_LOGGER)
     _LOGGER.debug("_LOGGER set-up")
 
     # run based on request
