@@ -114,7 +114,8 @@ class Downloader(object):
                 else:
                     cobj.setopt(pycurl.TCP_KEEPALIVE, 0)
             except AttributeError:
-                pass
+                _LOGGER.debug('no keep alive support')
+
             cobj.setopt(pycurl.SSL_VERIFYPEER, 0)
             cobj.setopt(pycurl.SSL_VERIFYHOST, 0)
             #cobj.setopt(pycurl.SSL_VERIFYRESULT, 0)
@@ -141,13 +142,10 @@ class Downloader(object):
         Appends to the list of things to download.
         """
         assert len(urls) == len(outfiles)
-        self._receive_one()
         self.urls += urls
         self.outfiles += outfiles
         _LOGGER.debug('append %d => %d',
                       len(urls), len(self.urls))
-        if post_request:
-            self.push_request(len(urls))
 
     def get_all(self):
         """
@@ -155,6 +153,89 @@ class Downloader(object):
         """
         self.wait_for_data()
         return self.results
+
+    def wait_for_data(self, count=None):
+        """
+        Waits for some provider to deliver its data.
+        """
+        if count is None:
+            count = len(self.urls)
+        _LOGGER.debug('waiting for %d items', count)
+        num_processed = 0
+
+        while self.provider_offset < count:
+            # If there is an url to process and a free curl object, add to multi stack
+            while self.provider_offset < count and len(self.freelist) > 0:
+                url = self.urls[self.provider_offset]
+                filename = self.outfiles[self.provider_offset]
+                work_message = {'url': url,
+                                'output': filename,
+                                'hash': self.compute_hash,
+                                'autoext': self.auto_extension,
+                                'index': self.provider_offset}
+                self.provider_offset = self.provider_offset + 1
+
+                while True:
+                    if self.auto_extension:
+                        filename = put_ext_from_url(url, filename)[0]
+                        if os.path.isfile(filename):
+                            work_message['output'] = filename
+                            self._file_downloaded(work_message, url, 'existing')
+                            break
+                    elif os.path.isfile(filename):
+                        self._file_downloaded(work_message, url, 'existing')
+                        break
+                    # download the file
+                    _LOGGER.debug('%s is enqueued for %s',
+                                  url, work_message['output'])
+                    cobj = self.freelist.pop()
+                    cobj.fp = open(work_message['output'], "wb")
+                    cobj.setopt(pycurl.URL, url)
+                    cobj.setopt(pycurl.WRITEDATA, cobj.fp)
+                    cobj.work_message = work_message
+                    _LOGGER.debug('handle %s added to multi', str(cobj))
+                    self.multi.add_handle(cobj)
+                    break
+
+            # Run the internal curl state machine for the multi stack
+            while 1:
+                ret, num_handles = self.multi.perform()
+                _LOGGER.debug('perform: %d, %d', ret, num_handles)
+                if ret != pycurl.E_CALL_MULTI_PERFORM:
+                    break
+            # Check for curl objects which have terminated, and add them to the freelist
+            while 1:
+                num_q, ok_list, err_list = self.multi.info_read()
+                _LOGGER.debug('read: num_q %d, ok %d, err %d',
+                              num_q, len(ok_list), len(err_list))
+                for cobj in ok_list:
+                    self._cobj_done(cobj)
+                    self._file_downloaded(cobj.work_message,
+                                          cobj.getinfo(pycurl.EFFECTIVE_URL))
+                    self.freelist.append(cobj)
+
+                for cobj, errno, errmsg in err_list:
+                    self._cobj_done(cobj)
+                    self._file_failed(cobj.work_message, errno, errmsg)
+                    self.freelist.append(cobj)
+
+                num_processed = num_processed + len(ok_list) + len(err_list)
+                if num_q == 0:
+                    break
+
+            # Currently no more I/O is pending, could do something in the meantime
+            # (display a progress bar, etc.).
+            # We just call select() to sleep until some more data is available.
+            self.multi.select(1.0)
+
+    def _cobj_done(self, cobj):
+        """
+        Release a connection object.
+        """
+        cobj.fp.close()
+        cobj.fp = None
+        self.multi.remove_handle(cobj)
+        _LOGGER.debug('handle %s removed from multi', str(cobj))
 
     def _file_downloaded(self, work_message, url, status='ok'):
         """
@@ -195,121 +276,6 @@ class Downloader(object):
                       work_message['url'],
                       work_message['output'],
                       errno, errmsg)
-
-    def _cobj_done(self, cobj):
-        """Release a connection object."""
-        cobj.fp.close()
-        cobj.fp = None
-        self.multi.remove_handle(cobj)
-        # this assumes a single thread
-        self.freelist.append(cobj)
-
-    def _receive_one(self):
-        """
-        See if there's anything in the queue and process.
-        """
-        num_q, ok_list, err_list = self.multi.info_read()
-        _LOGGER.debug('read: num_q %d, ok %d, err %d',
-                      num_q, len(ok_list), len(err_list))
-        for cobj in ok_list:
-            self._cobj_done(cobj)
-            self._file_downloaded(cobj.work_message,
-                                  cobj.getinfo(pycurl.EFFECTIVE_URL))
-        for cobj, errno, errmsg in err_list:
-            self._cobj_done(cobj)
-            self._file_failed(cobj.work_message, errno, errmsg)
-
-    def wait_for_data(self, count=None):
-        """
-        Waits for some provider to deliver its data.
-        """
-        if count is None:
-            count = len(self.urls)
-        _LOGGER.debug('waiting for %d items', count)
-        while count > len(self.results):
-            while 1:
-                ret, num_handles = self.multi.perform()
-                _LOGGER.debug('perform: %d, %d', ret, num_handles)
-                if ret != pycurl.E_CALL_MULTI_PERFORM:
-                    break
-            while num_handles:
-                num_q, ok_list, err_list = self.multi.info_read()
-                _LOGGER.debug('read: num_q %d, ok %d, err %d',
-                              num_q, len(ok_list), len(err_list))
-                for cobj in ok_list:
-                    self._cobj_done(cobj)
-                    self._file_downloaded(cobj.work_message,
-                                          cobj.getinfo(pycurl.EFFECTIVE_URL))
-                for cobj, errno, errmsg in err_list:
-                    self._cobj_done(cobj)
-                    self._file_failed(cobj.work_message, errno, errmsg)
-                self.push_request()
-                ret = self.multi.select(1.0)
-                if ret == -1:
-                    continue
-                while 1:
-                    ret, num_handles = self.multi.perform()
-                    _LOGGER.debug('perform: %d, %d', ret, num_handles)
-                    if ret != pycurl.E_CALL_MULTI_PERFORM:
-                        break
-
-    def push_request(self, count=None):
-        """
-        Adds a request for a specified number of images.
-
-        Sends a request for a specified number of images down a zeromq "PUSH"
-        connection to be processed by listening workers, in a round robin
-        load balanced fashion.
-
-        Parameters
-        ----------
-        count : int, optional
-            Number of images to retreive. Default is to request all images
-            in the list.
-        """
-        _LOGGER.debug('push_request count %s, offset %d, urls %d, free %d',
-                      str(count), self.provider_offset,
-                      len(self.urls), len(self.freelist))
-        while self.provider_offset < len(self.urls) and len(self.freelist) > 0:
-            url = self.urls[self.provider_offset]
-            filename = self.outfiles[self.provider_offset]
-            work_message = {'url': url,
-                            'output': filename,
-                            'hash': self.compute_hash,
-                            'autoext': self.auto_extension,
-                            'index': self.provider_offset}
-            while True:
-                if self.auto_extension:
-                    filename = put_ext_from_url(url, filename)[0]
-                    if os.path.isfile(filename):
-                        work_message['output'] = filename
-                        self._file_downloaded(work_message, url, 'existing')
-                        break
-                elif os.path.isfile(filename):
-                    self._file_downloaded(work_message, url, 'existing')
-                    break
-                # download the file
-                _LOGGER.debug('%s is enqueued for %s',
-                              url, work_message['output'])
-                cobj = self.freelist.pop()
-                cobj.fp = open(work_message['output'], "wb")
-                cobj.setopt(pycurl.URL, url)
-                cobj.setopt(pycurl.WRITEDATA, cobj.fp)
-                cobj.work_message = work_message
-                self.multi.add_handle(cobj)
-                break
-            self.provider_offset = self.provider_offset + 1
-
-        _LOGGER.debug('%d files in queue (%d total, %d downloaded',
-                      len(self.urls) - self.provider_offset,
-                      len(self.urls), self.provider_offset)
-
-        # Run the internal curl state machine for the multi stack
-        while 1:
-            ret, num_handles = self.multi.perform()
-            _LOGGER.debug('perform: %d, %d', ret, num_handles)
-            if ret != pycurl.E_CALL_MULTI_PERFORM:
-                break
 
 def hashfile(path, blocksize=65536):
     """
@@ -439,7 +405,7 @@ def download_files(urls, outfiles=None, compute_hash=True,
     return result
 
 if __name__ == '__main__':
-    parser = make_argument_parser()
+    parser = make_argument_parser(description="download files")
     parser.add_argument('input', type=str,
                         help='The file to download')
     parser.add_argument('output', type=str,

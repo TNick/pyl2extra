@@ -601,8 +601,7 @@ def cmd_download_synset(args):
                           post_request=True)
         tot_files = tot_files + len(in_links)
 
-    downloader.wait_for_data()
-    results = downloader.results
+    results = downloader.get_all()
     downloader.tear_down()
     del downloader
 
