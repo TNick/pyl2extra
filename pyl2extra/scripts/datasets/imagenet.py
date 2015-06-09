@@ -576,7 +576,7 @@ def cmd_download_synset(args):
 
     downloader = Downloader(urls=[],
                             outfiles=[],
-                            count=10,
+                            count=64,
                             compute_hash=True,
                             auto_extension=True,
                             wait_timeout=-1)

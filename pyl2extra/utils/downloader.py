@@ -106,6 +106,11 @@ class Downloader(object):
             cobj.setopt(pycurl.TIMEOUT, self.wait_timeout)
             cobj.setopt(pycurl.NOSIGNAL, 1)
             cobj.setopt(pycurl.AUTOREFERER, 1)
+
+            # After 15.000 files and 99 open files the process freezes
+            # Try to mitigate this.
+            cobj.setopt(pycurl.FORBID_REUSE, 1)
+
             try:
                 if self.keep_alive:
                     cobj.setopt(pycurl.TCP_KEEPALIVE, 1)
@@ -226,7 +231,7 @@ class Downloader(object):
             # Currently no more I/O is pending, could do something in the meantime
             # (display a progress bar, etc.).
             # We just call select() to sleep until some more data is available.
-            self.multi.select(1.0)
+            self.multi.select(0.2)
 
     def _cobj_done(self, cobj):
         """
