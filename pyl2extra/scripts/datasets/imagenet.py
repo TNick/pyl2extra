@@ -704,6 +704,22 @@ def cmd_outliers(args):
                                                       args.recursive)
     tot_files = len(duplicates) + len(good_files)
 
+    while args.delete:
+        print "\nWARNING! ", len(duplicates) ," files are about to be deleted."
+        inp = raw_input("Are you sure? [y/N]").lower().strip()
+        if inp == '' or inp == 'n' or inp == 'no':
+            return
+        elif inp == 'y' or inp == 'yes' or inp == 'ok':
+            for dupl in duplicates:
+                _LOGGER.info(dupl)
+                os.remove(dupl)
+            _LOGGER.info('%d files inspected in %d synsets, '
+                         '%d duplicates deleted.',
+                         tot_files, len(synsets), len(duplicates))
+            return
+        else:
+            print "Please answer with y for yes or n for now"
+
     for dupl in duplicates:
         _LOGGER.info(dupl)
 
@@ -738,6 +754,11 @@ def cmd_good_files(args):
                 sset = match.group(1)
                 description = cached_descr[sset]
                 spamwriter.writerow([goodf, sset, description])
+
+    tot_files = len(duplicates) + len(good_files)
+    _LOGGER.info('%d files inspected in %d synsets, '
+                 '%d duplicates.',
+                 tot_files, len(synsets), len(duplicates))
 
 # ----------------------------------------------------------------------------
 
@@ -850,6 +871,9 @@ def make_arg_parser():
                           default='.')
     parser_a.add_argument('--recursive', '-R', type=bool,
                           help='For directories - scan subfolders',
+                          default=False)
+    parser_a.add_argument('--delete', '-D', type=bool,
+                          help='Delete outliers',
                           default=False)
     parser_a.set_defaults(func=cmd_outliers)
 
