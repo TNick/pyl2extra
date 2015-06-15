@@ -199,7 +199,7 @@ class InlineGen(Generator):
                                 (1, trg.shape[0], trg.shape[1], trg.shape[2]))
             if idx_features > -1:
                 trg = self.dataset.process(trg)
-                result[idx_features][i, :, :, :] = trg
+                result[idx_features][i, :, :, :] = trg[0, :, :, 0:3]
             if idx_targets > -1:
                 result[idx_targets][i][0] = categ
 
