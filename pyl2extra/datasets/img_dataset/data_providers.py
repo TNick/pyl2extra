@@ -25,8 +25,18 @@ class Provider(object):
     If implementations below are not suited for your needs implement a
     subclass of this class. The methods to be implemented are ``next()``
     and ``category()``.
+
+    Parameters
+    ----------
+    categories : list, optional
+        A list of categories; if empty the provider will use `get_categs()`.
     """
-    def __init__(self):
+    def __init__(self, categs=None):
+        if not categs is None:
+            if isinstance(categs, Provider):
+                self.categs = categs.categories()
+            else:
+                self.categs = categs
         super(Provider, self).__init__()
 
     def next(self):
@@ -153,7 +163,7 @@ class Provider(object):
         """
         if isinstance(image, basestring):
             if internal:
-                image, categ = self.read(image)
+                image = self.read(image)[0]
             else:
                 image = Image.open(image)
                 image = Provider.normalize_image(image)
@@ -166,7 +176,7 @@ class Provider(object):
         # image is an array
         if image.shape[2] == 3:
             app = numpy.ones(shape=(image.shape[0], image.shape[1], 1),
-                             dtype=image.stype) * 255
+                             dtype=image.dtype) * 255
             numpy.append(image, app, axis=2)
         assert numpy.all(image >= 0.0) and numpy.all(image <= 1.0)
         return image
@@ -223,6 +233,7 @@ class Provider(object):
             ctg = self.category(key)
             if not ctg in self.categs:
                 self.categs.append(ctg)
+
         return self.categs
 
     def categ2int(self, categ):
@@ -336,9 +347,11 @@ class DictProvider(Provider):
     data : dict of strings
         A dictionary with the keys being file paths and values being
         the category.
+    categs : list, optional
+        A list of categories; if empty the provider will use `get_categs()`.
     """
-    def __init__(self, data):
-        super(DictProvider, self).__init__()
+    def __init__(self, data, categs=None):
+        super(DictProvider, self).__init__(categs)
 
         #: The dictionary that maps paths to classes.
         self.data = data
@@ -431,6 +444,8 @@ class CsvProvider(DictProvider):
         not include the header row that is managed separatelly.
     skip_last : int, optional
         Skip this many rows at the end of the file.
+    categs : list, optional
+        A list of categories; if empty the provider will use `get_categs()`.
 
     Notes
     -----
@@ -449,7 +464,7 @@ class CsvProvider(DictProvider):
     """
     def __init__(self, csv_path, col_path=1, col_class=0, has_header=False,
                  delimiter=',', quotechar='"',
-                 skip_first=0, skip_last=0):
+                 skip_first=0, skip_last=0, categs=None):
 
         assert skip_first >= 0
         assert skip_last >= 0
@@ -514,7 +529,7 @@ class CsvProvider(DictProvider):
                     data.pop(f2rem, None)
 
         # everything else is provided by DictProvider
-        super(CsvProvider, self).__init__(data)
+        super(CsvProvider, self).__init__(data, categs)
 
 
 class RandomProvider(DictProvider):
