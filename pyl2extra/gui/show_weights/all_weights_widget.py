@@ -193,11 +193,12 @@ class AllWeightsWidget(QtGui.QMainWindow, ActionsMixin,
             QtGui.QMessageBox.warning(self, "Error",
                                       "No image to save")
             return
-        path = os.path.join(self.settings.value('aww/save_path'),
+        path = os.path.join(self.settings.value('aww/save_path', ''),
                             'Untitled.png')
-        fname = QtGui.QFileDialog.getSaveFileName(self,
-                                                  'Select location',
-                                                  path, '*.*')
+        fname = QtGui.QFileDialog.getSaveFileName(parent=self,
+                                                  caption='Select location',
+                                                  directory=path,
+                                                  filter='*.*')
         if fname is None or len(fname) == 0:
             return
         path, name = os.path.split(fname)
@@ -377,10 +378,35 @@ def best_square_shape(number):
                 best = cand
     return (best[0] * sign, best[1])
 
-def best_shape(number):
+ALLOW_COLORS = True
+def best_shape(number, color_candidate=False):
     """
     Compute best arrangement.
+    
+    Parameters
+    ----------
+    number : int
+        The number of items to arrange
+    color_candidate : bool
+        Should this be considered for colorized special case?
+        
+    Returns
+    -------
+    first : int
+        The number of rows.
+    second : int
+        The number of columns.
+        
+    Notes
+    -----
+    If ``color_candidate`` is ``Treu`` and 
+    ``ALLOW_COLORS`` is ``True``  and ``number`` is 3 a special value
+    is returned - ``(None, 1)`` that means the implementation should 
+    onsider the three elements Red, Green and Blue.
     """
+    if color_candidate and ALLOW_COLORS and number == 3:
+        return (None, 1)
+
     number = int(number)
     if number < 0:
         sign = -1
@@ -427,7 +453,7 @@ def generate(separator, point_size, order, value, back_value=None):
     shapes = value.shape[:-2]
 
     # compute arrangements for these axes
-    layouts = [best_shape(shp) for shp in shapes]
+    layouts = [best_shape(shp, i == len(shapes)-1) for i, shp in enumerate(shapes)]
 
     # compute the size of each rectangle for each axis
     lay_rev = [itm for itm in reversed(layouts)]
@@ -436,8 +462,9 @@ def generate(separator, point_size, order, value, back_value=None):
     dims = [(width_prev, height_prev, separator)]
     for i in range(len(shapes)):
         cols, rows = lay_rev[i]
-        width_prev = cols * width_prev + (cols + 1) * separator
-        height_prev = rows * height_prev + (rows + 1) * separator
+        if cols != None:
+            width_prev = cols * width_prev + (cols + 1) * separator
+            height_prev = rows * height_prev + (rows + 1) * separator
         dims.append((width_prev, height_prev, separator))
     dims = [itm for itm in reversed(dims)]
 
@@ -479,6 +506,30 @@ def generate(separator, point_size, order, value, back_value=None):
             bkg_color[3] = bkg_color[3] + UPDATE_ALPHA
 
             cols, rows = layouts[level]
+            if cols is None:
+                if rows == 1:
+                    level = level + 1
+                    width, height, separator = dims[level]
+                    
+                    psx = deltax
+                    psy_orig = deltay
+        
+                    for pszx in range(point_size):
+                        psy = psy_orig
+                        for pszy in range(point_size):
+                            psx2 = psx + width
+                            psy2 = psy + height
+                            img[psy:psy2:point_size, psx:psx2:point_size, 0] = comp[0]
+                            img[psy:psy2:point_size, psx:psx2:point_size, 1] = comp[1]
+                            img[psy:psy2:point_size, psx:psx2:point_size, 2] = comp[2]
+                            img[psy:psy2:point_size, psx:psx2:point_size, 3] = 255
+                            psy = psy + 1
+                        psx = psx + 1
+                    
+                else:
+                    raise RuntimeError('Unknown special case %d' % rows)
+                return
+                
             width, height, separator = dims[level+1]
             row = 0
             col = 0

@@ -1,5 +1,5 @@
 """
-Tests for paramstore..
+Tests for paramstore.
 """
 __authors__ = "Nicu Tofan"
 __copyright__ = "Copyright 2015, Nicu Tofan"
