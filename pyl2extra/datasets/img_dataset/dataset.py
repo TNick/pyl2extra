@@ -119,7 +119,7 @@ class ImgDataset(Dataset):
         for adj in self.adjusters:
             self.transf_count = self.transf_count * adj.transf_count()
         self.transf_count = int(self.transf_count)
-        
+
         #: total number of unique examples
         self.totlen = len(self.data_provider) * self.transf_count
         empty = self.totlen == 0
@@ -142,8 +142,8 @@ class ImgDataset(Dataset):
             self._iter_num_batches = self._iter_num_batches  + 1
 
         #: default random number generator
-        self.rng = make_np_rng(rng_or_seed=rng, 
-                               default_seed=[2017, 5, 17], 
+        self.rng = make_np_rng(rng_or_seed=rng,
+                               default_seed=[2017, 5, 17],
                                which_method=["random_integers"])
 
         #: default data specs
@@ -275,14 +275,14 @@ class ImgDataset(Dataset):
         [mode, batch_size, num_batches, rng, data_specs] = self._init_iterator(
             mode, batch_size, num_batches, rng, data_specs)
 
-        # self._init_iterator will return the default number of batches that 
+        # self._init_iterator will return the default number of batches that
         # matches the default batch size; we need a number that reflects batch_size
         # argument.
         totrawex = len(self.data_provider)
         num_batches = totrawex / batch_size
         #if totrawex > num_batches * batch_size:
         #    num_batches = num_batches + 1
-        
+
         return FiniteDatasetIterator(self,
                                      mode(num_batches * batch_size,
                                           batch_size,
@@ -404,22 +404,22 @@ class ImgDataset(Dataset):
     def process_labels(self, size):
         """
         Gets the textual description for the transformations.
-        
-        This method can be used to describe what transformations a 
-        particular image suffered when subjected to Adjuster.accumulate() 
+
+        This method can be used to describe what transformations a
+        particular image suffered when subjected to Adjuster.accumulate()
         chain (calling `process(batch, accumulate=True)`).
-        
+
         Parameters
         ----------
         size : int
             The length of the batch that was passed to `process()`.
-            
+
         Returns
         -------
         result : list
             A list of items, each one representing an image. An imtem is
             represented as a list of dictionaries, one for easch adjuster.
-            Inside each dictionary a key-value pair is present for each 
+            Inside each dictionary a key-value pair is present for each
             parameter.
         """
         result = [[] * size]
@@ -442,6 +442,123 @@ class ImgDataset(Dataset):
             os.mkdir(path)
         return path
 
+    def get_topo_batch_axis(self):
+        """
+        The index of the axis of the batches.
+
+        This is the same method as ``DenseDesignMatrix.get_topo_batch_axis()``
+        in ``pylearn2.datasets.dense_design_matrix``.
+
+        Returns
+        -------
+        axis : int
+            The axis of a topological view of this dataset that corresponds
+            to indexing over different examples.
+        """
+        axis = self.axes.index('b')
+        return axis
+
+    def get_topological_view(self, mat=None):
+        """
+        Convert an array (or the entire dataset) to a topological view.
+
+        This is the same method as ``DenseDesignMatrix.get_topological_view()``
+        in ``pylearn2.datasets.dense_design_matrix``.
+
+        Parameters
+        ----------
+        mat : ndarray, 2-dimensional, optional
+            An array containing a design matrix representation of training
+            examples. If unspecified, the entire dataset (`self.X`) is used
+            instead.
+            This parameter is not named X because X is generally used to
+            refer to the design matrix for the current problem. In this
+            case we want to make it clear that `mat` need not be the design
+            matrix defining the dataset.
+        """
+        if mat is None:
+            mat = self.to_dense_design_matrix().X
+        assert mat.shape[1] == self.shape[0] * self.shape[1] * 3
+        return numpy.reshape(mat, mat.shape[0],
+                             self.shape[0], self.shape[1], 3)
+
+    def get_design_matrix(self, topo=None):
+        """
+        Return topo (a batch of examples in topology preserving format),
+        in design matrix format.
+
+        This is the same method as ``DenseDesignMatrix.get_design_matrix()``
+        in ``pylearn2.datasets.dense_design_matrix``.
+
+        Parameters
+        ----------
+        topo : ndarray, optional
+            An array containing a topological representation of training
+            examples. If unspecified, the entire dataset (`self.X`) is used
+            instead.
+        Returns
+        -------
+        WRITEME
+        """
+        if topo is None:
+            topo = self.to_dense_design_matrix().X
+        return numpy.reshape(topo, topo.shape[0],
+                             topo.shape[1] * topo.shape[2] * topo.shape[3])
+
+    def get_targets(self):
+        """
+        Get the classes for all examples.
+        """
+        return self._to_dense_design_matrix()[1]
+
+    def _to_dense_design_matrix(self, num_examples=None, ne_raw=True):
+        """
+        Generates a DenseDesignMatrix from examples in this dataset.
+        """
+        if num_examples is None:
+            num_examples = self.totlen
+            ne_raw = False
+        elif ne_raw == True:
+            num_examples = num_examples * self.transf_count
+        # num_examples now represents the number f examples in final dataset
+
+        result_x = None
+        result_y = None
+        ofs = 0
+        for fpath in self.data_provider:
+            # generate all combinations from this image
+            batch = self.data_provider.read_image(image=fpath,
+                                                  internal=True)
+            batch = batch.reshape(1, batch.shape[0],
+                                  batch.shape[1], batch.shape[2])
+            batch = self.process(batch, accumulate=True)
+            clss = self.data_provider.category(fpath)
+            classes = [clss for i in range(batch.shape[0])]
+
+            # save it into our array
+            if result_x is None:
+                shape = (num_examples, self.shape[1], self.shape[0], 3)
+                result_x = numpy.empty(shape=shape, dtype=batch.dtype)
+                result_y = []
+            to_copy = min(num_examples, batch.shape[0])
+            result_x[ofs:ofs+to_copy, :, :, :] = batch[0:to_copy, :, :, :]
+            result_y += classes[0:to_copy]
+
+            # update counters
+            ofs = ofs + to_copy
+            num_examples = num_examples - to_copy
+            if num_examples <= 0:
+                break
+
+        result_y = numpy.array(result_y).reshape(len(result_y), 1)
+        result = DenseDesignMatrix(topo_view=result_x,
+                                   y=result_y,
+                                   axes=('b', 0, 1, 'c'),
+                                   preprocessor=None,
+                                   fit_preprocessor=False,
+                                   X_labels=None, y_labels=None)
+        return result, result_y
+
     def to_dense_design_matrix(self, num_examples=None, ne_raw=True):
         """
         Generates a DenseDesignMatrix from examples in this dataset.
@@ -449,15 +566,15 @@ class ImgDataset(Dataset):
         Parameters
         ----------
         num_examples : int, optional
-            Number of examples to place in the new dataset. The meaning of 
+            Number of examples to place in the new dataset. The meaning of
             this parameter depends on ``ne_raw``. If None all examples are
-            going to be processed and saved. Note that this may be a 
-            large number and that the whole resulted dataset needs 
+            going to be processed and saved. Note that this may be a
+            large number and that the whole resulted dataset needs
             to fit in memory.
         ne_raw : bool, optional
             How to interpret ``num_examples``. if True, ``num_examples``
             represents the number of raw examples to process; final number of
-            examples in the DenseDesignMatrix instance will be 
+            examples in the DenseDesignMatrix instance will be
             ``num_examples`` times number of processing steps. If False,
             ``num_examples`` represents the desired number of examples
             in output dataset.
@@ -468,48 +585,5 @@ class ImgDataset(Dataset):
             A topology-preserving dense dataset. The number of channels is
             always 3.
         """
-        
-        if num_examples is None:
-            num_examples = self.totlen
-            ne_raw = False
-        elif ne_raw == True:
-            num_examples = num_examples * self.transf_count
-        # num_examples now represents the number f examples in final dataset
-        
-        result_x = None
-        result_y = None
-        ofs = 0
-        for fpath in self.data_provider:
-            # generate all combinations from this image
-            batch = self.data_provider.read_image(image=fpath,
-                                                  internal=True)
-            batch = batch.reshape(1, batch.shape[0], 
-                                  batch.shape[1], batch.shape[2])
-            batch = self.process(batch, accumulate=True)
-            clss = self.data_provider.category(fpath)
-            classes = [clss for i in range(batch.shape[0])]
-            
-            # save it into our array
-            if result_x is None:
-                shape = (num_examples, self.shape[1], self.shape[0], 3)
-                result_x = numpy.empty(shape=shape, dtype=batch.dtype)
-                result_y = []
-            to_copy = min(num_examples, batch.shape[0])
-            result_x[ofs:ofs+to_copy, :, :, :] = batch[0:to_copy, :, :, :]
-            result_y += classes[0:to_copy]
-            
-            # update counters
-            ofs = ofs + to_copy
-            num_examples = num_examples - to_copy
-            if num_examples <= 0:
-                break
-        
-        result_y = numpy.array(result_y).reshape(len(result_y), 1)
-        result = DenseDesignMatrix(topo_view=result_x,
-                                   y=result_y,
-                                   axes=('b', 0, 1, 'c'),
-                                   preprocessor=None,
-                                   fit_preprocessor=False,
-                                   X_labels=None, y_labels=None)
-        return result
+        return self.to_dense_design_matrix(num_examples, ne_raw)[0]
 
