@@ -419,7 +419,7 @@ class CsvProvider(DictProvider):
     ----------
     csv_path : str
         The path where the csv file can be found.
-     : bool
+    has_header : bool
         Skip first row if true. ``has_header`` must be True if ``col_path``
         or ``col_class`` are strings.
     col_path : str or int, optional
