@@ -232,6 +232,7 @@ class Provider(object):
         for key in self:
             ctg = self.category(key)
             if not ctg in self.categs:
+                logging.warning('category %d: %s', len(self.categs), str(ctg))
                 self.categs.append(ctg)
 
         return self.categs

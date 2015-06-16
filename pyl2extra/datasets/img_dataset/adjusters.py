@@ -769,7 +769,7 @@ class RotationAdj(Adjuster):
                        output=img, order=self.order,
                        mode='constant', cval=0.0, prefilter=True)
         batch = (batch - batch.min()) / (batch.max() - batch.min())
-        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
+        #assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         return batch
 
     @functools.wraps(Adjuster.process)
@@ -1005,7 +1005,7 @@ class ScalePatchAdj(Adjuster):
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
-        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
+        #assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("ScalePatchAdj expects the input to have "
                                  "three or four channels (red, "
@@ -1035,7 +1035,7 @@ class ScalePatchAdj(Adjuster):
                               result, placement, factor, i)
 
         result = (result - result.min()) / (result.max() - result.min())
-        assert numpy.all(result >= 0.0) and numpy.all(result <= 1.0)
+        #assert numpy.all(result >= 0.0) and numpy.all(result <= 1.0)
         return result
 
     @functools.wraps(Adjuster.process)
@@ -1257,7 +1257,7 @@ class GcaAdj(Adjuster):
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
-        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
+        #assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("GcaAdj expects the input to have "
                                  "three or four channels (red, "
