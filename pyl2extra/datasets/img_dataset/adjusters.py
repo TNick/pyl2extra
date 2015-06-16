@@ -744,7 +744,7 @@ class RotationAdj(Adjuster):
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
-        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
+        #assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("RotationAdj expects the input to have "
                                  "three or four channels (red, "
