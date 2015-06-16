@@ -227,7 +227,7 @@ class AsyncMixin(object):
     """
     Functionality that is common to threads and processes.
     """
-    def __init__(self):
+    def __init__(self, cache_refill_count=64, keep_baskets=0):
         #: list of cached batches; each list entry is a basket
         self.baskets = []
         #: number of cached images (in all baskets)
@@ -235,7 +235,7 @@ class AsyncMixin(object):
         #: if the cache has fewer than this number of images request refill
         self.cache_refill_treshold = 5256
         #: number of images to retreive by each thread
-        self.cache_refill_count = 128
+        self.cache_refill_count = cache_refill_count
         #: on termination counts the workers that exited
         self.finish = 0
         #: one time trigger ofr the threads to exit
@@ -244,7 +244,7 @@ class AsyncMixin(object):
         self.workers_count = 0
 
         #: number of baskets to keep arraound if we don't have enough data
-        self.keep_baskets = 128
+        self.keep_baskets = keep_baskets
         #: the list of baskets kept around
         self.baskets_backup = []
         #: number of unique examples
@@ -276,7 +276,7 @@ class AsyncMixin(object):
             # copy the things in place
             to_copy = min(count, len(basket))
             if idx_features > -1:
-                btc = basket.batch[0:to_copy, :, :, :]
+                btc = basket.batch[0:to_copy, :, :, 0:3]
                 result[idx_features][offset:offset+to_copy, :, :, :] = btc
             if idx_targets > -1:
                 btc = basket.classes[0:to_copy]
@@ -311,7 +311,7 @@ class AsyncMixin(object):
         After the baskets are used they are normally discarded. If we're
         unable to provide examples fast enough the network will block
         waiting (sometimes for tens of seconds). To alleviate that, we keep
-        arround the old examples and we serve them when there anre no
+        arround the old examples and we serve them when there are no
         new baskets.
         """
         if self.keep_baskets == 0:
@@ -911,7 +911,7 @@ class ProcessGen(Generator, AsyncMixin):
                     baskets.append(basket)
                 else:
                     logging.error("Empty basket received")
-                assert self.outstanding_requests >= 0
+                #assert self.outstanding_requests >= 0
             except zmq.ZMQError as exc:
                 if exc.errno == zmq.EAGAIN:
                     b_done = True
