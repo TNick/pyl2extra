@@ -745,6 +745,7 @@ class RotationAdj(Adjuster):
     @functools.wraps(Adjuster.process)
     def process(self, batch):
         #assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
+        assert numpy.all(numpy.isfinite(batch))
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("RotationAdj expects the input to have "
                                  "three or four channels (red, "
@@ -768,8 +769,13 @@ class RotationAdj(Adjuster):
                 rotate(img, angle, axes=(0, 1), reshape=False,
                        output=img, order=self.order,
                        mode='constant', cval=0.0, prefilter=True)
-        batch = (batch - batch.min()) / (batch.max() - batch.min())
-        #assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
+        span = batch.max() - batch.min()
+        if span <= 1e-6:
+            batch = batch - batch.min()
+        else:
+            batch = (batch - batch.min()) / span
+        assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
+        #assert numpy.all(numpy.isfinite(batch))
         return batch
 
     @functools.wraps(Adjuster.process)
@@ -1005,6 +1011,7 @@ class ScalePatchAdj(Adjuster):
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
+        assert numpy.all(numpy.isfinite(batch))
         #assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("ScalePatchAdj expects the input to have "
@@ -1036,6 +1043,7 @@ class ScalePatchAdj(Adjuster):
 
         result = (result - result.min()) / (result.max() - result.min())
         #assert numpy.all(result >= 0.0) and numpy.all(result <= 1.0)
+        assert numpy.all(numpy.isfinite(batch))
         return result
 
     @functools.wraps(Adjuster.process)
@@ -1257,6 +1265,7 @@ class GcaAdj(Adjuster):
 
     @functools.wraps(Adjuster.process)
     def process(self, batch):
+        assert numpy.all(numpy.isfinite(batch))
         #assert numpy.all(batch >= 0.0) and numpy.all(batch <= 1.0)
         if batch.shape[3] != 3 and batch.shape[3] != 4:
             raise AssertionError("GcaAdj expects the input to have "
