@@ -1,6 +1,48 @@
 """
 Dataset for images and related functionality.
 
+This module does not have dependencies inside pyl2extra package, so you
+can just copy-paste it inside your source tree.
+
+To use this dataset prepare a .csv file with targets (integers or real numbers)
+on first column and file paths on the second column:
+
+..code:
+
+    0,file1.png
+    1,file2.png
+
+Image file paths are relative to current directory (``os.getcwd()``). The
+images need not be square and can be in any format recognized by the
+``Image`` module. Internally, the images are converted to RGB and are made
+square for you.
+
+Use it in a .yaml file like so:
+
+..code:
+
+    dataset: &trndataset !obj:pyl2extra.datasets.images.Images {
+        source: 'train.csv',
+        image_size: 128
+    }
+
+The ``image_size`` can be skipped, in which case the size of the images is
+derived from first image that is provided.
+
+By default the class assumes a classification problem (targets are integers).
+If you need to uset it in a regression problem create it like so:
+
+..code:
+
+    dataset: &trndataset !obj:pyl2extra.datasets.images.Images {
+        source: 'train.csv',
+        image_size: 128,
+        regression: True
+    }
+
+As the dataset simply wraps the ``DenseDesignMatrix``, parameters like
+``rng`` (random number generator), ``preprocessor`` and ``fit_preprocessor``
+can be used and will be passed to ``DenseDesignMatrix`` superclass.
 """
 __authors__ = "Nicu Tofan"
 __copyright__ = "Copyright 2015, Nicu Tofan"
