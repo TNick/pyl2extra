@@ -660,6 +660,9 @@ def segregate_files(path, recursive=False):
             duplicates_hash[hval] = (fname, file_path)
             try:
                 image = Image.open(file_path)
+                colors = [i for i in imgg.histogram() if i > 0]
+                if len(colors) <= 2:
+                    duplicates.append(file_path)
                 del image
             except IOError:
                 duplicates.append(file_path)
