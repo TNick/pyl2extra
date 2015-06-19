@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Clone la layer's characteristics as weights and biases.
+Clone layer's characteristics as weights and biases.
 """
 __authors__ = "Nicu Tofan"
 __copyright__ = "Copyright 2015, Nicu Tofan"
@@ -10,9 +10,9 @@ __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
 
-class Stat(object):
+class Clone(object):
     """
-    Information about a file.
+    TODO: Implement
     """
     def __init__(self, model):
         self.model = model
