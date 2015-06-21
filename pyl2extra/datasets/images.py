@@ -146,7 +146,7 @@ class Images(DenseDesignMatrix):
         # we choose to have number of examples on first axis ('b'),
         # then rows and columns of the image, then the channels
         # always 3 in our case
-        axes = ('b', 0, 1, 'c')
+        self.axes = ('b', 0, 1, 'c')
         if image_size is None:
             dense_x = None
         else:
@@ -197,12 +197,17 @@ class Images(DenseDesignMatrix):
                 dense_y = numpy.empty(shape=(len(ind), 1),
                                       dtype=theano.config.floatX)
                 for i, ctg in enumerate(categories):
-                    dense_y[i, 0] = float(ctg)
+                    dense_y[i] = float(ctg)
             else:
                 # in classification we expect integers
                 dense_y = numpy.empty(shape=(len(ind), 1), dtype=int)
                 for i, ctg in enumerate(categories):
                     dense_y[i, 0] = int(ctg)
+#                hot = numpy.zeros((dense_y.shape[0], 8),
+#                                  dtype=theano.config.floatX)
+#                for i in xrange(dense_y.shape[0]):
+#                    hot[i, dense_y[i]] = 1.
+#                dense_y = hot
         else:
             dense_y = None
 
@@ -212,10 +217,14 @@ class Images(DenseDesignMatrix):
         # everything else is handled by the DenseDesignMatrix superclass
         super(Images, self).__init__(topo_view=dense_x,
                                      y=dense_y,
-                                     axes=axes,
+                                     axes=self.axes,
                                      preprocessor=preprocessor,
                                      fit_preprocessor=fit_preprocessor,
                                      X_labels=None, y_labels=None)
+
+        #tv = self.get_topological_view()
+        #self.set_topological_view(tv, axes=self.view_converter.axes)
+        #self.set_topological_view(dense_x, axes=self.view_converter.axes)
 
 def _load_csv(csv_path):
     """
