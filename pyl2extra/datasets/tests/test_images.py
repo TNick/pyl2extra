@@ -29,6 +29,11 @@ from pylearn2.costs.cost import MethodCost
 from pylearn2.models.mlp import Softmax
 from pylearn2.space import Conv2DSpace
 from pylearn2.models.mlp import MLP, ConvRectifiedLinear
+from pylearn2.models.mlp import RectifiedLinear
+from pylearn2.models.mlp import LinearGaussian
+from pylearn2.models.mlp import mean_of_targets
+from pylearn2.models.mlp import beta_from_targets
+from pylearn2.training_algorithms.bgd import BGD
 
 from pyl2extra.datasets.images import Images
 from pyl2extra.testing import images
@@ -229,8 +234,72 @@ class TestClassification(unittest.TestCase):
         self.assertGreater(self.train_obj.training_seconds.eval(), 0)
 
 
+class TestRegression(unittest.TestCase):
+    """
+    Tests for the dataset.
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+
+        self.image_size = 64
+        self.tmp_dir = tempfile.mkdtemp()
+        self.images = images.create(self.tmp_dir)
+        self.csv_file_fc, self.csv_file_f = create_csvs(self.tmp_dir,
+                                                        self.images)
+        self.dataset = Images(source=self.csv_file_fc,
+                              image_size=self.image_size,
+                              classes=None)
+        layer_0 = RectifiedLinear(layer_name='h0',
+                                  dim=1200,
+                                  irange=.05,
+                                  max_col_norm=1.9365)
+        layer_1 = RectifiedLinear(layer_name='h1',
+                                  dim=1200,
+                                  irange=.05,
+                                  max_col_norm=1.9365)
+        layer_2 = LinearGaussian(init_bias=mean_of_targets(self.dataset),
+                                 init_beta=beta_from_targets(self.dataset),
+                                 min_beta=1.,
+                                 max_beta=100.,
+                                 beta_lr_scale=1.,
+                                 dim=1,
+                                 layer_name='y',
+                                 irange=.005)
+        model = MLP(layers=[layer_0, layer_1, layer_2],
+                    nvis=self.image_size*self.image_size*3)
+        self.algorithm = BGD(line_search_mode='exhaustive',
+                             batch_size=1024,
+                             conjugate=1,
+                             reset_conjugate=0,
+                             reset_alpha=0,
+                             updates_per_batch=10,
+                             monitoring_dataset={'train': self.dataset},
+                             termination_criterion=EpochCounter(max_epochs=2))
+        self.train_obj = Train(dataset=self.dataset,
+                               model=model,
+                               algorithm=self.algorithm,
+                               save_path=None,
+                               save_freq=0,
+                               extensions=[])
+
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+        del self.tmp_dir
+
+    def test_file(self):
+        """
+        Loading the parameters for small network.
+        """
+        self.train_obj.main_loop()
+        self.assertTrue(self.train_obj.allow_overwrite)
+        self.assertTrue(self.train_obj.exceeded_time_budget)
+        self.assertGreater(self.train_obj.total_seconds.eval(), 0)
+        self.assertGreater(self.train_obj.training_seconds.eval(), 0)
+
+
 if __name__ == '__main__':
     if False:
         unittest.main()
     else:
-        unittest.main(argv=['--verbose', 'TestClassification'])
+        unittest.main(argv=['--verbose', 'TestRegression'])
