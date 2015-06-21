@@ -86,10 +86,12 @@ class Images(DenseDesignMatrix):
         The size of the images in the final dataset. All images
         will be resized to be ``image_size`` x ``image_size``
         pixels.
-    regression : bool, optional
-        Tell if this is a classification problem (classes are
-        expected to be integers) or a regression problem
-        values should be convertible to real numbers.
+    classes : int, optional
+        If this is a classification problem the parameter should be
+        used to indicate the total number of classes and targets are
+        expected to be integers in the range ``[0; classes-1]``.
+        If this is a regression problem the parameter should be ``None`` and
+        targets are expected to be real numbers.
     rng : object, optional
         A random number generator used for picking random \
         indices into the design matrix when choosing minibatches.
@@ -99,14 +101,14 @@ class Images(DenseDesignMatrix):
         Whether preprocessor can fit parameters when applied to training
         data.
     """
-    def __init__(self, source, image_size=None, regression=False,
+    def __init__(self, source, image_size=None, classes=None,
                  rng=None, preprocessor=None, fit_preprocessor=False):
 
         #: preserve original argument for future reference
         self.source = source
 
-        #: regression or classification problem
-        self.regression = regression
+        #: Number of classes (None for regression)
+        self.classes = classes
 
         if isinstance(source, basestring):
             # this is a csv file that we're going to read
@@ -153,7 +155,7 @@ class Images(DenseDesignMatrix):
             dense_x = numpy.zeros(shape=(len(ind), image_size, image_size, 3),
                                   dtype='uint8')
         categories = []
-        has_categ = False
+        has_targets = False
         for i, img in enumerate(ind):
             largest = max(img.size)
             width = img.size[0]
@@ -188,43 +190,35 @@ class Images(DenseDesignMatrix):
             dense_x[i, delta_y:delta_y2, delta_x:delta_x2, :] = imgin
             categories.append(ind[img])
             if ind[img] != '':
-                has_categ = True
+                has_targets = True
 
         # if we have categories / values convert them to proper format
-        if has_categ:
-            if regression:
+        if has_targets:
+            if classes is None:
                 # in regression we expect real values
                 dense_y = numpy.empty(shape=(len(ind), 1),
                                       dtype=theano.config.floatX)
                 for i, ctg in enumerate(categories):
-                    dense_y[i] = float(ctg)
+                    dense_y[i, 0] = float(ctg)
             else:
                 # in classification we expect integers
                 dense_y = numpy.empty(shape=(len(ind), 1), dtype=int)
                 for i, ctg in enumerate(categories):
                     dense_y[i, 0] = int(ctg)
-#                hot = numpy.zeros((dense_y.shape[0], 8),
-#                                  dtype=theano.config.floatX)
-#                for i in xrange(dense_y.shape[0]):
-#                    hot[i, dense_y[i]] = 1.
-#                dense_y = hot
         else:
             dense_y = None
 
         if rng is None:
             rng = DenseDesignMatrix._default_seed
-
         # everything else is handled by the DenseDesignMatrix superclass
         super(Images, self).__init__(topo_view=dense_x,
                                      y=dense_y,
                                      axes=self.axes,
+                                     view_converter=None,
                                      preprocessor=preprocessor,
                                      fit_preprocessor=fit_preprocessor,
-                                     X_labels=None, y_labels=None)
-
-        #tv = self.get_topological_view()
-        #self.set_topological_view(tv, axes=self.view_converter.axes)
-        #self.set_topological_view(dense_x, axes=self.view_converter.axes)
+                                     X_labels=None,
+                                     y_labels=classes if has_targets else None)
 
 def _load_csv(csv_path):
     """
