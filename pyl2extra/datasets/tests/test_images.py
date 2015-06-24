@@ -299,7 +299,7 @@ class TestRegression(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    if False:
+    if True:
         unittest.main()
     else:
         unittest.main(argv=['--verbose', 'TestRegression'])
