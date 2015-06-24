@@ -9,18 +9,26 @@ __license__ = "3-clause BSD"
 __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
-import csv
 import functools
-import Image
-from itertools import izip
 import numpy
 import os
 import shutil
 import tempfile
 import unittest
 
-from pyl2extra.testing import images
+os.environ['THEANO_FLAGS'] = 'optimizer=fast_compile,' \
+    'device=cpu,' \
+    'floatX=float64'
+#    'linker=py,'
+#    'exception_verbosity=high,' \
 
+from pylearn2.training_algorithms.sgd import SGD
+from pylearn2.training_algorithms.learning_rule import Momentum
+from pylearn2.termination_criteria import EpochCounter
+from pylearn2.train import Train
+from pylearn2.costs.cost import MethodCost
+
+from pyl2extra.testing import images
 from pyl2extra.models.overfeat import (Params, standardize, FILE_PATH_KEY,
     SMALL_NETWORK_FILTER_SHAPES, SMALL_NETWORK_BIAS_SHAPES,
     LARGE_NETWORK_FILTER_SHAPES, LARGE_NETWORK_BIAS_SHAPES,
@@ -28,7 +36,7 @@ from pyl2extra.models.overfeat import (Params, standardize, FILE_PATH_KEY,
 
 
 
-@unittest.skipUnless(os.environ.has_key(FILE_PATH_KEY), 
+@unittest.skipUnless(os.environ.has_key(FILE_PATH_KEY),
                      'missing %s environment variable' % FILE_PATH_KEY)
 class TestParams(unittest.TestCase):
     """
@@ -57,14 +65,14 @@ class TestParams(unittest.TestCase):
         self.assertIsInstance(self.testee.biases_shapes, numpy.ndarray)
         self.assertIsInstance(self.testee.weights, numpy.ndarray)
         self.assertIsInstance(self.testee.biases, numpy.ndarray)
-        
+
         self.assertTupleEqual(self.testee.filter_shapes.shape, (8, 4))
         self.assertTupleEqual(self.testee.biases_shapes.shape, (8,))
         self.assertTupleEqual(self.testee.weights.shape, (8,))
         self.assertTupleEqual(self.testee.biases.shape, (8,))
-        
+
         for i, (weight, bias) in enumerate(zip(self.testee.weights,
-                                             self.testee.biases)):
+                                               self.testee.biases)):
             self.assertTupleEqual(weight.shape,
                                   tuple(SMALL_NETWORK_FILTER_SHAPES[i]))
             self.assertTupleEqual(bias.shape,
@@ -81,14 +89,14 @@ class TestParams(unittest.TestCase):
         self.assertIsInstance(self.testee.biases_shapes, numpy.ndarray)
         self.assertIsInstance(self.testee.weights, numpy.ndarray)
         self.assertIsInstance(self.testee.biases, numpy.ndarray)
-        
+
         self.assertTupleEqual(self.testee.filter_shapes.shape, (9, 4))
         self.assertTupleEqual(self.testee.biases_shapes.shape, (9,))
         self.assertTupleEqual(self.testee.weights.shape, (9,))
         self.assertTupleEqual(self.testee.biases.shape, (9,))
-        
+
         for i, (weight, bias) in enumerate(zip(self.testee.weights,
-                                             self.testee.biases)):
+                                               self.testee.biases)):
             self.assertTupleEqual(weight.shape,
                                   tuple(LARGE_NETWORK_FILTER_SHAPES[i]))
             self.assertTupleEqual(bias.shape,
@@ -117,60 +125,66 @@ class TestStandardize(unittest.TestCase):
             ary = standardize(ipath)
             self.assertEqual(ary.shape[2], 3)
 
-from pylearn2.training_algorithms.sgd import SGD
-from pylearn2.training_algorithms.learning_rule import Momentum
-from pylearn2.termination_criteria import EpochCounter
-from pylearn2.costs.mlp.dropout import Dropout
-from pylearn2.train import Train
-from pylearn2.training_algorithms.learning_rule import MomentumAdjustor
-from pylearn2.training_algorithms.sgd import LinearDecayOverEpoch
-from pylearn2.train_extensions.window_flip import WindowAndFlip
-from pylearn2.costs.cost import MethodCost
-
 class TestModelLarge(unittest.TestCase):
     """
     Tests for standardize.
     """
     @functools.wraps(unittest.TestCase.setUp)
     def setUp(self):
+        self.testee = None
         self.tmp_dir = tempfile.mkdtemp()
         self.images = images.create(self.tmp_dir)
-        self.dataset = images.dataset(LARGE_INPUT, self.tmp_dir)
-        self.valid_dataset = images.dataset(LARGE_INPUT, self.tmp_dir)
-        self.algorithm = SGD(
-            batch_size=2,
-            learning_rate=.17,
-            learning_rule=Momentum(init_momentum=.5),
-            monitoring_dataset={'test': self.valid_dataset},
-            cost=MethodCost(method='cost_from_X'),
-            termination_criterion=EpochCounter(max_epochs=2))
-        self.train_obj = Train(
-            dataset=self.dataset,
-            model=None,
-            algorithm=self.algorithm,
-            save_path=None,
-            save_freq=0)
-         
+        self.dataset = images.dataset(
+            image_size=LARGE_INPUT,
+            path=self.tmp_dir,
+            factor=10)
+        self.valid_dataset = images.dataset(
+            LARGE_INPUT,
+            self.tmp_dir,
+            factor=10)
+
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
         shutil.rmtree(self.tmp_dir)
         del self.tmp_dir
+        del self.testee
 
     def test_file(self):
         """
         Loading the parameters for small network.
         """
-        self.testee = Params(large=True)
-        model = self.testee.model()
-        self.assertEqual(len(model.layers), 9)
-        
-        self.train_obj.model = model
-        self.train_obj.main_loop()
-            
-            
+        self.testee = Params(large=True, weights_file=None)
+        train_obj = Train(
+            dataset=self.dataset,
+            model=self.testee.model(),
+            algorithm=SGD(
+                learning_rate=0.01,
+                batch_size=2,
+                learning_rule=Momentum(
+                    init_momentum=0.5
+                ),
+                cost=MethodCost(
+                    method='cost_from_X'
+                ),
+                termination_criterion=EpochCounter(
+                    max_epochs=2
+                ),
+                monitoring_dataset={
+                    'train': self.dataset
+                }
+            ),
+            save_freq=0
+        )
+        train_obj.main_loop()
+
+# TODO: small model testing
 
 if __name__ == '__main__':
     if True:
         unittest.main()
     else:
-        unittest.main(argv=['--verbose', 'TestGeneric'])
+        unittest.main(argv=['--verbose', 'TestModelLarge'])
+        #tr = TestModelLarge()
+        #tr.setUp()
+        #tr.test_file()
+        #tr.tearDown()
