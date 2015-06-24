@@ -28,6 +28,8 @@ def create(path, factor=1, shape=None):
     being  tuples of (category, image).
     """
     result = OrderedDict()
+    if not os.path.isdir(path):
+        os.mkdir(path)
 
     def mkimg(i, img_base, loc_shp, imgform):
         """Create  a single file"""
@@ -35,37 +37,37 @@ def create(path, factor=1, shape=None):
         img_file = os.path.join(path, img_base % (i+uniq_files))
         wid, hgh = loc_shp if shape is None else shape
         imarray = numpy.random.rand(wid, hgh, 3) * 255
-        im = Image.fromarray(imarray.astype('uint8')).convert()
-        im.save(img_file)
+        img = Image.fromarray(imarray.astype('uint8')).convert()
+        img.save(img_file)
         uniq_files = uniq_files + 1
-        return img_file, im
+        return img_file, img
 
     for i in range(factor):
-        img_file, im = mkimg(i, 'rgba_file_%d.png', (100, 100), 'RGBA')
-        result[img_file] = ('rgba', im, 0)
-        img_file, im = mkimg(i, 'rgb_file_%d.png', (100, 50), 'RGB')
-        result[img_file] = ('rgb', im, 1)
-        img_file, im = mkimg(i, 'greyscale_file_%d.png', (50, 100), 'L')
-        result[img_file] = ('l', im, 2)
-        img_file, im = mkimg(i, 'black_white_file_%d.png', (100, 10), '1')
-        result[img_file] = ('bw', im, 3)
-        img_file, im = mkimg(i, 'rpalette_file_%d.png', (10, 100), 'P')
-        result[img_file] = ('palette', im, 4)
-        img_file, im = mkimg(i, 'cmyk_file_%d.jpg', (255, 254), 'CMYK')
-        result[img_file] = ('cmyk', im, 5)
-        img_file, im = mkimg(i, 'integer_file_%d.png', (10, 11), 'I')
-        result[img_file] = ('integer', im, 6)
-        img_file, im = mkimg(i, 'float_file_%d.tif', (999, 999), 'F')
-        result[img_file] = ('float', im, 7)
+        img_file, img = mkimg(i, 'rgba_file_%d.png', (100, 100), 'RGBA')
+        result[img_file] = ('rgba', img, 0)
+        img_file, img = mkimg(i, 'rgb_file_%d.png', (100, 50), 'RGB')
+        result[img_file] = ('rgb', img, 1)
+        img_file, img = mkimg(i, 'greyscale_file_%d.png', (50, 100), 'L')
+        result[img_file] = ('l', img, 2)
+        img_file, img = mkimg(i, 'black_white_file_%d.png', (100, 10), '1')
+        result[img_file] = ('bw', img, 3)
+        img_file, img = mkimg(i, 'rpalette_file_%d.png', (10, 100), 'P')
+        result[img_file] = ('palette', img, 4)
+        img_file, img = mkimg(i, 'cmyk_file_%d.jpg', (255, 254), 'CMYK')
+        result[img_file] = ('cmyk', img, 5)
+        img_file, img = mkimg(i, 'integer_file_%d.png', (10, 11), 'I')
+        result[img_file] = ('integer', img, 6)
+        img_file, img = mkimg(i, 'float_file_%d.tif', (999, 999), 'F')
+        result[img_file] = ('float', img, 7)
     return result
 
 def dataset(image_size, path, factor=1):
     """
     Creates a dataset of images.
     """
-    
+
     images = create(path, factor)
-    
+
     # create a dictionary mapping images to classes
     inpimg = OrderedDict()
     for img in images:
@@ -73,8 +75,7 @@ def dataset(image_size, path, factor=1):
 
     return Images(source=inpimg,
                   image_size=image_size,
-                  regression=False,
+                  classes=8,
                   rng=None,
                   preprocessor=None,
                   fit_preprocessor=False)
-           
