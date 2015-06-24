@@ -51,11 +51,10 @@ __license__ = "3-clause BSD"
 __maintainer__ = "Nicu Tofan"
 __email__ = "nicu.tofan@gmail.com"
 
-from collections import OrderedDict
 import csv
 import numpy
 import os
-import Image
+from PIL import Image
 from pylearn2.datasets.dense_design_matrix import DenseDesignMatrix
 import theano
 
@@ -72,16 +71,16 @@ class Images(DenseDesignMatrix):
         on the data type:
         - if ``source`` is a string, it is interpreted to be the
           path towards a csv file; the file must NOT have a header,
-          first column must contain the classes or values and
+          first column must contain the targets (classes or values) and
           second column must contain the paths for the image files;
         - if ``source`` is a dictionary, the keys must be the
-          paths for image files or ``Image`` instances and
+          paths for image files, ``Image`` instances or numpy arrays and
           the values must be the classes or values (None or empty
           string if this instance does not provide the labels);
-        - a tuple or list must have exactly one or two memobers:
+        - a tuple or list must have exactly one or two members:
           first one must be a list or tuple of image paths or
-          Images, while second one (optional) has the classes
-          or values.
+          Images or numpy arrays, while second one (optional)
+          has the targets (classes as integers or real values).
     image_size : int, optional
         The size of the images in the final dataset. All images
         will be resized to be ``image_size`` x ``image_size``
@@ -112,19 +111,17 @@ class Images(DenseDesignMatrix):
 
         if isinstance(source, basestring):
             # this is a csv file that we're going to read
-            ind = _load_dict(_load_csv(source))
+            ind = _load_list(_load_csv(source))
         elif isinstance(source, dict):
             # keys are file names, values are classes
-            ind = _load_dict(source)
+            ind = _load_list(source.items())
         elif isinstance(source, (list, tuple)):
             # one item lists the files, the other lists the classes
             if len(source) == 1:
-                ind = _load_dict(OrderedDict([(src, None)
-                                              for src in source[0]]))
+                ind = _load_list([(src, None) for src in source[0]])
             elif len(source) == 2:
                 if len(source[0]) == len(source[1]):
-                    zpd = zip(source[0], source[1])
-                    ind = _load_dict(OrderedDict(zpd))
+                    ind = _load_list(zip(source[0], source[1]))
                 else:
                     raise ValueError("Lists/tuples provded to Images class "
                                      "constructor are expected to have "
@@ -142,9 +139,9 @@ class Images(DenseDesignMatrix):
                              "a file path (string), a dictionary of "
                              "file:class pairs, or a pair of lists (tuples); "
                              "%s is not supported" % str(source.__class__))
-        # all images are loaded as pil.Image in ``ind`` variable
+        # all images are loaded in ``ind`` variable
 
-        # DenseDesignMatrix expects us to provide an numpy array
+        # DenseDesignMatrix expects us to provide a numpy array
         # we choose to have number of examples on first axis ('b'),
         # then rows and columns of the image, then the channels
         # always 3 in our case
@@ -156,11 +153,12 @@ class Images(DenseDesignMatrix):
                                   dtype='uint8')
         categories = []
         has_targets = False
-        for i, img in enumerate(ind):
-            largest = max(img.size)
-            width = img.size[0]
-            height = img.size[1]
-            #print i, largest, img.size
+        for i, (img, ctg) in enumerate(ind):
+            if isinstance(img, Image.Image):
+                img = numpy.array(img)
+            width = img.shape[1]
+            height = img.shape[0]
+            largest = max(width, height)
             if image_size is None:
                 # if the user did not specify an image size we determine
                 # the size  using the first image that we encounter; this is
@@ -177,19 +175,20 @@ class Images(DenseDesignMatrix):
                 width = int(width * wpercent)
                 height = int(height * wpercent)
                 largest = max(width, height)
-                imgin = img.resize((width, height), Image.ANTIALIAS)
+                # inefficient? could use scipy.ndimage.zoom.
+                img_tmp = Image.fromarray(img)
+                img_tmp = img_tmp.resize((width, height), Image.ANTIALIAS)
+                imgin = numpy.array(img_tmp)
             else:
                 imgin = img
-            # convert to coresponding numpy array
-            imgin = numpy.array(imgin)
             delta_x = (largest - width) / 2
             delta_y = (largest - height) / 2
             delta_x2 = delta_x + width
             delta_y2 = delta_y + height
             #print delta_x, delta_y, delta_x2, delta_y2, width, height
             dense_x[i, delta_y:delta_y2, delta_x:delta_x2, :] = imgin
-            categories.append(ind[img])
-            if ind[img] != '':
+            categories.append(ctg)
+            if ctg != '':
                 has_targets = True
 
         # if we have categories / values convert them to proper format
@@ -224,15 +223,20 @@ def _load_csv(csv_path):
     """
     Internal function for loading the content from a .csv file.
 
+    Parameters
+    ----------
+    csv_path : str
+        The path towards the .csv file to read.
+
     Returns
     -------
-    result : OrderedDict
-    The method creates a dictionary that should be passed to
-    `_load_dict()`.
+    result : list of tuples
+        The method creates a list of tuples that should be passed to
+        `_load_list()`.
     """
 
     # we're going to accumulate files and categories here
-    result = OrderedDict()
+    result = []
 
     # compute absolute path of the source csv file
     csv_path = os.path.abspath(csv_path)
@@ -255,42 +259,52 @@ def _load_csv(csv_path):
             # name; but we try to keep the things simple
 
             # class/value is always first, file path second
-            result[row[1]] = row[0]
+            result.append((row[1], row[0]))
 
     return result
 
-def _load_dict(srcdict):
+def _load_list(srclist):
     """
-    Internal function for loading the content from a dictionary.
+    Internal function for loading the content from a list.
 
-    Image files and numpy arrays are converted to `pil.Image`;
+    Image files are converted to `numpy.ndarray`;
     empty classes are normalized to a string of lenghth 0.
+
+    Parameters
+    ----------
+    srclist : list of tuples
+         A list of tuples, with first entry in tuple being
+        a string, an Image or `numpy.ndarray` instances and
+        second being classes (None for no class).
 
     Returns
     -------
-    result : dict
-    The method creates a dictionary, with keys being `pil.Image`
-    instances and values being classes (None for no class).
+    result : list of tuples
+        The method creates a list of tuples, with first entry in tuple being
+        `numpy.ndarray` instances and second being targets (None for no
+        target) - integer classes (classification) or real values
+        (regression).
     """
 
     # we're going to accumulate Images and categories here
-    result = OrderedDict()
+    result = []
 
-    for img in srcdict:
+    for img, cls in srclist:
         if isinstance(img, basestring):
             imgin = Image.open(img)
         elif isinstance(img, numpy.ndarray):
             imgin = Image.fromarray(img)
         elif isinstance(img, Image.Image):
             imgin = img
+        elif Image.isImageType(img):
+            imgin = img
         else:
             raise ValueError("Valid input for images are strings (a "
                              "path towards a file), pil images "
                              "and numpy arrays; %s is not supported" %
                              str(img.__class__))
-        cls = srcdict[img]
         if cls is None:
             cls = ''
         imgin = imgin.convert('RGB')
-        result[imgin] = cls
+        result.append((numpy.array(imgin), cls))
     return result
