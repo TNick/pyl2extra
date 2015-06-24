@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 This module is the centre of all activity in building, distributing,
-and installing using the Distutils.
+and installing using the Distutils. It was inspired by
+(setup.py <https://github.com/lisa-lab/pylearn2/blob/master/setup.py>)_
+in pylearn2 library.
 """
 
 from __future__ import print_function
@@ -22,13 +25,12 @@ cmdclass = {}
 ext_modules = []
 base_path = os.path.split(os.path.abspath(__file__))[0]
 
+
 class Pyl2ExtraInstall(install):
     """
     Customize install process.
     """
     def run(self):
-        global base_path
-        
         try:
             skip_pylearn2 = bool(os.environ['PYL2EXTRA_SKIP_PYL2'])
         except KeyError:
@@ -55,6 +57,8 @@ class Pyl2ExtraInstall(install):
             self.distribution.run_command('develop')
         if mode == 'install':
             return install.run(self)
+
+
 cmdclass.update({'install': Pyl2ExtraInstall})
 
 setup(
@@ -68,7 +72,7 @@ setup(
     long_description=open('ReadMe.md', 'rb').read().decode('utf8'),
     dependency_links=['git+http://github.com/Theano/Theano.git#egg=Theano'],
     install_requires=['numpy>=1.5', 'pyyaml', 'argparse', "Theano",
-                      'python-magic', 'webcolors', 'dill'],
+                      'python-magic', 'webcolors', 'dill', 'pillow'],
     scripts=[],
     package_data={
         '': ['*.cu', '*.cuh', '*.h'],
