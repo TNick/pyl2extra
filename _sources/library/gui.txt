@@ -43,11 +43,10 @@ Debugger
 .. automodule:: pyl2extra.gui.debugger.debugger_publisher
    :members:
 
-.. automodule:: pyl2extra.gui.debugger.gui
-   :members:
-
 .. automodule:: pyl2extra.gui.debugger.main_window
    :members:
 
 .. automodule:: pyl2extra.gui.debugger.signal_handler
    :members:
+
+   

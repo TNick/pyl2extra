@@ -120,63 +120,27 @@
 <span id="python-scripts-imagenet"></span><h3>Python Scripts: Imagenet<a class="headerlink" href="#module-pyl2extra.scripts.datasets.imagenet" title="Permalink to this headline">¶</a></h3>
 <p>Module to interact with ImageNet resources.</p>
 <dl class="class">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader">
-<em class="property">class </em><tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">ImageDownloader</tt><big>(</big><em>down_loc</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class to help in downloading images.</p>
-<dl class="method">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.done_synset">
-<tt class="descname">done_synset</tt><big>(</big><em>thid</em>, <em>sset_name</em>, <em>im_ok</em>, <em>im_fail</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.done_synset" title="Permalink to this definition">¶</a></dt>
-<dd><p>A thread reports that it is done with a synset.</p>
+<dt id="pyl2extra.scripts.datasets.imagenet.TrackDuplicates">
+<em class="property">class </em><tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">TrackDuplicates</tt><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.TrackDuplicates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maintains a list of duplicates and the dictionary of hashes it
+has seen so far.</p>
+<dl class="attribute">
+<dt id="pyl2extra.scripts.datasets.imagenet.TrackDuplicates.duplicates">
+<tt class="descname">duplicates</tt><em class="property"> = None</em><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.TrackDuplicates.duplicates" title="Permalink to this definition">¶</a></dt>
+<dd><p>the list of duplicate objects</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.get_image">
-<tt class="descname">get_image</tt><big>(</big><em>imname</em>, <em>imurl</em>, <em>magicf</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.get_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>A thread downloads one image.</p>
+<dt id="pyl2extra.scripts.datasets.imagenet.TrackDuplicates.inspect">
+<tt class="descname">inspect</tt><big>(</big><em>rslt</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.TrackDuplicates.inspect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks to see if the result is a duplicate and maintains
+internal states.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.image_downloaded">
-<tt class="descname">image_downloaded</tt><big>(</big><em>full_path</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.image_downloaded" title="Permalink to this definition">¶</a></dt>
-<dd><p>We&#8217;re informed that an image was downloaded.</p>
-<p>Compute the hash of the file; if we saw this hash before, add it there.
-self.file_hashes will be used in purge_duplicates().</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.pop_synset">
-<tt class="descname">pop_synset</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.pop_synset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets a synset from queue.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.purge_duplicates">
-<tt class="descname">purge_duplicates</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.purge_duplicates" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removes duplicates from download directory.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.push_synset">
-<tt class="descname">push_synset</tt><big>(</big><em>sset_name</em>, <em>sset_data</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.push_synset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds a synset to queue.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.run">
-<tt class="descname">run</tt><big>(</big><em>url_rel</em>, <em>url_mapping</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Downloads everything.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.thread_ended">
-<tt class="descname">thread_ended</tt><big>(</big><em>thid</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.thread_ended" title="Permalink to this definition">¶</a></dt>
-<dd><p>Show yourself out.</p>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="pyl2extra.scripts.datasets.imagenet.ImageDownloader.worker">
-<em class="property">static </em><tt class="descname">worker</tt><big>(</big><em>myself</em>, <em>thid</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.ImageDownloader.worker" title="Permalink to this definition">¶</a></dt>
-<dd><p>The thread.</p>
+<dt id="pyl2extra.scripts.datasets.imagenet.TrackDuplicates.print_duplicates">
+<tt class="descname">print_duplicates</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.TrackDuplicates.print_duplicates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print using standard <tt class="docutils literal"><span class="pre">_LOGGER.info()</span></tt> mechanism.</p>
 </dd></dl>
 
 </dd></dl>
@@ -185,6 +149,19 @@ self.file_hashes will be used in purge_duplicates().</p>
 <dt id="pyl2extra.scripts.datasets.imagenet.cmd_download_images">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">cmd_download_images</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.cmd_download_images" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of images.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.scripts.datasets.imagenet.cmd_download_synset">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">cmd_download_synset</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.cmd_download_synset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download all images in a synset.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.scripts.datasets.imagenet.cmd_good_files">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">cmd_good_files</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.cmd_good_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print images that seem to be valid.</p>
+<p>The images may also be saved in a file.</p>
 </dd></dl>
 
 <dl class="function">
@@ -206,9 +183,38 @@ self.file_hashes will be used in purge_duplicates().</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pyl2extra.scripts.datasets.imagenet.cmd_outliers">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">cmd_outliers</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.cmd_outliers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print images that don&#8217;t seem to be valid.</p>
+<p>This includes files that can&#8217;t be loaded as an image and those that
+are images but their hash was found multiple times.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.scripts.datasets.imagenet.cmd_rem_img">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">cmd_rem_img</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.cmd_rem_img" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove images from synsets.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.cmd_synsets">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">cmd_synsets</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.cmd_synsets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints the list of synsets.</p>
+<p>Simple wrapper around <cite>get_synsets()</cite> that prints retreived synsets,
+one on each line.
+To be used as a script command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote class="last">
+<div><p>The path towards the resource to retreive.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -224,16 +230,68 @@ self.file_hashes will be used in purge_duplicates().</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pyl2extra.scripts.datasets.imagenet.dense_list">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">dense_list</tt><big>(</big><em>listin</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.dense_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove empty entries and strip non-empty ones.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.dense_list_from_url">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">dense_list_from_url</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.dense_list_from_url" title="Permalink to this definition">¶</a></dt>
 <dd><p>Downloads a page, assumes it is text; splits it into lines.</p>
 <p>Trims out white space at beginning and end; removes empty lines.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>list</strong> : list of str</p>
+<blockquote class="last">
+<div><p>A list of trimmed, non-empty string or an empty list.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.get_hypos">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_hypos</tt><big>(</big><em>url</em>, <em>synset</em>, <em>full_tree</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_hypos" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retreives hypos :)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive. It must contain a <tt class="docutils literal"><span class="pre">%s</span></tt>
+that gets replaced by <tt class="docutils literal"><span class="pre">synset</span></tt> and another <tt class="docutils literal"><span class="pre">%s</span></tt> that will
+be <tt class="docutils literal"><span class="pre">0</span></tt> or <tt class="docutils literal"><span class="pre">1</span></tt> depending on <tt class="docutils literal"><span class="pre">full_tree</span></tt>.</p>
+</div></blockquote>
+<p><strong>synset</strong> : str</p>
+<blockquote>
+<div><p>The name of the sysnset.</p>
+</div></blockquote>
+<p><strong>full_tree</strong> : bool</p>
+<blockquote>
+<div><p>Retreive the full hierarchy or just first level.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>words</strong> : list of str</p>
+<blockquote class="last">
+<div><p>A list of strings, each one being a synset identifier.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -245,30 +303,193 @@ self.file_hashes will be used in purge_duplicates().</p>
 - numImages
 - released
 - version</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive</p>
+</div></blockquote>
+<p><strong>is_url</strong> : bool</p>
+<blockquote>
+<div><p>If True retreive the resource from an url using <cite>xml_from_url()</cite>,
+otherwise <tt class="docutils literal"><span class="pre">url</span></tt> is a path towards a file.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>dir_entries</strong> : dict</p>
+<blockquote class="last">
+<div><p>A dictionary with keys being synset identifiers and values the number
+of images for that identifier.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.get_image_synsets">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_image_synsets</tt><big>(</big><em>url</em>, <em>is_url=True</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_image_synsets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retreives a list of synsets that have images associated with them.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive</p>
+</div></blockquote>
+<p><strong>is_url</strong> : bool</p>
+<blockquote>
+<div><p>If True retreive the resource from an url using <cite>xml_from_url()</cite>,
+otherwise <tt class="docutils literal"><span class="pre">url</span></tt> is a path towards a file.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>blob_list</strong> : list</p>
+<blockquote class="last">
+<div><p>A list of synset identifiers.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.scripts.datasets.imagenet.get_image_synsets_cached">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_image_synsets_cached</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_image_synsets_cached" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retreives a list of synsets that have images associated with them.</p>
+<p>If the cached file does not exist in the current directory
+it is downloaded.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.get_image_urls">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_image_urls</tt><big>(</big><em>url</em>, <em>synset</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_image_urls" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retreives a list of image names and urls for the synset.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive</p>
+</div></blockquote>
+<p><strong>synset</strong> : str</p>
+<blockquote>
+<div><p>The sysnset id.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : dict</p>
+<blockquote class="last">
+<div><p>A dictionary mapping image name to image url.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.scripts.datasets.imagenet.get_image_urls_cached">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_image_urls_cached</tt><big>(</big><em>url</em>, <em>synset</em>, <em>cache_file</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_image_urls_cached" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retreives a list of image names and urls for the synset.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive</p>
+</div></blockquote>
+<p><strong>synset</strong> : str</p>
+<blockquote>
+<div><p>The sysnset id.</p>
+</div></blockquote>
+<p><strong>cache_file</strong> : str</p>
+<blockquote>
+<div><p>Path to cache file.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>result</strong> : dict</p>
+<blockquote class="last">
+<div><p>A dictionary mapping image name to image url.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.scripts.datasets.imagenet.get_images">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_images</tt><big>(</big><em>url_rel</em>, <em>url_mapping</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download images</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.get_synsets">
-<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_synsets</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_synsets" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_synsets</tt><big>(</big><em>url='http://www.image-net.org/api/text/imagenet.synset.obtain_synset_list'</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_synsets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Downloads the list of synsets.</p>
+<p>This is just a simple wrapper around <cite>dense_list_from_url()</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive. With no argument
+uses the default defined at module level.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>elem</strong> : list of str</p>
+<blockquote class="last">
+<div><p>A list of strings.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.get_words">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">get_words</tt><big>(</big><em>url</em>, <em>synset</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.get_words" title="Permalink to this definition">¶</a></dt>
 <dd><p>Downloads the list of words for a synset.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive. It must contain a <tt class="docutils literal"><span class="pre">%s</span></tt>
+that gets replaced by <tt class="docutils literal"><span class="pre">synset</span></tt>.</p>
+</div></blockquote>
+<p><strong>synset</strong> : str</p>
+<blockquote>
+<div><p>The name of the sysnset or a list of sysnset names.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>words</strong> : list of str or dict</p>
+<blockquote class="last">
+<div><p>If <tt class="docutils literal"><span class="pre">synset</span></tt> is a string result is a list of strings,
+each one being a word or a word sequence. If <tt class="docutils literal"><span class="pre">synset</span></tt> is a list,
+then a dictionary is constructed, with keys being the synsets that
+were provided at input and values the words describing that syset.
+While a single synset may have multiple sentences describing it, only
+first one is returned in latter form.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -281,6 +502,24 @@ self.file_hashes will be used in purge_duplicates().</p>
 <dt id="pyl2extra.scripts.datasets.imagenet.list_from_url">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">list_from_url</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.list_from_url" title="Permalink to this definition">¶</a></dt>
 <dd><p>Downloads a page, assumes it is text; splits it into lines.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>list</strong> : list of str</p>
+<blockquote class="last">
+<div><p>A list of lines.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -290,28 +529,96 @@ self.file_hashes will be used in purge_duplicates().</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyl2extra.scripts.datasets.imagenet.make_argument_parser">
-<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">make_argument_parser</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.make_argument_parser" title="Permalink to this definition">¶</a></dt>
+<dt id="pyl2extra.scripts.datasets.imagenet.make_arg_parser">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">make_arg_parser</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.make_arg_parser" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates an ArgumentParser to read the options for this script from
 sys.argv</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyl2extra.scripts.datasets.imagenet.setup_logging">
-<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">setup_logging</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.setup_logging" title="Permalink to this definition">¶</a></dt>
-<dd><p>Setup logging configuration</p>
+<dt id="pyl2extra.scripts.datasets.imagenet.segregate_files">
+<tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">segregate_files</tt><big>(</big><em>path</em>, <em>recursive=False</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.segregate_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Divides the files in two lists: good and bad.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>path</strong> : str</p>
+<blockquote>
+<div><p>The path to scan.</p>
+</div></blockquote>
+<p><strong>recursive</strong> : bool</p>
+<blockquote>
+<div><p>Scan the subdirectories.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>duplicates</strong> : list</p>
+<p><strong>good_files</strong> : list</p>
+<blockquote>
+<div><p>List of file paths that</p>
+</div></blockquote>
+<p><strong>synsets</strong> : list</p>
+<blockquote class="last">
+<div><p>List of synsets that were identified</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.xml_elem_by_path">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">xml_elem_by_path</tt><big>(</big><em>document</em>, <em>path</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.xml_elem_by_path" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the xml element at a given path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>document</strong> : minidom.Document</p>
+<blockquote>
+<div><p>Target document where the path is to be searched.</p>
+</div></blockquote>
+<p><strong>path</strong> : list of str</p>
+<blockquote>
+<div><p>The tag name for each level forming a list of strings. If
+multiple elements with same tag exist first one is retreived.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>elem</strong> : minidom.Element</p>
+<blockquote class="last">
+<div><p>The element that was found.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="pyl2extra.scripts.datasets.imagenet.xml_from_url">
 <tt class="descclassname">pyl2extra.scripts.datasets.imagenet.</tt><tt class="descname">xml_from_url</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#pyl2extra.scripts.datasets.imagenet.xml_from_url" title="Permalink to this definition">¶</a></dt>
 <dd><p>Downloads a page, assumes it is xml; creates a dom document.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : str</p>
+<blockquote>
+<div><p>The path towards the resource to retreive</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>elem</strong> : minidom.Document</p>
+<blockquote class="last">
+<div><p>The document that was generated from remote string.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -515,7 +822,7 @@ False by default.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2015, Nicu Tofan.
-      Last updated on May 20, 2015.
+      Last updated on Jun 24, 2015.
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.Theme by <a href="http://github.com/vkvn">vkvn</a>
     </div>
   </body>

@@ -108,6 +108,62 @@ pylearn2 related items.</p>
 <p>Run it using something along following lines:</p>
 <blockquote>
 <div>python main.py</div></blockquote>
+<span class="target" id="module-pyl2extra.gui.debugger.dataset_window"></span><p>&#64;author: Nicu Tofan &lt;<a class="reference external" href="mailto:nicu&#46;tofan&#37;&#52;&#48;gmail&#46;com">nicu<span>&#46;</span>tofan<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p>
+<dl class="class">
+<dt id="pyl2extra.gui.debugger.dataset_window.DatasetWindow">
+<em class="property">class </em><tt class="descclassname">pyl2extra.gui.debugger.dataset_window.</tt><tt class="descname">DatasetWindow</tt><big>(</big><em>mw</em>, <em>dataset</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.dataset_window.DatasetWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Presents the content of a PyLearn2 Dataset.</p>
+<p>TODO: Actually only DenseDesignMatrix is supported right now.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>dataset</strong> :  pylearn2.datasets.dataset.Dataset</p>
+<blockquote class="last">
+<div><p>A dataset to show in the GUI.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.dataset_window.DatasetWindow.btn_next">
+<tt class="descname">btn_next</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.dataset_window.DatasetWindow.btn_next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot to get to next image.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.dataset_window.DatasetWindow.btn_prev">
+<tt class="descname">btn_prev</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.dataset_window.DatasetWindow.btn_prev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot to get to previous image.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.dataset_window.DatasetWindow.change_image">
+<tt class="descname">change_image</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.dataset_window.DatasetWindow.change_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot to change the image.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.dataset_window.DatasetWindow.init_ui">
+<tt class="descname">init_ui</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.dataset_window.DatasetWindow.init_ui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the GUI.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.dataset_window.DatasetWindow.load_attribs">
+<tt class="descname">load_attribs</tt><big>(</big><em>tree_widget</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.dataset_window.DatasetWindow.load_attribs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the attributes from undelying object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.dataset_window.DatasetWindow.show_optional_attr">
+<tt class="descname">show_optional_attr</tt><big>(</big><em>tree_widget</em>, <em>s_name</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.dataset_window.DatasetWindow.show_optional_attr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Looks for an attribute in thge dataset and shows it if present.</p>
+</dd></dl>
+
+</dd></dl>
+
 <span class="target" id="module-pyl2extra.gui.debugger.debugger"></span><p>This module implements a pylearn2 debugger.</p>
 <p>The user needs to provide a signal handler that is used by the
 debugger instance to send signals about its status.
@@ -318,6 +374,74 @@ freeing the underlying memory - boom!).</p>
 <dd><p>Converts an numpy image (W, H, 3) into a Qt pixmap.</p>
 </dd></dl>
 
+<span class="target" id="module-pyl2extra.gui.debugger.object_tree_window"></span><p>&#64;author: Nicu Tofan &lt;<a class="reference external" href="mailto:nicu&#46;tofan&#37;&#52;&#48;gmail&#46;com">nicu<span>&#46;</span>tofan<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p>
+<dl class="class">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow">
+<em class="property">class </em><tt class="descclassname">pyl2extra.gui.debugger.object_tree_window.</tt><tt class="descname">ObjectTreeWindow</tt><big>(</big><em>mw</em>, <em>obj_tree</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Presents the content of a PyLearn2 Dataset.</p>
+<p>TODO: Actually only DenseDesignMatrix is supported right now.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>obj</strong> :  object</p>
+<blockquote class="last">
+<div><p>The object to be presented.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.change_max_depth">
+<tt class="descname">change_max_depth</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.change_max_depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot to change the maximum depth of the tree</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.init_ui">
+<tt class="descname">init_ui</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.init_ui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the GUI.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.object_tree_contextual">
+<tt class="descname">object_tree_contextual</tt><big>(</big><em>position</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.object_tree_contextual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot for contextual menu in the YAML tree view.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.object_tree_double_click">
+<tt class="descname">object_tree_double_click</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.object_tree_double_click" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot for double-click in the YAML/PKL tree view.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.refresh_object_tree">
+<tt class="descname">refresh_object_tree</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.refresh_object_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reloads the YAML tree.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.toggle_buildins">
+<tt class="descname">toggle_buildins</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.toggle_buildins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot to change buildins visibility</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.toggle_hidden">
+<tt class="descname">toggle_hidden</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.toggle_hidden" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot to change hidden symbols visibility</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.toggle_methods">
+<tt class="descname">toggle_methods</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.object_tree_window.ObjectTreeWindow.toggle_methods" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot to change methods visibility</p>
+</dd></dl>
+
+</dd></dl>
+
 <span class="target" id="module-pyl2extra.gui.debugger.utils"></span><p>&#64;author: Nicu Tofan &lt;<a class="reference external" href="mailto:nicu&#46;tofan&#37;&#52;&#48;gmail&#46;com">nicu<span>&#46;</span>tofan<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p>
 <dl class="function">
 <dt id="pyl2extra.gui.debugger.utils.make_act">
@@ -503,6 +627,90 @@ response.</p>
 </table>
 </dd></dl>
 
+<span class="target" id="module-pyl2extra.gui.debugger.remote_window"></span><p>&#64;author: Nicu Tofan &lt;<a class="reference external" href="mailto:nicu&#46;tofan&#37;&#52;&#48;gmail&#46;com">nicu<span>&#46;</span>tofan<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p>
+<dl class="class">
+<dt id="pyl2extra.gui.debugger.remote_window.RemoteDialog">
+<em class="property">class </em><tt class="descclassname">pyl2extra.gui.debugger.remote_window.</tt><tt class="descname">RemoteDialog</tt><big>(</big><em>mw</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.remote_window.RemoteDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows selecting remote in order to debug on  that remote.</p>
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.remote_window.RemoteDialog.get_values">
+<tt class="descname">get_values</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.remote_window.RemoteDialog.get_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the values selected by the user.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.remote_window.RemoteDialog.init_ui">
+<tt class="descname">init_ui</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.remote_window.RemoteDialog.init_ui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the GUI.</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-pyl2extra.gui.debugger.variable_window"></span><p>&#64;author: Nicu Tofan &lt;<a class="reference external" href="mailto:nicu&#46;tofan&#37;&#52;&#48;gmail&#46;com">nicu<span>&#46;</span>tofan<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p>
+<dl class="class">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow">
+<em class="property">class </em><tt class="descclassname">pyl2extra.gui.debugger.variable_window.</tt><tt class="descname">VariableWindow</tt><big>(</big><em>mw</em>, <em>variable</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the content of a Theano variable.</p>
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.change_ndarray_layout">
+<tt class="descname">change_ndarray_layout</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.change_ndarray_layout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.data_format">
+<tt class="descname">data_format</tt><big>(</big><em>data_ty</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.data_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the format to use based on the name of the type.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.init_ui">
+<tt class="descname">init_ui</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.init_ui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the GUI.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.print_2darray">
+<tt class="descname">print_2darray</tt><big>(</big><em>variable</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.print_2darray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Present an 2D array</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.print_nd_one_layer">
+<tt class="descname">print_nd_one_layer</tt><big>(</big><em>var</em>, <em>original=None</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.print_nd_one_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursive function to print matrices with higher dimensions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.show_1darray">
+<tt class="descname">show_1darray</tt><big>(</big><em>variable</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.show_1darray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Present an 1D array</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.show_2darray">
+<tt class="descname">show_2darray</tt><big>(</big><em>variable</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.show_2darray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Present an 2D array</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.show_3darray">
+<tt class="descname">show_3darray</tt><big>(</big><em>variable</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.show_3darray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Present an 3D array</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.show_ndarray">
+<tt class="descname">show_ndarray</tt><big>(</big><em>variable</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.show_ndarray" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.variable_window.VariableWindow.show_xdarray">
+<tt class="descname">show_xdarray</tt><big>(</big><em>variable</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.variable_window.VariableWindow.show_xdarray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Present an XD array</p>
+</dd></dl>
+
+</dd></dl>
+
 <span class="target" id="module-pyl2extra.gui.debugger.debugger_publisher"></span><p>Implements the publisher used in remote deployments.</p>
 <p>&#64;author: Nicu Tofan &lt;<a class="reference external" href="mailto:nicu&#46;tofan&#37;&#52;&#48;gmail&#46;com">nicu<span>&#46;</span>tofan<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p>
 <dl class="class">
@@ -613,6 +821,216 @@ was stopped.</p>
 <tt class="descclassname">pyl2extra.gui.debugger.debugger_publisher.</tt><tt class="descname">backup_file</tt><big>(</big><em>local_file</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.debugger_publisher.backup_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>back-up a file.</p>
 <p>TODO: this should allow a number of back-ups.</p>
+</dd></dl>
+
+<span class="target" id="module-pyl2extra.gui.debugger.main_window"></span><p>Main window for the debugger.</p>
+<dl class="class">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow">
+<em class="property">class </em><tt class="descclassname">pyl2extra.gui.debugger.main_window.</tt><tt class="descname">MainWindow</tt><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main application window.</p>
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.browse_dataset">
+<tt class="descname">browse_dataset</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.browse_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that browse for and loads a dataset file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.browse_for_debug">
+<tt class="descname">browse_for_debug</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.browse_for_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that browse for and loads a YAML file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.browse_pkl">
+<tt class="descname">browse_pkl</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.browse_pkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that browse for and loads a PKL file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.browse_yaml">
+<tt class="descname">browse_yaml</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.browse_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that browse for and loads a YAML file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.closeEvent">
+<tt class="descname">closeEvent</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.closeEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build-in close event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.collect_show_statistics">
+<tt class="descname">collect_show_statistics</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.collect_show_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collects the statistics from the debugger and presens them in GUI.</p>
+<p>TODO: implement</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.connect_debugger">
+<tt class="descname">connect_debugger</tt><big>(</big><em>debugger</em>, <em>is_remote=False</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.connect_debugger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a debugger the current instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.debug_end">
+<tt class="descname">debug_end</tt><big>(</big><em>yaml_file</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.debug_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that connects to debugger; raised when the debugger
+unloaded a file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.debug_error">
+<tt class="descname">debug_error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.debug_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that connects to debugger; raised when the debugger
+encounters an error.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.debug_paused">
+<tt class="descname">debug_paused</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.debug_paused" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that connects to debugger; raised when the debugger
+enters pause.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.debug_remote_start">
+<tt class="descname">debug_remote_start</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.debug_remote_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts a debug session with the remote host.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.debug_run">
+<tt class="descname">debug_run</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.debug_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that connects to debugger; raised when the debugger
+starts a run.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.debug_start">
+<tt class="descname">debug_start</tt><big>(</big><em>yaml_file</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.debug_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that connects to debugger; raised when the debugger
+loaded a file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.debug_state_change">
+<tt class="descname">debug_state_change</tt><big>(</big><em>old_state</em>, <em>new_state</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.debug_state_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that connects to debugger; raised when the debugger
+changes the state.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.debug_stopped">
+<tt class="descname">debug_stopped</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.debug_stopped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that connects to debugger; raised when the debugger
+was stopped.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.disconnect_debugger">
+<tt class="descname">disconnect_debugger</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.disconnect_debugger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnects current debugger.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.init_actions">
+<tt class="descname">init_actions</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.init_actions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the actions, then menus &amp; toolbars.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.init_ui">
+<tt class="descname">init_ui</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.init_ui" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare GUI for main window.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.load_dataset">
+<tt class="descname">load_dataset</tt><big>(</big><em>fname</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.load_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that loads a Dataset file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.load_pkl">
+<tt class="descname">load_pkl</tt><big>(</big><em>fname</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.load_pkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that loads a PKL file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.load_yaml">
+<tt class="descname">load_yaml</tt><big>(</big><em>fname</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.load_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slot that loads a YAML file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.remote_debugger_alive">
+<tt class="descname">remote_debugger_alive</tt><big>(</big><em>new_state</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.remote_debugger_alive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get informed if the harbeat is not received.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.set_state_text">
+<tt class="descname">set_state_text</tt><big>(</big><em>state_text</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.set_state_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the state text.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.show_dataset">
+<tt class="descname">show_dataset</tt><big>(</big><em>dataset</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.show_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a new window and show the dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.show_debug_channels">
+<tt class="descname">show_debug_channels</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.show_debug_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the plot of the channels</p>
+<p>TODO: implement</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.show_debug_train_raw">
+<tt class="descname">show_debug_train_raw</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.show_debug_train_raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the raw content of the train object.</p>
+<p>TODO: implement</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.show_network_3d">
+<tt class="descname">show_network_3d</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.show_network_3d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the raw content of the train object.</p>
+<p>TODO: implement</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.show_object_tree">
+<tt class="descname">show_object_tree</tt><big>(</big><em>obj_tree</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.show_object_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>High level method to present current YAML object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.show_remote_debug">
+<tt class="descname">show_remote_debug</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.show_remote_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters for remote debugging.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.show_statistics">
+<tt class="descname">show_statistics</tt><big>(</big><em>epocs=0</em>, <em>examples=0</em>, <em>channels=0</em>, <em>learning_rate=0.0</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.show_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Present the statistics.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.show_variable">
+<tt class="descname">show_variable</tt><big>(</big><em>var</em><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.show_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a new window and show the dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyl2extra.gui.debugger.main_window.MainWindow.stop_or_pause">
+<tt class="descname">stop_or_pause</tt><big>(</big><big>)</big><a class="headerlink" href="#pyl2extra.gui.debugger.main_window.MainWindow.stop_or_pause" title="Permalink to this definition">¶</a></dt>
+<dd><p>The debugger will not react to stop/pause right away.</p>
+</dd></dl>
+
 </dd></dl>
 
 <span class="target" id="module-pyl2extra.gui.debugger.signal_handler"></span><p>Interface for signal handler used by the debugger and implementations.</p>
@@ -763,7 +1181,7 @@ was stopped.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2015, Nicu Tofan.
-      Last updated on May 20, 2015.
+      Last updated on Jun 24, 2015.
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.Theme by <a href="http://github.com/vkvn">vkvn</a>
     </div>
   </body>
