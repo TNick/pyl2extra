@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Tests for overfeat module.
 """
@@ -32,7 +34,7 @@ from pyl2extra.testing import images
 from pyl2extra.models.overfeat import (Params, standardize, FILE_PATH_KEY,
     SMALL_NETWORK_FILTER_SHAPES, SMALL_NETWORK_BIAS_SHAPES,
     LARGE_NETWORK_FILTER_SHAPES, LARGE_NETWORK_BIAS_SHAPES,
-    SMALL_INPUT, LARGE_INPUT)
+    SMALL_INPUT, LARGE_INPUT, predict)
 
 
 
@@ -125,36 +127,25 @@ class TestStandardize(unittest.TestCase):
             ary = standardize(ipath)
             self.assertEqual(ary.shape[2], 3)
 
-class TestModelLarge(unittest.TestCase):
+
+class ModelBaseTst(unittest.TestCase):
     """
-    Tests for standardize.
+    Base class for both large and small.
     """
-    @functools.wraps(unittest.TestCase.setUp)
-    def setUp(self):
+    def prepare(self, large, inp_size):
         self.testee = None
         self.tmp_dir = tempfile.mkdtemp()
         self.images = images.create(self.tmp_dir)
         self.dataset = images.dataset(
-            image_size=LARGE_INPUT,
+            image_size=inp_size,
             path=self.tmp_dir,
             factor=10)
         self.valid_dataset = images.dataset(
-            LARGE_INPUT,
+            inp_size,
             self.tmp_dir,
             factor=10)
-
-    @functools.wraps(unittest.TestCase.tearDown)
-    def tearDown(self):
-        shutil.rmtree(self.tmp_dir)
-        del self.tmp_dir
-        del self.testee
-
-    def test_file(self):
-        """
-        Loading the parameters for small network.
-        """
-        self.testee = Params(large=True, weights_file=None)
-        train_obj = Train(
+        self.testee = Params(large=large, weights_file=None)
+        self.train_obj = Train(
             dataset=self.dataset,
             model=self.testee.model(),
             algorithm=SGD(
@@ -175,15 +166,94 @@ class TestModelLarge(unittest.TestCase):
             ),
             save_freq=0
         )
-        train_obj.main_loop()
 
-# TODO: small model testing
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+        del self.tmp_dir
+        del self.testee
+
+
+class TestModelLarge(ModelBaseTst):
+    """
+    Tests for large model.
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+        self.prepare(True, LARGE_INPUT)
+
+    def test_main_loop(self):
+        """
+        Loading the parameters for network.
+        """
+        self.train_obj.main_loop()
+
+    def test_predict(self):
+        """
+        Predict using this network.
+        """
+        predict(model=self.mode, images=(self.images,))
+
+
+class TestModelSmall(ModelBaseTst):
+    """
+    Tests small model.
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+        self.prepare(False, SMALL_INPUT)
+
+    def test_main_loop(self):
+        """
+        Loading the parameters for network.
+        """
+        self.train_obj.main_loop()
+
+    def test_predict(self):
+        """
+        Predict using this network.
+        """
+        predict(model=self.mode, images=(self.images,))
+
+
+class TestPredict(ModelBaseTst):
+    """
+    Tests small model.
+    """
+    @functools.wraps(unittest.TestCase.setUp)
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp()
+        self.images = images.create(self.tmp_dir)
+        self.dataset = images.dataset(
+            image_size=LARGE_INPUT,
+            path=self.tmp_dir,
+            factor=10)
+
+    @functools.wraps(unittest.TestCase.tearDown)
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dir)
+        del self.tmp_dir
+        del self.images
+        del self.dataset
+
+    def test_predict_dataset(self):
+        """
+        Predict using a new network.
+        """
+        predict(images=self.dataset)
+
+    def test_predict_image(self):
+        """
+        Predict using a new network.
+        """
+        predict(images=self.images[0])
+
 
 if __name__ == '__main__':
-    if True:
+    if False:
         unittest.main()
     else:
-        unittest.main(argv=['--verbose', 'TestModelLarge'])
+        unittest.main(argv=['--verbose', 'TestPredict'])
         #tr = TestModelLarge()
         #tr.setUp()
         #tr.test_file()

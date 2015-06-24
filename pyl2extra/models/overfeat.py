@@ -1,11 +1,12 @@
-
-import Image
+# -*- coding: utf-8 -*-
+from PIL import Image
 import os
 import numbers
 import numpy
 import time
 import theano
 from pylearn2.models.model import Model
+from pylearn2.datasets.dataset import Dataset
 from pylearn2.models.mlp import (MLP, ConvElemwise,
                                  ConvRectifiedLinear, IdentityConvNonlinearity,
                                  Softmax, Layer)
@@ -13,6 +14,7 @@ from pylearn2.space import (Conv2DSpace, VectorSpace)
 from pylearn2.utils import wraps, safe_zip
 from theano import tensor
 
+from pyl2extra.datasets.images import Images
 
 floatX = theano.config.floatX
 
@@ -558,3 +560,70 @@ def standardize(image, mean=118.380948, std=61.896913):
     image = (image - mean) / std
 
     return image
+
+def predict(images, model=None):
+    """
+    Run a set of images through the network and predict their classes.
+
+    The images provided should match expected size for the model. By
+    default the large variant is used, which expects images to be 221
+    by 221 pixels.
+
+    The ``images`` parameter is quite flexible, allowing .csv input, single
+    and multiple images, PIL images and numpy arrays. Note, however, that
+    a single string will not be interpreted as the path to an image file
+    but as the path towards a .csv file.
+
+    Examples
+    --------
+
+    ::code..
+
+        predict(Image.open('path/to/file.png))
+
+        numpy_img = numpy.zeros(shape=(221, 221, 3), dtype=int)
+        predict(numpy_img)
+
+        params = Params(large=False)
+        predict('path/to/csv/file.csv', model=params.model())
+
+    Parameters
+    ----------
+    images : dataset, string, list, tuple, numpy.ndarray, Image.Image
+        The image(s) to predict the labels for. This argument is directly
+        used with the :class:`Images` constructor if it is not already a
+        dataset (it has only been tested with ``DenseDesignMatrix``
+        subclasses).
+    model :  pylearn2.models.model.Model, optional
+        The model to use; by default a new model is created with
+        parameters being initialized from 'large' file.
+    """
+    if isinstance(images, Dataset):
+        dataset = images
+    else:
+        dataset = Images(images, model=None)
+
+    if model is None:
+        params = Params(large=True, weights_file=None)
+        model = params.model()
+
+    # should be a Conv2DSpace
+    data_space = model.get_input_space()
+
+    # probably "features"
+    data_source = model.get_input_source()
+
+    data_specs = (data_space, data_source)
+
+    batch = data_space.make_theano_batch('X')
+    predict = theano.function([batch], model.fprop(batch))
+
+    batch_size = 1
+    iter = dataset.iterator(mode='sequential',
+                            batch_size=batch_size,
+                            data_specs=data_specs)
+    predictions = []
+    for item in iter:
+        predictions.append(predict(item))
+
+    print predictions, predictions[0].__class__
