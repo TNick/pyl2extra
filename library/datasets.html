@@ -53,8 +53,9 @@
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Datasets</a><ul>
-<li><a class="reference internal" href="#module-pyl2extra.datasets.img_dataset">ImgDataset</a></li>
+<li><a class="reference internal" href="#module-pyl2extra.datasets.images">Images</a></li>
 <li><a class="reference internal" href="#cosdataset">CosDataset</a></li>
+<li><a class="reference internal" href="#module-pyl2extra.datasets.img_dataset">ImgDataset</a></li>
 </ul>
 </li>
 </ul>
@@ -97,14 +98,168 @@
 <p class="topic-title first">Contents</p>
 <ul class="simple">
 <li><a class="reference internal" href="#module-pyl2extra.datasets" id="id1">Datasets</a><ul>
-<li><a class="reference internal" href="#module-pyl2extra.datasets.img_dataset" id="id2">ImgDataset</a></li>
+<li><a class="reference internal" href="#module-pyl2extra.datasets.images" id="id2">Images</a></li>
 <li><a class="reference internal" href="#cosdataset" id="id3">CosDataset</a></li>
+<li><a class="reference internal" href="#module-pyl2extra.datasets.img_dataset" id="id4">ImgDataset</a></li>
 </ul>
 </li>
 </ul>
 </div>
+<div class="section" id="module-pyl2extra.datasets.images">
+<span id="images"></span><h2><a class="toc-backref" href="#id2">Images</a><a class="headerlink" href="#module-pyl2extra.datasets.images" title="Permalink to this headline">¶</a></h2>
+<p>Dataset for images and related functionality.</p>
+<p>This module does not have dependencies inside pyl2extra package, so you
+can just copy-paste it inside your source tree.</p>
+<p>To use this dataset prepare a .csv file with targets (integers or real numbers)
+on first column and file paths on the second column:</p>
+<div class="code highlight-python"><div class="highlight"><pre><span class="mi">0</span><span class="p">,</span><span class="n">file1</span><span class="o">.</span><span class="n">png</span>
+<span class="mi">1</span><span class="p">,</span><span class="n">file2</span><span class="o">.</span><span class="n">png</span>
+</pre></div>
+</div>
+<p>Image file paths are relative to current directory (<tt class="docutils literal"><span class="pre">os.getcwd()</span></tt>). The
+images need not be square and can be in any format recognized by the
+<tt class="docutils literal"><span class="pre">Image</span></tt> module. Internally, the images are converted to RGB and are made
+square for you.</p>
+<p>Use it in a .yaml file like so:</p>
+<div class="code highlight-python"><div class="highlight"><pre>dataset: &amp;trndataset !obj:pyl2extra.datasets.images.Images {
+    source: &#39;train.csv&#39;,
+    image_size: 128
+}
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">image_size</span></tt> can be skipped, in which case the size of the images is
+derived from first image that is provided.</p>
+<p>By default the class assumes a classification problem (targets are integers).
+If you need to uset it in a regression problem create it like so:</p>
+<div class="code highlight-python"><div class="highlight"><pre>dataset: &amp;trndataset !obj:pyl2extra.datasets.images.Images {
+    source: &#39;train.csv&#39;,
+    image_size: 128,
+    regression: True
+}
+</pre></div>
+</div>
+<p>As the dataset simply wraps the <tt class="docutils literal"><span class="pre">DenseDesignMatrix</span></tt>, parameters like
+<tt class="docutils literal"><span class="pre">rng</span></tt> (random number generator), <tt class="docutils literal"><span class="pre">preprocessor</span></tt> and <tt class="docutils literal"><span class="pre">fit_preprocessor</span></tt>
+can be used and will be passed to <tt class="docutils literal"><span class="pre">DenseDesignMatrix</span></tt> superclass.</p>
+<dl class="class">
+<dt id="pyl2extra.datasets.images.Images">
+<em class="property">class </em><tt class="descclassname">pyl2extra.datasets.images.</tt><tt class="descname">Images</tt><big>(</big><em>source</em>, <em>image_size=None</em>, <em>classes=None</em>, <em>rng=None</em>, <em>preprocessor=None</em>, <em>fit_preprocessor=False</em><big>)</big><a class="headerlink" href="#pyl2extra.datasets.images.Images" title="Permalink to this definition">¶</a></dt>
+<dd><p>A pylearn2 dataset that loads the images from a list or csv file.</p>
+<p>Please note that - if you use this dataset and your model has a
+final Softmax layer you should construct it like so (YAML syntax):</p>
+<div class="code highlight-python"><div class="highlight"><pre>!obj:pylearn2.models.mlp.Softmax {
+    layer_name: &#39;y&#39;,
+    irange: .0,
+    n_classes: %(classes)d,
+    binary_target_dim: 1
+}
+</pre></div>
+</div>
+<p>where <tt class="docutils literal"><span class="pre">classes</span></tt> is the same number of classes passed to <tt class="docutils literal"><span class="pre">Images</span></tt>
+constructor. <tt class="docutils literal"><span class="pre">binary_target_dim</span></tt> is important and failing to set it
+constructs the wrong architecture, causing errors like:</p>
+<blockquote>
+<div>ValueError: VectorSpace(dim=1, dtype=float32) with total dimension 1
+can&#8217;t format a batch into VectorSpace(dim=X, dtype=float32) because
+its total dimension is X.</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>source: OrderedDict, dict, str, tuple, list</strong></p>
+<blockquote>
+<div><p>This argument provides the input images and (optionally)
+associated categories. The meaning of the argument depends
+on the data type:</p>
+<ul class="simple">
+<li>if <tt class="docutils literal"><span class="pre">source</span></tt> is a string, it is interpreted to be the
+path towards a csv file; the file must NOT have a header,
+first column must contain the targets (classes or values) and
+second column must contain the paths for the image files;</li>
+<li>if <tt class="docutils literal"><span class="pre">source</span></tt> is a dictionary, the keys must be the
+paths for image files, <tt class="docutils literal"><span class="pre">Image</span></tt> instances or numpy arrays and
+the values must be the classes or values (None or empty
+string if this instance does not provide the labels);</li>
+<li>a tuple or list must have exactly one or two 
+members: first one must be a list or tuple of image paths or
+Images or numpy arrays, while second one (optional)
+has the targets (classes as integers or real values).</li>
+</ul>
+</div></blockquote>
+<p><strong>image_size: int, optional</strong></p>
+<blockquote>
+<div><p>The size of the images in the final dataset. All images
+will be resized to be <tt class="docutils literal"><span class="pre">image_size</span></tt> x <tt class="docutils literal"><span class="pre">image_size</span></tt>
+pixels.</p>
+</div></blockquote>
+<p><strong>classes: int, optional</strong></p>
+<blockquote>
+<div><p>If this is a classification problem the parameter should be
+used to indicate the total number of classes and targets are
+expected to be integers in the range <tt class="docutils literal"><span class="pre">[0;</span> <span class="pre">classes-1]</span></tt>.
+If this is a regression problem the parameter should be <tt class="docutils literal"><span class="pre">None</span></tt> and
+targets are expected to be real numbers.</p>
+</div></blockquote>
+<p><strong>rng: object, optional</strong></p>
+<blockquote>
+<div><p>A random number generator used for picking random         indices into the design matrix when choosing minibatches.</p>
+</div></blockquote>
+<p><strong>preprocessor: Preprocessor, optional</strong></p>
+<blockquote>
+<div><p>Preprocessor to apply to images.</p>
+</div></blockquote>
+<p><strong>fit_preprocessor: bool, optional</strong></p>
+<blockquote class="last">
+<div><p>Whether preprocessor can fit parameters when applied to training
+data.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="cosdataset">
+<h2><a class="toc-backref" href="#id3">CosDataset</a><a class="headerlink" href="#cosdataset" title="Permalink to this headline">¶</a></h2>
+<p>This is mostly deprecated and will be replaced with a more generic dataset that
+generates values from functions like <tt class="docutils literal"><span class="pre">cos</span></tt>, <tt class="docutils literal"><span class="pre">sin</span></tt> and so on.</p>
+<dl class="class">
+<dt id="pyl2extra.datasets.cos_dataset.CosDataset">
+<em class="property">class </em><tt class="descclassname">pyl2extra.datasets.cos_dataset.</tt><tt class="descname">CosDataset</tt><big>(</big><em>min_x=-6.28</em>, <em>max_x=6.28</em>, <em>std=0.05</em>, <em>rng=(17</em>, <em>2</em>, <em>946)</em><big>)</big><a class="headerlink" href="#pyl2extra.datasets.cos_dataset.CosDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dataset that streams randomly generated 2D examples.</p>
+<p>The first coordinate is sampled from a uniform distribution.
+The second coordinate is the cosine of the first coordinate,
+plus some gaussian noise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>min_x</strong> : float, optional</p>
+<blockquote>
+<div><p>Lower limit for x as in cos(x)</p>
+</div></blockquote>
+<p><strong>max_x</strong> : float, optional</p>
+<blockquote>
+<div><p>Higher limit for x as in cos(x)</p>
+</div></blockquote>
+<p><strong>std</strong> : float, optional</p>
+<blockquote>
+<div><p>Standard deviation for the noise added to the values we generate</p>
+</div></blockquote>
+<p><strong>rng</strong> : tuple, optional</p>
+<blockquote class="last">
+<div><p>Seed for random number generator</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="module-pyl2extra.datasets.img_dataset">
-<span id="imgdataset"></span><h2><a class="toc-backref" href="#id2">ImgDataset</a><a class="headerlink" href="#module-pyl2extra.datasets.img_dataset" title="Permalink to this headline">¶</a></h2>
+<span id="imgdataset"></span><h2><a class="toc-backref" href="#id4">ImgDataset</a><a class="headerlink" href="#module-pyl2extra.datasets.img_dataset" title="Permalink to this headline">¶</a></h2>
 <p>Provides a easy solution for using images in Pylearn2.</p>
 <p>Input files may be provided in various ways:</p>
 <ul class="simple">
@@ -178,44 +333,6 @@ from a previous run and will use it as the first batch if found.</p>
 <p><strong>rng</strong> : <cite>numpy.random.RandomState</cite> or seed, optional</p>
 <blockquote class="last">
 <div><p>The random number generator associated with this dataset</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</div>
-<div class="section" id="cosdataset">
-<h2><a class="toc-backref" href="#id3">CosDataset</a><a class="headerlink" href="#cosdataset" title="Permalink to this headline">¶</a></h2>
-<p>This is mostly deprecated and will be replaced with a more generic dataset that
-generates values from functions.</p>
-<dl class="class">
-<dt id="pyl2extra.datasets.cos_dataset.CosDataset">
-<em class="property">class </em><tt class="descclassname">pyl2extra.datasets.cos_dataset.</tt><tt class="descname">CosDataset</tt><big>(</big><em>min_x=-6.28</em>, <em>max_x=6.28</em>, <em>std=0.05</em>, <em>rng=(17</em>, <em>2</em>, <em>946)</em><big>)</big><a class="headerlink" href="#pyl2extra.datasets.cos_dataset.CosDataset" title="Permalink to this definition">¶</a></dt>
-<dd><p>A dataset that streams randomly generated 2D examples.</p>
-<p>The first coordinate is sampled from a uniform distribution.
-The second coordinate is the cosine of the first coordinate,
-plus some gaussian noise.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>min_x</strong> : float, optional</p>
-<blockquote>
-<div><p>Lower limit for x as in cos(x)</p>
-</div></blockquote>
-<p><strong>max_x</strong> : float, optional</p>
-<blockquote>
-<div><p>Higher limit for x as in cos(x)</p>
-</div></blockquote>
-<p><strong>std</strong> : float, optional</p>
-<blockquote>
-<div><p>Standard deviation for the noise added to the values we generate</p>
-</div></blockquote>
-<p><strong>rng</strong> : tuple, optional</p>
-<blockquote class="last">
-<div><p>Seed for random number generator</p>
 </div></blockquote>
 </td>
 </tr>
