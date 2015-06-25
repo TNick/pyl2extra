@@ -255,12 +255,12 @@ def _load_csv(csv_path):
 
     Parameters
     ----------
-    csv_path : str
+    csv_path: str
         The path towards the .csv file to read.
 
     Returns
     -------
-    result : list of tuples
+    result: list of tuples
         The method creates a list of tuples that should be passed to
         `_load_list()`.
     """
@@ -302,14 +302,14 @@ def _load_list(srclist):
 
     Parameters
     ----------
-    srclist : list of tuples
+    srclist: list of tuples
          A list of tuples, with first entry in tuple being
         a string, an Image or `numpy.ndarray` instances and
         second being classes (None for no class).
 
     Returns
     -------
-    result : list of tuples
+    result: list of tuples
         The method creates a list of tuples, with first entry in tuple being
         `numpy.ndarray` instances and second being targets (None for no
         target) - integer classes (classification) or real values
@@ -347,7 +347,7 @@ def one_image(image, image_size=None, classes=None,
 
     Parameters
     ----------
-    image : string, image or numpy.ndarray
+    image: string, image or numpy.ndarray
         The image to use as source.
 
     See :class:`Images` for a description of other parameters.
