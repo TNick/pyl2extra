@@ -61,7 +61,8 @@ def create(path, factor=1, shape=None):
         result[img_file] = ('float', img, 7)
     return result
 
-def dataset(image_size, path, factor=1):
+def dataset(image_size, path, factor=1,
+            preprocessor=None, fit_preprocessor=False):
     """
     Creates a dataset of images.
     """
@@ -77,5 +78,5 @@ def dataset(image_size, path, factor=1):
                   image_size=image_size,
                   classes=8,
                   rng=None,
-                  preprocessor=None,
-                  fit_preprocessor=False)
+                  preprocessor=preprocessor,
+                  fit_preprocessor=fit_preprocessor)
