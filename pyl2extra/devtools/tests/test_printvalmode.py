@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Tests for dataset
 """
@@ -25,9 +27,9 @@ from pylearn2.datasets.dense_design_matrix import DenseDesignMatrix
 from pylearn2.termination_criteria import EpochCounter
 from pylearn2.train import Train
 from pylearn2.training_algorithms.sgd import SGD
-from pylearn2.training_algorithms.tests.test_sgd import SupervisedDummyCost
-from pylearn2.training_algorithms.tests.test_sgd import SoftmaxModel
 
+from pyl2extra.testing.model import SoftmaxModel
+from pyl2extra.testing.cost import SupervisedDummyCost
 from pyl2extra.devtools.printvalmode import PrintValMode, XmlValMode
 
 class TestPrintValMode(unittest.TestCase):
