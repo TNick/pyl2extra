@@ -109,37 +109,8 @@ class Images(DenseDesignMatrix):
         #: Number of classes (None for regression)
         self.classes = classes
 
-        if isinstance(source, basestring):
-            # this is a csv file that we're going to read
-            ind = _load_list(_load_csv(source))
-        elif isinstance(source, dict):
-            # keys are file names, values are classes
-            ind = _load_list(source.items())
-        elif isinstance(source, (list, tuple)):
-            # one item lists the files, the other lists the classes
-            if len(source) == 1:
-                ind = _load_list([(src, None) for src in source[0]])
-            elif len(source) == 2:
-                if len(source[0]) == len(source[1]):
-                    ind = _load_list(zip(source[0], source[1]))
-                else:
-                    raise ValueError("Lists/tuples provded to Images class "
-                                     "constructor are expected to have "
-                                     "same length (%d != %d)" %
-                                     (len(source[0]), len(source[1])))
-
-            else:
-                raise ValueError("Lists/tuples provided to Images class "
-                                 "constructor are expected to have one "
-                                 "(images only) or two members (images"
-                                 " and classes); the input has %d members." %
-                                 len(source))
-        else:
-            raise ValueError("Images class expects for its `source` argument "
-                             "a file path (string), a dictionary of "
-                             "file:class pairs, or a pair of lists (tuples); "
-                             "%s is not supported" % str(source.__class__))
         # all images are loaded in ``ind`` variable
+        ind = _init_input(source)
 
         # DenseDesignMatrix expects us to provide a numpy array
         # we choose to have number of examples on first axis ('b'),
@@ -218,6 +189,42 @@ class Images(DenseDesignMatrix):
                                      fit_preprocessor=fit_preprocessor,
                                      X_labels=None,
                                      y_labels=classes if has_targets else None)
+
+def _init_input(source):
+    """
+    Homogenize sources.
+    """
+    if isinstance(source, basestring):
+        # this is a csv file that we're going to read
+        result = _load_list(_load_csv(source))
+    elif isinstance(source, dict):
+        # keys are file names, values are classes
+        result = _load_list(source.items())
+    elif isinstance(source, (list, tuple)):
+        # one item lists the files, the other lists the classes
+        if len(source) == 1:
+            result = _load_list([(src, None) for src in source[0]])
+        elif len(source) == 2:
+            if len(source[0]) == len(source[1]):
+                result = _load_list(zip(source[0], source[1]))
+            else:
+                raise ValueError("Lists/tuples provded to Images class "
+                                 "constructor are expected to have "
+                                 "same length (%d != %d)" %
+                                 (len(source[0]), len(source[1])))
+        else:
+            raise ValueError("Lists/tuples provided to Images class "
+                             "constructor are expected to have one "
+                             "(images only) or two members (images"
+                             " and classes); the input has %d members." %
+                             len(source))
+    else:
+        raise ValueError("Images class expects for its `source` argument "
+                         "a file path (string), a dictionary of "
+                         "file:class pairs, or a pair of lists (tuples); "
+                         "%s is not supported" % str(source.__class__))
+    return result
+
 
 def _load_csv(csv_path):
     """
@@ -308,3 +315,21 @@ def _load_list(srclist):
         imgin = imgin.convert('RGB')
         result.append((numpy.array(imgin), cls))
     return result
+
+
+def one_image(image, image_size=None, classes=None,
+              rng=None, preprocessor=None, fit_preprocessor=False):
+    """
+    Convenience function that creates an Images dataset from a single image.
+
+    Parameters
+    ----------
+    image : string, image or numpy.ndarray
+        The image to use as source.
+
+    See :class:`Images` for a description of other parameters.
+    """
+    return Images(source=((image,),),
+                  image_size=image_size, classes=classes,
+                  rng=rng, preprocessor=preprocessor,
+                  fit_preprocessor=fit_preprocessor)
