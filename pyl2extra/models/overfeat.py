@@ -697,27 +697,27 @@ def predict(images, model=None, mapper=get_overfeat_class_label):
         The name of the class for each image if a ``mapper`` was provided,
         ``None`` otherwise.
     """
-    if isinstance(images, Dataset):
-        dataset = images
-    else:
-        dataset = Images(images, model=None,
-                         preprocessor=StandardizePrep())
 
     if model is None:
         params = Params(large=True, weights_file=None)
         model = params.model()
 
-    # should be a Conv2DSpace
     data_space = model.get_input_space()
-
-    # probably "features"
+    assert isinstance(data_space, Conv2DSpace)
+    assert data_space.shape[0] == data_space.shape[1]
     data_source = model.get_input_source()
-
     data_specs = (data_space, data_source)
-
+    out_space = model.get_output_space()
+    class_count = out_space.get_origin_batch(1).shape[1]
     batch = data_space.make_theano_batch('X')
     pfunc = theano.function([batch], model.fprop(batch))
 
+    if isinstance(images, Dataset):
+        dataset = images
+    else:
+        dataset = Images(images, classes=class_count,
+                         image_size=data_space.shape[0],
+                         preprocessor=StandardizePrep())
     dset_sz = dataset.get_num_examples()
     batch_size = min(dset_sz, 256)
     while batch_size > 0:
@@ -728,14 +728,13 @@ def predict(images, model=None, mapper=get_overfeat_class_label):
     iter = dataset.iterator(mode='sequential',
                             batch_size=batch_size,
                             data_specs=data_specs)
-    predictions = []
-    probabilities = model.get_output_space().get_origin_batch(dset_sz)
+
+    probabilities = out_space.get_origin_batch(dset_sz)
     out_idx = 0
     for item in iter:
         result = pfunc(item)
         probabilities[out_idx:out_idx+batch_size] = result
         out_idx = out_idx + batch_size
-        predictions.append(result)
 
     # forward propagation results in an array for each example that
     # has a probability for each class

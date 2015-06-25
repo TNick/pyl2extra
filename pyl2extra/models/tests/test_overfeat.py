@@ -133,6 +133,7 @@ class ModelBaseTst(unittest.TestCase):
     Base class for both large and small.
     """
     def prepare(self, large, inp_size):
+        """Used by setUp to prepare the class for use"""
         self.testee = None
         self.tmp_dir = tempfile.mkdtemp()
         self.images = images.create(self.tmp_dir)
@@ -194,7 +195,7 @@ class TestModelLarge(ModelBaseTst):
         """
         Predict using this network.
         """
-        predict(model=self.mode, images=(self.images,))
+        predict(model=self.train_obj.model, images=(self.images,))
 
 
 class TestModelSmall(ModelBaseTst):
@@ -215,7 +216,7 @@ class TestModelSmall(ModelBaseTst):
         """
         Predict using this network.
         """
-        predict(model=self.mode, images=(self.images,))
+        predict(model=self.train_obj.model, images=(self.images,))
 
 
 class TestPredict(ModelBaseTst):
@@ -244,24 +245,29 @@ class TestPredict(ModelBaseTst):
         Predict using a new network.
         """
         probabilities, classes, class_names = predict(images=self.dataset)
-        self.assertTupleEqual(probabilities.shape, (8,8))
+        self.assertTupleEqual(probabilities.shape, (8, 1000))
         self.assertEqual(len(classes), 8)
         self.assertEqual(len(class_names), 8)
-        self.assertTrue(all(classes < 8))
+        self.assertTrue(all(classes < 1000))
         self.assertTrue(all(classes >= 0))
 
     def test_predict_image(self):
         """
         Predict using a new network.
         """
-        probabilities, classes, class_names = predict(images=self.images[0])
-
+        probabilities, classes, class_names = predict(
+            images=((self.images.keys()[0],),))
+        self.assertTupleEqual(probabilities.shape, (1, 1000))
+        self.assertEqual(len(classes), 1)
+        self.assertEqual(len(class_names), 1)
+        self.assertTrue(all(classes < 1000))
+        self.assertTrue(all(classes >= 0))
 
 if __name__ == '__main__':
     if False:
         unittest.main()
     else:
-        unittest.main(argv=['--verbose', 'TestPredict.test_predict_dataset'])
+        unittest.main(argv=['--verbose', 'TestPredict.test_predict_image'])
         #tr = TestModelLarge()
         #tr.setUp()
         #tr.test_file()
