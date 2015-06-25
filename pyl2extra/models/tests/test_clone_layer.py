@@ -16,7 +16,7 @@ import unittest
 
 from pyl2extra.models.clone_layer import Clone
 
-
+@unittest.skip("not yet implemented")
 class TestClone(unittest.TestCase):
     """
     Tests for Clone.
