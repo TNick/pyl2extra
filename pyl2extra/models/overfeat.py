@@ -1,4 +1,30 @@
 # -*- coding: utf-8 -*-
+"""
+Layers and models based on OverFeat_ weights.
+
+OverFeat_ is a Convolutional Network-based image classifier
+and feature extractor. OverFeat is Copyright NYU 2013. Authors are
+Michael Mathieu, Pierre Sermanet, and Yann LeCun. The weights archive
+is provided separatelly (here <http://cilvr.cs.nyu.edu/lib/exe/fetch.php?media=overfeat:overfeat-weights.tgz>)_
+
+..code:
+
+    wget http://cilvr.cs.nyu.edu/lib/exe/fetch.php?media=overfeat:overfeat-weights.tgz -O weights.tgz
+    tar -xzf weights.tgz
+
+The two files of interest for us are ``net_weight_0`` for small network
+and ``net_weight_1`` for large network.
+
+The code in this file was inspired and, in some cases, copied from
+(sklearn-theano <https://github.com/sklearn-theano/sklearn-theano>)_ that
+is licensed under a BSD 3-clause license by Kyle Kastner and
+Michael Eickenberg. OverFeat specifics are mostly in (overfeat.py
+<https://github.com/sklearn-theano/sklearn-theano/blob/master/sklearn_theano/feature_extraction/overfeat.py>)_
+
+
+_OverFeat: https://github.com/sermanet/OverFeat
+"""
+
 from PIL import Image
 import os
 import numbers
@@ -12,18 +38,28 @@ from pylearn2.models.mlp import (MLP, ConvElemwise,
                                  Softmax, Layer)
 from pylearn2.space import (Conv2DSpace, VectorSpace)
 from pylearn2.utils import wraps, safe_zip
+from pylearn2.datasets.preprocessing import Preprocessor
 from theano import tensor
 
 from pyl2extra.datasets.images import Images
+from pyl2extra.models.overfeat_class_labels import get_overfeat_class_label
 
+# architecture dependent representation of real numbers
 floatX = theano.config.floatX
 
+# the size of the input image for the two networks
 SMALL_INPUT = 231
 LARGE_INPUT = 221
 
+# names of the weights files
 SMALL_NETWORK_WEIGHT_FILE = 'net_weight_0'
 LARGE_NETWORK_WEIGHT_FILE = 'net_weight_1'
 
+# The shape of the network organized as follows
+# - number of output channels
+# - number of input channels
+# - number of rows
+# - number of columns
 SMALL_NETWORK_FILTER_SHAPES = numpy.array([(96, 3, 11, 11),
                                            (256, 96, 5, 5),
                                            (512, 256, 3, 3),
@@ -45,12 +81,29 @@ LARGE_NETWORK_FILTER_SHAPES = numpy.array([(96, 3, 7, 7),
                                            (1000, 4096, 1, 1)])
 LARGE_NETWORK_BIAS_SHAPES = LARGE_NETWORK_FILTER_SHAPES[:, 0]
 
-
+# the name of the environment variable that is expected to hold the
+# path to directory containing network parameters (net_weight_0 and
+# net_weight_1)
 FILE_PATH_KEY = 'PYL2X_OVERFEAT_PATH'
+
+# parameters for image normalization
+STANDARDIZE_MEAN = 118.380948
+STANDARDIZE_STD = 61.896913
+
 
 class Params(object):
     """
     Container for OverFeat weights and biases.
+
+    The constructor simply looiks up the file, reads it and loads
+    ``weights`` and ``biases`` attributes with their respective values.
+
+    The set of coresponding pylearn2 layers can be created using
+    ``layers()`` method. The weights are NOT copied inside them, allowing
+    the user to copy the architecture only.
+
+    To create a full pylearn2 model with all the layers and all the weights
+    initialized use ``model()`` method.
 
     Parameters
     ----------
@@ -381,7 +434,7 @@ class Params(object):
             max_col_norm=1.9365,
             layer_name='y',
             binary_target_dim=1,
-            n_classes=8,
+            n_classes=1000,
             irange=.005
         ))
 
@@ -442,6 +495,8 @@ class Params(object):
 class ZeroPad(Layer):
     """
     A layer that adds borders consisting of zeros to its input.
+
+    This is a MLP compatible layer.
     """
     def __init__(self, padding, layer_name=None, *args, **kwargs):
         #: the input space
@@ -528,7 +583,34 @@ class ZeroPadYaml(ZeroPad):
         super(ZeroPadYaml, self).__init__(padding, layer_name)
 
 
-def standardize(image, mean=118.380948, std=61.896913):
+class StandardizePrep(Preprocessor):
+
+    """
+    Normalize a dataset.
+
+    The Standardize class in pylearn2 does not allow us to set the
+    parameters.
+
+    Parameters
+    ----------
+    mean : float
+        The value is substracted from all elements of the array.
+    std : float
+        All elements of the array are divided by this value.
+    """
+    def __init__(self, mean=STANDARDIZE_MEAN, std=STANDARDIZE_STD):
+        self.mean = mean
+        self.std = std
+        assert self.std != 0.0
+
+    @wraps(Preprocessor.apply)
+    def apply(self, dataset, can_fit=True):
+        X = dataset.get_design_matrix()
+        X = (X - self.mean) / self.std
+        dataset.set_design_matrix(X)
+
+
+def standardize(image, mean=STANDARDIZE_MEAN, std=STANDARDIZE_STD):
     """
     Normalize an image or array.
 
@@ -561,7 +643,7 @@ def standardize(image, mean=118.380948, std=61.896913):
 
     return image
 
-def predict(images, model=None):
+def predict(images, model=None, mapper=get_overfeat_class_label):
     """
     Run a set of images through the network and predict their classes.
 
@@ -593,15 +675,33 @@ def predict(images, model=None):
         The image(s) to predict the labels for. This argument is directly
         used with the :class:`Images` constructor if it is not already a
         dataset (it has only been tested with ``DenseDesignMatrix``
-        subclasses).
+        subclasses). Note that - if this is a dataset - the preprocessor
+        is NOT applied and you have to apply it yourself.
     model :  pylearn2.models.model.Model, optional
         The model to use; by default a new model is created with
         parameters being initialized from 'large' file.
+    mapper : callable, optional
+        A function that takes one parameter - an integer - and returns
+        the name of the class for that integer.
+
+    Returns
+    -------
+    probabilities : numpy.ndarray
+        The array that was generated by the final layer of the network.
+        It contains one entry for each image (first axis).
+        Each entry consists of a list of probabilities, one for each class
+        (second axis).
+    classes : list
+        The index of the class with highest probability for each image.
+    class_names : list
+        The name of the class for each image if a ``mapper`` was provided,
+        ``None`` otherwise.
     """
     if isinstance(images, Dataset):
         dataset = images
     else:
-        dataset = Images(images, model=None)
+        dataset = Images(images, model=None,
+                         preprocessor=StandardizePrep())
 
     if model is None:
         params = Params(large=True, weights_file=None)
@@ -616,14 +716,37 @@ def predict(images, model=None):
     data_specs = (data_space, data_source)
 
     batch = data_space.make_theano_batch('X')
-    predict = theano.function([batch], model.fprop(batch))
+    pfunc = theano.function([batch], model.fprop(batch))
 
+    dset_sz = dataset.get_num_examples()
+    batch_size = min(dset_sz, 256)
+    while batch_size > 0:
+        if dset_sz % batch_size == 0:
+            break
+        batch_size = batch_size - 1
     batch_size = 1
     iter = dataset.iterator(mode='sequential',
                             batch_size=batch_size,
                             data_specs=data_specs)
     predictions = []
+    probabilities = model.get_output_space().get_origin_batch(dset_sz)
+    out_idx = 0
     for item in iter:
-        predictions.append(predict(item))
+        result = pfunc(item)
+        probabilities[out_idx:out_idx+batch_size] = result
+        out_idx = out_idx + batch_size
+        predictions.append(result)
 
-    print predictions, predictions[0].__class__
+    # forward propagation results in an array for each example that
+    # has a probability for each class
+    # we get an array of indices for classes, one for each example
+    classes = probabilities.argmax(1)
+    assert classes.shape == (dset_sz,)
+    if not mapper is None:
+        class_names = []
+        for cls in classes:
+            class_names.append(mapper(cls))
+    else:
+        class_names = None
+
+    return probabilities, classes, class_names

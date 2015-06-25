@@ -34,7 +34,7 @@ from pyl2extra.testing import images
 from pyl2extra.models.overfeat import (Params, standardize, FILE_PATH_KEY,
     SMALL_NETWORK_FILTER_SHAPES, SMALL_NETWORK_BIAS_SHAPES,
     LARGE_NETWORK_FILTER_SHAPES, LARGE_NETWORK_BIAS_SHAPES,
-    SMALL_INPUT, LARGE_INPUT, predict)
+    SMALL_INPUT, LARGE_INPUT, predict, StandardizePrep)
 
 
 
@@ -139,11 +139,13 @@ class ModelBaseTst(unittest.TestCase):
         self.dataset = images.dataset(
             image_size=inp_size,
             path=self.tmp_dir,
-            factor=10)
+            factor=10,
+            preprocessor=StandardizePrep())
         self.valid_dataset = images.dataset(
             inp_size,
             self.tmp_dir,
-            factor=10)
+            factor=10,
+            preprocessor=StandardizePrep())
         self.testee = Params(large=large, weights_file=None)
         self.train_obj = Train(
             dataset=self.dataset,
@@ -227,7 +229,8 @@ class TestPredict(ModelBaseTst):
         self.dataset = images.dataset(
             image_size=LARGE_INPUT,
             path=self.tmp_dir,
-            factor=10)
+            factor=1,
+            preprocessor=StandardizePrep())
 
     @functools.wraps(unittest.TestCase.tearDown)
     def tearDown(self):
@@ -240,20 +243,25 @@ class TestPredict(ModelBaseTst):
         """
         Predict using a new network.
         """
-        predict(images=self.dataset)
+        probabilities, classes, class_names = predict(images=self.dataset)
+        self.assertTupleEqual(probabilities.shape, (8,8))
+        self.assertEqual(len(classes), 8)
+        self.assertEqual(len(class_names), 8)
+        self.assertTrue(all(classes < 8))
+        self.assertTrue(all(classes >= 0))
 
     def test_predict_image(self):
         """
         Predict using a new network.
         """
-        predict(images=self.images[0])
+        probabilities, classes, class_names = predict(images=self.images[0])
 
 
 if __name__ == '__main__':
     if False:
         unittest.main()
     else:
-        unittest.main(argv=['--verbose', 'TestPredict'])
+        unittest.main(argv=['--verbose', 'TestPredict.test_predict_dataset'])
         #tr = TestModelLarge()
         #tr.setUp()
         #tr.test_file()
