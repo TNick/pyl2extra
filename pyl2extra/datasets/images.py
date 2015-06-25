@@ -7,7 +7,7 @@ can just copy-paste it inside your source tree.
 To use this dataset prepare a .csv file with targets (integers or real numbers)
 on first column and file paths on the second column:
 
-..code:
+.. code::
 
     0,file1.png
     1,file2.png
@@ -19,7 +19,7 @@ square for you.
 
 Use it in a .yaml file like so:
 
-..code:
+.. code::
 
     dataset: &trndataset !obj:pyl2extra.datasets.images.Images {
         source: 'train.csv',
@@ -32,7 +32,7 @@ derived from first image that is provided.
 By default the class assumes a classification problem (targets are integers).
 If you need to uset it in a regression problem create it like so:
 
-..code:
+.. code::
 
     dataset: &trndataset !obj:pyl2extra.datasets.images.Images {
         source: 'train.csv',
@@ -63,12 +63,33 @@ class Images(DenseDesignMatrix):
     """
     A pylearn2 dataset that loads the images from a list or csv file.
 
+    Please note that - if you use this dataset and your model has a
+    final Softmax layer you should construct it like so (YAML syntax):
+
+    .. code::
+
+        !obj:pylearn2.models.mlp.Softmax {
+            layer_name: 'y',
+            irange: .0,
+            n_classes: %(classes)d,
+            binary_target_dim: 1
+        }
+
+    where ``classes`` is the same number of classes passed to ``Images``
+    constructor. ``binary_target_dim`` is important and failing to set it
+    constructs the wrong architecture, causing errors like:
+
+        ValueError: VectorSpace(dim=1, dtype=float32) with total dimension 1
+        can't format a batch into VectorSpace(dim=X, dtype=float32) because
+        its total dimension is X.
+
     Parameters
     ----------
-    source : OrderedDict, dict, str, tuple, list
+    source: OrderedDict, dict, str, tuple, list
         This argument provides the input images and (optionally)
         associated categories. The meaning of the argument depends
         on the data type:
+
         - if ``source`` is a string, it is interpreted to be the
           path towards a csv file; the file must NOT have a header,
           first column must contain the targets (classes or values) and
@@ -77,26 +98,27 @@ class Images(DenseDesignMatrix):
           paths for image files, ``Image`` instances or numpy arrays and
           the values must be the classes or values (None or empty
           string if this instance does not provide the labels);
-        - a tuple or list must have exactly one or two members:
-          first one must be a list or tuple of image paths or
+        - a tuple or list must have exactly one or two
+          members: first one must be a list or tuple of image paths or
           Images or numpy arrays, while second one (optional)
           has the targets (classes as integers or real values).
-    image_size : int, optional
+
+    image_size: int, optional
         The size of the images in the final dataset. All images
         will be resized to be ``image_size`` x ``image_size``
         pixels.
-    classes : int, optional
+    classes: int, optional
         If this is a classification problem the parameter should be
         used to indicate the total number of classes and targets are
         expected to be integers in the range ``[0; classes-1]``.
         If this is a regression problem the parameter should be ``None`` and
         targets are expected to be real numbers.
-    rng : object, optional
+    rng: object, optional
         A random number generator used for picking random \
         indices into the design matrix when choosing minibatches.
-    preprocessor : Preprocessor, optional
+    preprocessor: Preprocessor, optional
         Preprocessor to apply to images.
-    fit_preprocessor : bool, optional
+    fit_preprocessor: bool, optional
         Whether preprocessor can fit parameters when applied to training
         data.
     """
@@ -161,6 +183,7 @@ class Images(DenseDesignMatrix):
             categories.append(ctg)
             if ctg != '':
                 has_targets = True
+        dense_x = numpy.cast[theano.config.floatX](dense_x)
 
         # if we have categories / values convert them to proper format
         if has_targets:
