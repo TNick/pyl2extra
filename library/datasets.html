@@ -180,7 +180,7 @@ second column must contain the paths for the image files;</li>
 paths for image files, <tt class="docutils literal"><span class="pre">Image</span></tt> instances or numpy arrays and
 the values must be the classes or values (None or empty
 string if this instance does not provide the labels);</li>
-<li>a tuple or list must have exactly one or two 
+<li>a tuple or list must have exactly one or two
 members: first one must be a list or tuple of image paths or
 Images or numpy arrays, while second one (optional)
 has the targets (classes as integers or real values).</li>
@@ -213,6 +213,25 @@ targets are expected to be real numbers.</p>
 <div><p>Whether preprocessor can fit parameters when applied to training
 data.</p>
 </div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyl2extra.datasets.images.one_image">
+<tt class="descclassname">pyl2extra.datasets.images.</tt><tt class="descname">one_image</tt><big>(</big><em>image</em>, <em>image_size=None</em>, <em>classes=None</em>, <em>rng=None</em>, <em>preprocessor=None</em>, <em>fit_preprocessor=False</em><big>)</big><a class="headerlink" href="#pyl2extra.datasets.images.one_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function that creates an Images dataset from a single image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image: string, image or numpy.ndarray</strong></p>
+<blockquote>
+<div><p>The image to use as source.</p>
+</div></blockquote>
+<p class="last"><strong>See :class:`Images` for a description of other parameters.</strong></p>
 </td>
 </tr>
 </tbody>

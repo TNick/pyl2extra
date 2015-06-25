@@ -14,6 +14,7 @@ Images
 
 .. autoclass:: pyl2extra.datasets.images.Images
 
+.. autofunction:: pyl2extra.datasets.images.one_image
 
 CosDataset
 ==========
